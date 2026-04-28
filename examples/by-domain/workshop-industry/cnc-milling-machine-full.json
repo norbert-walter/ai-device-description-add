@@ -1,0 +1,250 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "autonomy": {
+    "level": 3,
+    "scores": {
+      "reversibility": 2,
+      "scope_of_effect": 2,
+      "error_tolerance": 2
+    },
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Full_v1.0"
+  },
+  "device": {
+    "name": "CNC Milling Machine — Production Cell 4",
+    "type": "actuator",
+    "location": "Production hall B, cell 4, coordinates B4-07",
+    "firmware": "CNC Controller V8.3.1",
+    "hardware": "Siemens SINUMERIK 840D sl",
+    "doc_url": "https://internal.example.com/production/cnc-cell4/manual",
+    "doc_url_note": "Chapter 3: safety interlocks and work envelope. Chapter 5: job file format. Chapter 8: alarm codes and recovery procedures."
+  },
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "token",
+    "enforcement": "All commands require a valid operator token. Hardware safety interlocks cannot be overridden via software under any circumstances. The emergency stop is hardware-only. Safety door and light curtain states are monitored by a dedicated safety PLC that operates independently of the network interface. A machining start command is rejected by the controller if any safety interlock is active, regardless of network-level authentication."
+  },
+  "interfaces": [
+    {
+      "name": "http_rest",
+      "physical": "Ethernet",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 8080,
+      "direction": "bidirectional",
+      "authentication": "Bearer token in Authorization header",
+      "data": [
+        {
+          "name": "machine_state",
+          "path": "/api/state",
+          "method": "GET",
+          "description": "Returns current machine state, active program, safety interlock states, spindle speed, and axis positions"
+        },
+        {
+          "name": "job_control",
+          "path": "/api/job",
+          "method": "POST",
+          "description": "Load, start, pause, or stop a machining job"
+        },
+        {
+          "name": "job_queue",
+          "path": "/api/queue",
+          "method": "GET",
+          "description": "Returns current job queue with status"
+        },
+        {
+          "name": "tool_status",
+          "path": "/api/tools",
+          "method": "GET",
+          "description": "Returns tool magazine state, tool wear, and remaining tool life"
+        },
+        {
+          "name": "alarms",
+          "path": "/api/alarms",
+          "method": "GET",
+          "description": "Returns active alarms and error states"
+        },
+        {
+          "name": "maintenance",
+          "path": "/api/maintenance",
+          "method": "GET",
+          "description": "Returns maintenance schedule and overdue items"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "read_machine_state",
+      "description": "Read current machine state including operational mode, active program name, safety door state, light curtain state, spindle speed (RPM), axis positions (X/Y/Z in mm), and coolant level.",
+      "interface": "http_rest",
+      "path": "/api/state",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true
+    },
+    {
+      "name": "load_job",
+      "description": "Load a verified job file to the machine controller for operator review. This prepares the job but does not start it. The operator must review and start the job manually.",
+      "interface": "http_rest",
+      "path": "/api/job",
+      "method": "POST",
+      "parameters": {
+        "action": {
+          "type": "string",
+          "values": [
+            "load"
+          ],
+          "required": true
+        },
+        "job_id": {
+          "type": "string",
+          "description": "ID of a pre-approved job file in the production system",
+          "required": true
+        },
+        "approved_by": {
+          "type": "string",
+          "description": "Name of the engineer who approved this job file",
+          "required": true
+        }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": false,
+      "requires_confirmation": true,
+      "requires_auth": true
+    },
+    {
+      "name": "pause_job",
+      "description": "Pause the currently running machining job at the next safe pause point. The machine will complete the current motion and stop.",
+      "interface": "http_rest",
+      "path": "/api/job",
+      "method": "POST",
+      "parameters": {
+        "action": {
+          "type": "string",
+          "values": [
+            "pause"
+          ],
+          "required": true
+        }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true
+    },
+    {
+      "name": "stop_job",
+      "description": "Stop the currently running or paused machining job. The machine returns to home position. The job must be restarted from the beginning if resumed.",
+      "interface": "http_rest",
+      "path": "/api/job",
+      "method": "POST",
+      "parameters": {
+        "action": {
+          "type": "string",
+          "values": [
+            "stop"
+          ],
+          "required": true
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for stopping — required for production log",
+          "required": true
+        }
+      },
+      "safe": false,
+      "reversible": false,
+      "idempotent": true,
+      "requires_confirmation": true,
+      "requires_auth": true
+    },
+    {
+      "name": "read_tool_status",
+      "description": "Read tool magazine state, remaining tool life (%), and wear indicators for all tools.",
+      "interface": "http_rest",
+      "path": "/api/tools",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true
+    },
+    {
+      "name": "read_alarms",
+      "description": "Read all active alarms and error states with alarm codes, descriptions, and recommended actions.",
+      "interface": "http_rest",
+      "path": "/api/alarms",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true
+    },
+    {
+      "name": "read_maintenance",
+      "description": "Read maintenance schedule including overdue items, next scheduled maintenance, and lubrication intervals.",
+      "interface": "http_rest",
+      "path": "/api/maintenance",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true
+    }
+  ],
+  "rules": [
+    "Before acting on this document, fetch and fully internalize the Ethical Framework at autonomy.ethic_url. Do not proceed if it cannot be loaded.",
+    "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Never start a machining job. Job start is exclusively performed by the on-site operator via the machine control panel after reviewing the loaded job.",
+    "Never load a job file that has not been explicitly approved by a production engineer — verified by the approved_by parameter.",
+    "Never attempt to override, bypass, or disable any safety interlock for any reason.",
+    "If the machine enters an alarm or error state during operation, do not attempt automatic recovery. Alert the operator immediately and wait for instruction.",
+    "Always read machine state before loading a job to verify safety interlock states and machine readiness.",
+    "If any safety interlock is active (safety door open, light curtain interrupted), do not load a job. Alert the operator.",
+    "If tool wear exceeds 85% on any tool required for the next job, alert the operator before loading the job.",
+    "If any maintenance item is overdue, alert the operator and recommend scheduling maintenance before the next production run.",
+    "Always confirm with the operator before stopping a running job — stopping is irreversible for the current workpiece.",
+    "Log all actions with timestamp, operator token identity, job ID, and outcome. Transmit to the production management system."
+  ],
+  "validation": {
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5"
+      }
+    ],
+    "validated_at": "2026-04-27T10:30:00Z",
+    "add_version": "1.0",
+    "score": {
+      "structure": "pass",
+      "comprehensibility": "pass",
+      "functional": "pass",
+      "rules_compliance": "pass",
+      "security": "pass",
+      "discovery": "pass"
+    },
+    "findings": [],
+    "improvements_applied": [
+      "Clarified that job start is exclusively operator-performed — not available as an AI action.",
+      "Added approved_by as required parameter for load_job.",
+      "Added tool wear threshold alert rule.",
+      "Added maintenance overdue alert rule.",
+      "Clarified stop_job as irreversible for the current workpiece."
+    ],
+    "summary": "Comprehensive CNC machine description with maximum Autonomy Level. AI role is correctly limited to job loading, monitoring, and alerting. Job start is exclusively operator-controlled. All safety interlocks are hardware-enforced and correctly documented. Ready for deployment as a production planning and monitoring assistant."
+  }
+}

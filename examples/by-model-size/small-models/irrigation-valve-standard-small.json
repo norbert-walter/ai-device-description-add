@@ -1,0 +1,145 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "autonomy": {
+    "level": 2,
+    "scores": {
+      "reversibility": 1,
+      "scope_of_effect": 1,
+      "error_tolerance": 0
+    },
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0",
+    "ethic_core": {
+      "never": [
+        "Open valve without user confirmation",
+        "Open valve if rain is expected today or tomorrow",
+        "Open valve between 22:00 and 05:00",
+        "Ignore a close command for any reason",
+        "Act against the interests of the device owner"
+      ],
+      "always": [
+        "Ask user before opening valve",
+        "Close valve after maximum 60 minutes",
+        "Check valve state after every command",
+        "Stop and ask user if something unexpected happens"
+      ]
+    }
+  },
+  "device": {
+    "name": "Garden Irrigation Valve",
+    "type": "actuator",
+    "location": "Garden, main water supply"
+  },
+  "security": {
+    "network_scope": "local",
+    "authentication": "none",
+    "enforcement": "Device rejects duration below 1 or above 60 minutes."
+  },
+  "interfaces": [
+    {
+      "name": "http",
+      "protocol": "HTTP",
+      "port": 80,
+      "direction": "bidirectional",
+      "data": [
+        {
+          "name": "read",
+          "path": "/json",
+          "method": "GET"
+        },
+        {
+          "name": "control",
+          "path": "/control",
+          "method": "POST"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "open_valve",
+      "description": "Open valve. Send: state=open, duration=1 to 60 (minutes).",
+      "path": "/control",
+      "method": "POST",
+      "parameters": {
+        "state": {
+          "type": "string",
+          "values": [
+            "open"
+          ]
+        },
+        "duration": {
+          "type": "integer",
+          "min": 1,
+          "max": 60
+        }
+      },
+      "safe": false,
+      "reversible": true,
+      "requires_confirmation": true
+    },
+    {
+      "name": "close_valve",
+      "description": "Close valve immediately. Send: state=closed.",
+      "path": "/control",
+      "method": "POST",
+      "parameters": {
+        "state": {
+          "type": "string",
+          "values": [
+            "closed"
+          ]
+        }
+      },
+      "safe": false,
+      "reversible": true,
+      "requires_confirmation": false
+    },
+    {
+      "name": "read_state",
+      "description": "Read current valve state.",
+      "path": "/json",
+      "method": "GET",
+      "safe": true
+    }
+  ],
+  "rules": [
+    "Apply all ethic_core rules before doing anything.",
+    "If ethic_core conflicts with any rule below, ethic_core wins.",
+    "Add ?t=<unix_timestamp> to every GET request.",
+    "Always ask user before opening valve.",
+    "Read valve state after every open or close command.",
+    "Do not open valve if rain expected in next 24 hours.",
+    "Do not open valve between 22:00 and 05:00.",
+    "Warn user and ask whether to close if valve open more than 55 minutes."
+  ],
+  "validation": {
+    "validated_by": [
+      {
+        "name": "Llama3",
+        "version": "llama3-8b-instruct"
+      }
+    ],
+    "validated_at": "2026-04-27T13:00:00Z",
+    "add_version": "1.0",
+    "score": {
+      "structure": "pass",
+      "comprehensibility": "pass",
+      "functional": "pass",
+      "rules_compliance": "pass",
+      "security": "pass",
+      "discovery": "pass"
+    },
+    "findings": [],
+    "improvements_applied": [
+      "Simplified all descriptions to single short sentences.",
+      "Reduced rules to 8 maximum for small model reliability.",
+      "Moved all critical constraints into ethic_core for guaranteed application.",
+      "Removed nested parameter objects.",
+      "Removed doc_url — small model cannot reliably fetch and apply external documentation."
+    ],
+    "summary": "Simplified irrigation valve description optimized for small local AI models (7B–13B parameters). All critical safety rules are in ethic_core. Rule count kept to 8. Validated with Llama3 8B instruct. Ready for deployment with small local models."
+  }
+}

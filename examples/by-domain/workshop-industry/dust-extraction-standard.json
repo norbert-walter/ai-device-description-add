@@ -1,0 +1,157 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "autonomy": {
+    "level": 2,
+    "scores": {
+      "reversibility": 1,
+      "scope_of_effect": 1,
+      "error_tolerance": 0
+    },
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0"
+  },
+  "device": {
+    "name": "Workshop Dust Extraction Unit",
+    "type": "actuator",
+    "location": "Workshop, rear wall, next to main power distribution",
+    "firmware": "V1.2",
+    "hardware": "ESP8266 relay module",
+    "doc_url": "https://example.com/dust-extractor/manual",
+    "doc_url_note": "See chapter 5 for filter pressure limits and chapter 7 for error codes."
+  },
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "none",
+    "enforcement": "The device will not accept a start command if internal filter pressure sensor reads above 90% of maximum. The motor has a thermal cutoff that activates independently at 85°C and cannot be overridden via software."
+  },
+  "interfaces": [
+    {
+      "name": "http_json",
+      "physical": "WiFi",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 80,
+      "direction": "bidirectional",
+      "data": [
+        {
+          "name": "state",
+          "path": "/json",
+          "method": "GET",
+          "description": "Returns motor state, filter pressure (0–100%), motor temperature (°C), and operating hours since last filter change"
+        },
+        {
+          "name": "control",
+          "path": "/control",
+          "method": "POST",
+          "description": "Starts or stops the extraction motor"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "start_extraction",
+      "description": "Start the dust extraction motor. The device will reject this command if filter pressure exceeds 90%.",
+      "interface": "http_json",
+      "path": "/control",
+      "method": "POST",
+      "parameters": {
+        "state": {
+          "type": "string",
+          "values": [
+            "on"
+          ],
+          "required": true
+        }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": true,
+      "requires_auth": false
+    },
+    {
+      "name": "stop_extraction",
+      "description": "Stop the dust extraction motor immediately.",
+      "interface": "http_json",
+      "path": "/control",
+      "method": "POST",
+      "parameters": {
+        "state": {
+          "type": "string",
+          "values": [
+            "off"
+          ],
+          "required": true
+        }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    },
+    {
+      "name": "read_state",
+      "description": "Read current motor state (on/off), filter pressure (0–100%), motor temperature (°C), and operating hours since last filter change.",
+      "interface": "http_json",
+      "path": "/json",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    }
+  ],
+  "rules": [
+    "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url as required by autonomy.level.",
+    "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
+    "Always read current state and filter pressure before issuing a start command.",
+    "Do not start the extraction unit if filter pressure exceeds 80%. Report the condition and instruct the user to replace the filter before proceeding.",
+    "Always confirm with the user before starting the extraction unit.",
+    "Verify operating state by reading device state after every start or stop command.",
+    "If the unit stops unexpectedly during operation, do not restart automatically. Report the event and wait for user instruction.",
+    "If motor temperature exceeds 75°C, warn the user immediately. If it exceeds 80°C, stop the unit and wait for user instruction.",
+    "If operating hours since last filter change exceed 50 hours, remind the user to schedule a filter inspection."
+  ],
+  "validation": {
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5"
+      }
+    ],
+    "validated_at": "2026-04-27T09:30:00Z",
+    "add_version": "1.0",
+    "score": {
+      "structure": "pass",
+      "comprehensibility": "pass",
+      "functional": "pass",
+      "rules_compliance": "pass",
+      "security": "warning",
+      "discovery": "pass"
+    },
+    "findings": [
+      {
+        "severity": "warning",
+        "category": "security",
+        "message": "No authentication configured. Any local network client can control the extraction unit. Acceptable for a single-user workshop network — document as a conscious design decision.",
+        "resolved": false
+      }
+    ],
+    "improvements_applied": [
+      "Added rule to always read filter pressure before start command.",
+      "Added rule against automatic restart after unexpected stop.",
+      "Added temperature warning thresholds.",
+      "Added filter maintenance reminder rule."
+    ],
+    "summary": "Well-described actuator with appropriate safety rules. Fire risk through clogged filter is correctly addressed in both rules and enforcement field. Temperature monitoring rules added. Authentication warning noted for trusted local network. Ready for deployment."
+  }
+}

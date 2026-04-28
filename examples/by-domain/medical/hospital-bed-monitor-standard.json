@@ -1,0 +1,184 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "autonomy": {
+    "level": 2,
+    "scores": {
+      "reversibility": 0,
+      "scope_of_effect": 2,
+      "error_tolerance": 1
+    },
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0"
+  },
+  "device": {
+    "name": "Hospital Bed Monitor Unit — Ward 3B Bed 12",
+    "type": "sensor",
+    "location": "Ward 3B, Bed 12, University Hospital",
+    "firmware": "V4.2.1",
+    "hardware": "Philips IntelliVue MX40 compatible interface module",
+    "doc_url": "https://hospital-internal.example/systems/bedmonitor/manual",
+    "doc_url_note": "Chapter 4: vital parameter normal ranges by patient category. Chapter 6: alarm threshold configuration. Chapter 9: data transmission format."
+  },
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "token",
+    "enforcement": "All read requests require a valid ward access token. The device is read-only — it does not accept any write or control commands and returns HTTP 405 for all non-GET requests. Patient data is transmitted in anonymized form — patient identity is resolved only through the hospital information system using the bed identifier."
+  },
+  "interfaces": [
+    {
+      "name": "http_json",
+      "physical": "Ethernet",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 443,
+      "direction": "read",
+      "authentication": "Bearer token in Authorization header",
+      "data": [
+        {
+          "name": "vitals",
+          "path": "/api/vitals",
+          "method": "GET",
+          "description": "Returns current vital parameters with device timestamps",
+          "fields": {
+            "heart_rate": {
+              "type": "integer",
+              "unit": "bpm",
+              "normal_range": "60–100",
+              "alarm_low": 40,
+              "alarm_high": 150
+            },
+            "respiratory_rate": {
+              "type": "integer",
+              "unit": "breaths/min",
+              "normal_range": "12–20",
+              "alarm_low": 8,
+              "alarm_high": 30
+            },
+            "spo2": {
+              "type": "float",
+              "unit": "%",
+              "normal_range": "95–100",
+              "alarm_low": 90
+            },
+            "bed_occupied": {
+              "type": "boolean",
+              "description": "True if patient is in bed"
+            },
+            "device_timestamp": {
+              "type": "string",
+              "unit": "ISO 8601",
+              "description": "Timestamp from device clock — always use this, not local AI time"
+            },
+            "signal_quality": {
+              "type": "string",
+              "values": [
+                "good",
+                "degraded",
+                "poor",
+                "no_signal"
+              ],
+              "description": "Sensor signal quality indicator"
+            }
+          }
+        },
+        {
+          "name": "alarms",
+          "path": "/api/alarms",
+          "method": "GET",
+          "description": "Returns currently active alarm states"
+        },
+        {
+          "name": "trends",
+          "path": "/api/trends",
+          "method": "GET",
+          "description": "Returns 1-hour trend data for all vital parameters at 1-minute resolution"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "read_vitals",
+      "description": "Read current vital parameters: heart rate (bpm), respiratory rate (breaths/min), SpO2 (%), bed occupancy, device timestamp, and signal quality for each parameter.",
+      "interface": "http_json",
+      "path": "/api/vitals",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true
+    },
+    {
+      "name": "read_alarms",
+      "description": "Read all currently active alarm states with alarm type, severity, and onset timestamp.",
+      "interface": "http_json",
+      "path": "/api/alarms",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true
+    },
+    {
+      "name": "read_trends",
+      "description": "Read 1-hour trend data for all vital parameters at 1-minute resolution. Useful for detecting gradual deterioration patterns.",
+      "interface": "http_json",
+      "path": "/api/trends",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true
+    }
+  ],
+  "rules": [
+    "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url as required by autonomy.level.",
+    "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /api/vitals?t=1745490000).",
+    "Always use the device_timestamp from the response for all data records — never substitute local AI time.",
+    "Never suppress, filter, average, or delay any alarm or anomalous reading. Report all readings as received.",
+    "Alert nursing staff immediately if heart rate falls below 40 or exceeds 150 bpm.",
+    "Alert nursing staff immediately if respiratory rate falls below 8 or exceeds 30 breaths per minute.",
+    "Alert nursing staff immediately if SpO2 falls below 90%.",
+    "Alert nursing staff immediately if signal_quality is 'poor' or 'no_signal' for any parameter — degraded signal may mask a deteriorating patient condition.",
+    "Alert nursing staff immediately if data transmission from this device is interrupted for more than 60 seconds.",
+    "Never use readings from this device as the sole basis for a clinical decision. Always present data as supporting information that requires human clinical verification.",
+    "When reporting trend data, highlight gradual trends that approach alarm thresholds — do not wait for the threshold to be crossed.",
+    "Never attempt to access patient identity information from this device — resolve patient identity only through the hospital information system using the bed identifier."
+  ],
+  "validation": {
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5"
+      }
+    ],
+    "validated_at": "2026-04-27T11:00:00Z",
+    "add_version": "1.0",
+    "score": {
+      "structure": "pass",
+      "comprehensibility": "pass",
+      "functional": "pass",
+      "rules_compliance": "pass",
+      "security": "pass",
+      "discovery": "pass"
+    },
+    "findings": [],
+    "improvements_applied": [
+      "Added signal_quality field with rule for poor signal alerting.",
+      "Added trend reading action for early deterioration detection.",
+      "Added rule to use device timestamp exclusively.",
+      "Added rule against patient identity access from device interface.",
+      "Clarified that data is anonymized at device level."
+    ],
+    "summary": "Read-only vital signs monitoring interface with appropriate clinical safety rules. All alarm thresholds are explicitly defined. Signal quality monitoring added to catch sensor failures before they mask patient deterioration. AI role correctly limited to monitoring and alerting — clinical decisions remain with medical personnel. Ready for deployment."
+  }
+}

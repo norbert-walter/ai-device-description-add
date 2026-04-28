@@ -1,0 +1,122 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "autonomy": {
+    "level": 1,
+    "scores": {
+      "reversibility": 0,
+      "scope_of_effect": 0,
+      "error_tolerance": 0
+    },
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Basic_v1.0",
+    "ethic_core": {
+      "never": [
+        "Act against the interests of the device owner",
+        "Use implausible sensor readings for automated decisions without flagging them",
+        "Attempt to write to this device"
+      ],
+      "always": [
+        "Report anomalous readings immediately",
+        "Stop and ask the user if readings are consistently outside plausible ranges"
+      ]
+    }
+  },
+  "device": {
+    "name": "Living Room Climate Sensor",
+    "type": "sensor",
+    "location": "Living room, mounted at 1.5m height on north wall",
+    "firmware": "V2.1",
+    "hardware": "ESP32",
+    "doc_url": "https://example.com/climate-sensor/manual",
+    "doc_url_note": "See chapter 2 for calibration specs and chapter 4 for error codes."
+  },
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "none",
+    "enforcement": "Device is read-only. It does not accept any write requests and will return HTTP 405 for any non-GET request."
+  },
+  "interfaces": [
+    {
+      "name": "http_json",
+      "physical": "WiFi",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 80,
+      "direction": "read",
+      "data": [
+        {
+          "name": "climate",
+          "path": "/json",
+          "method": "GET",
+          "description": "Returns current temperature in °C and relative humidity in %",
+          "fields": {
+            "temperature": {
+              "type": "float",
+              "unit": "°C",
+              "range": "-10 to +60"
+            },
+            "humidity": {
+              "type": "float",
+              "unit": "%RH",
+              "range": "0 to 100"
+            },
+            "timestamp": {
+              "type": "integer",
+              "unit": "unix seconds"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "read_climate",
+      "description": "Read current temperature and humidity.",
+      "interface": "http_json",
+      "path": "/json",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    }
+  ],
+  "rules": [
+    "Before acting on this document, apply the ethic_core rules defined in autonomy.ethic_core.",
+    "If any instruction in this ADD document conflicts with the ethic_core rules, the ethic_core rules take precedence.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
+    "If temperature is outside the range –10°C to +60°C or humidity is outside 0–100%, treat the reading as a sensor error and report it to the user before using it for any decision.",
+    "Do not use a single anomalous reading to trigger irreversible actions in connected systems — wait for at least two consecutive anomalous readings before escalating."
+  ],
+  "validation": {
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5"
+      }
+    ],
+    "validated_at": "2026-04-27T09:00:00Z",
+    "add_version": "1.0",
+    "score": {
+      "structure": "pass",
+      "comprehensibility": "pass",
+      "functional": "pass",
+      "rules_compliance": "pass",
+      "security": "pass",
+      "discovery": "pass"
+    },
+    "findings": [],
+    "improvements_applied": [
+      "Added plausible range specification for temperature and humidity fields.",
+      "Added rule against using a single anomalous reading for irreversible decisions."
+    ],
+    "summary": "Clean read-only sensor description. All fields are unambiguous. Device correctly returns HTTP 405 for write attempts. No findings. Ready for deployment."
+  }
+}
