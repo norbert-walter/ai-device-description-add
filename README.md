@@ -121,9 +121,9 @@ ADD defines three autonomy levels based on the risk profile of the deployment:
 | Document | Description |
 |---|---|
 | [ADD Specification v1.0](ADD_Specification_v1.0.md) | The complete ADD core specification |
-| [Ethical Framework — Basic](ADD_Ethical_Framework_Basic_v1.0.md) | For Autonomy Level 1 |
-| [Ethical Framework — Standard](ADD_Ethical_Framework_Standard_v1.0.md) | For Autonomy Level 2 |
-| [Ethical Framework — Full](ADD_Ethical_Framework_Full_v1.0.md) | For Autonomy Level 3 |
+| [Ethical Framework — Basic](ADD_Ethical_Framework_Basic_v1_0.md) | For Autonomy Level 1 |
+| [Ethical Framework — Standard](ADD_Ethical_Framework_Standard_v1_0.md) | For Autonomy Level 2 |
+| [Ethical Framework — Full](ADD_Ethical_Framework_Full_v1_0.md) | For Autonomy Level 3 |
 
 ## Examples
 
