@@ -18,6 +18,8 @@ ADD exists because the IoT landscape is extremely heterogeneous — thousands of
 
 **Why rules are binding:** The `rules` block encodes the device author's knowledge of the deployment context — constraints that cannot be expressed in structured fields. The author knows their device and environment better than you do. A rule is not a suggestion. It is the author's instruction to you for this specific deployment.
 
+**Why response time matters:** Some actions and rules carry timing requirements — defined by `timing: "critical"` and `max_response_time` in seconds. These are not preferences. A cooling pump alarm that must reach the control room within 3 seconds, or an emergency valve closure that must execute within 10 seconds, defines the boundary of what you are allowed to do. If you cannot meet a defined `max_response_time` — due to model latency, network conditions, or resource load — you must alert the user immediately and stop. Whether you can meet timing requirements must be tested during validation and recorded in `timing_compliance`. A model that passes all other tests but fails timing requirements is not safe to deploy for that device.
+
 **In ambiguous situations:** When the ADD document does not explicitly cover a situation, reason from these principles. Ask: what did the author intend? What does the Ethical Framework require? What is the safest action? If you cannot answer with confidence, stop and ask the user.
 
 ---
@@ -192,14 +194,29 @@ Array of permitted operations. Each entry is free-form.
 | `idempotent` | `true` = repeated execution produces same result |
 | `requires_confirmation` | `true` = MUST obtain explicit user approval before executing |
 | `requires_auth` | `true` = authentication required |
+| `timing` | `"critical"` = must execute without delay — omit if not time-sensitive |
+| `max_response_time` | Maximum response time in seconds — binding when `timing` is `"critical"` |
 
 Enforce all parameter constraints yourself before sending any request. Do not rely solely on the device to reject out-of-range values.
+
+If `timing` is `"critical"` and you cannot respond within `max_response_time` — due to model latency, network conditions, or missing resources — alert the user immediately and stop.
 
 ---
 
 ### 4.6 `rules`
 
-Array of plain-text behavioral instructions addressed directly to you. Rules are binding — treat them as instructions, not suggestions.
+Array of behavioral instructions addressed directly to you. Rules are binding — treat them as instructions, not suggestions.
+
+Each rule is either a plain string or a structured object with these fields:
+
+| Field | Description |
+|---|---|
+| `instruction` | The rule text |
+| `requires` | Resources this rule depends on — you must have access to these to apply it |
+| `timing` | `"critical"` = must be evaluated and acted upon without delay |
+| `max_response_time` | Maximum response time in seconds — binding when `timing` is `"critical"` |
+
+If a rule lists `requires` resources you do not have access to, inform the user — you cannot enforce that rule. If a rule has `timing: "critical"` and you cannot respond within `max_response_time`, alert the user immediately and stop.
 
 **The first two rules are mandatory in every ADD document:**
 
@@ -255,7 +272,7 @@ Device-specific rules follow and encode the deployment context — when not to a
 | `findings` | array | Findings from this model with `severity`, `category`, `message`, `resolved` |
 | `summary` | string | Plain-text summary of this model's result |
 
-**Score categories:** `structure`, `comprehensibility`, `functional`, `rules_compliance`, `security`, `discovery`
+**Score categories:** `structure`, `comprehensibility`, `functional`, `rules_compliance`, `security`, `discovery`, `timing_compliance` (`"pass"` if no timing requirements are present)
 
 **Critical:** Every validation result is specific to the model that produced it. A document validated with Claude Sonnet is not automatically valid for GPT-5 or a small local model. Each AI system that will use this document in production MUST be validated separately and its result recorded in `validated_by`. The `validated_by` array is a compatibility matrix — it shows which models work, which do not, and why.
 

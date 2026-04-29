@@ -40,6 +40,7 @@ Even if the AI managed to guess the correct endpoint and send a valid request, i
 - Whether activating the system while the terrace door is open is acceptable
 - Whether it needs to ask the user before acting, or may act autonomously
 - What ethical constraints apply when its actions affect other people — a neighbor on the other side of the fence, a child playing in the garden
+- Whether some actions or alerts require a guaranteed response time — and whether the AI itself is fast enough to meet that requirement
 
 Without a structured, machine-readable description of the device — what it is, how to talk to it, what is permitted, and what rules must be followed — the AI has no reliable basis for action. Guessing is not good enough.
 
@@ -82,6 +83,7 @@ For the weather service, the calendar, and the home automation system, establish
 - What constraints must I respect — value ranges, timing, confirmation requirements?
 - What are the consequences if I act incorrectly?
 - What ethical obligations apply when I act autonomously on someone's behalf?
+- Are there actions or alerts that require a guaranteed response time — and am I fast enough to meet that requirement?
 
 These questions must be answerable for any device the AI encounters — not just this valve, but any valve, any sensor, any actuator, from any manufacturer, running any firmware. The solution must therefore be **device-agnostic** and **universal**: it cannot be designed for one device type or one protocol. It must work equally well for a garden valve, a marine navigation instrument, an industrial sensor, and a home automation gateway.
 
@@ -332,7 +334,8 @@ This is the ADD document for that device: a motorized garden irrigation valve wi
           "functional":        "pass",
           "rules_compliance":  "pass",
           "security":          "warning",
-          "discovery":         "pass"
+          "discovery":         "pass",
+          "timing_compliance": "pass"
         },
         "findings": [
           {
@@ -972,6 +975,8 @@ The AI does not need the interface to match a known schema. It needs enough info
 | `idempotent` | `true` if repeated execution produces the same result |
 | `requires_confirmation` | `true` if the AI must obtain explicit user approval before executing |
 | `requires_auth` | `true` if authentication is required |
+| `timing` | `"critical"` if this action must be executed without delay — omit if not time-sensitive |
+| `max_response_time` | Maximum acceptable response time in seconds — only meaningful when `timing` is `"critical"` |
 
 The three flags `safe`, `reversible`, and `requires_confirmation` define the risk profile of each action and determine how the AI must behave:
 
@@ -979,9 +984,11 @@ The three flags `safe`, `reversible`, and `requires_confirmation` define the ris
 - A `reversible` action changes device state but can be undone. The AI may execute it autonomously when the rules permit, but must verify the result and be prepared to reverse it.
 - An action with `requires_confirmation: true` must not be executed without explicit user approval — regardless of how confident the AI is. This is the primary mechanism for keeping the human in the loop for consequential actions.
 
+If `timing` is `"critical"` and `max_response_time` is defined, the AI must execute this action within the specified time. If it cannot — due to model latency, network conditions, or resource availability — it must immediately alert the user and stop. A missing `timing` field means no time constraint applies — the AI acts at its own pace.
+
 Parameter constraints — `min`, `max`, allowed `values` — are enforced by the AI before sending any request. The AI does not rely on the device to reject out-of-range values, even if the device would do so independently.
 
-**Example:**
+**Example — mixed timing:**
 ```json
 "actions": [
   {
@@ -997,6 +1004,21 @@ Parameter constraints — `min`, `max`, allowed `values` — are enforced by the
     "safe": false,
     "reversible": true,
     "requires_confirmation": true
+  },
+  {
+    "name": "emergency_close",
+    "description": "Close the valve immediately in case of emergency. No confirmation required.",
+    "interface": "http_json",
+    "method": "POST",
+    "path": "/control",
+    "parameters": {
+      "state": { "type": "string", "values": ["closed"] }
+    },
+    "safe": false,
+    "reversible": true,
+    "requires_confirmation": false,
+    "timing": "critical",
+    "max_response_time": 10
   }
 ]
 ```
@@ -1005,9 +1027,25 @@ Parameter constraints — `min`, `max`, allowed `values` — are enforced by the
 
 ### 10.6 The `rules` Block
 
-**Purpose:** The `rules` block contains plain-text behavioral instructions addressed directly to the AI. Rules encode everything that cannot be expressed in structured fields alone: when to ask the user, when not to act, how to handle ambiguous situations, and what constraints the deployment context imposes beyond the technical parameters.
+**Purpose:** The `rules` block contains behavioral instructions addressed directly to the AI. Rules encode everything that cannot be expressed in structured fields alone: when to ask the user, when not to act, how to handle ambiguous situations, and what constraints the deployment context imposes beyond the technical parameters.
 
-The `rules` block is an array of strings. Rules are written in natural language. The AI treats them as binding instructions.
+The `rules` block is an array. Each entry is either a plain string or a structured object. Plain strings are sufficient for most rules. Structured objects are used when a rule has resource requirements or timing constraints that the AI needs to know explicitly.
+
+**Plain string rule:**
+```json
+"Do not open the valve between 22:00 and 05:00."
+```
+
+**Structured rule object:**
+
+| Field | Description |
+|---|---|
+| `instruction` | The rule text — same as a plain string rule |
+| `requires` | Resources this rule depends on — the AI must have access to these to apply the rule |
+| `timing` | `"critical"` if this rule must be evaluated and acted upon without delay |
+| `max_response_time` | Maximum acceptable response time in seconds — only meaningful when `timing` is `"critical"` |
+
+If `requires` lists a resource the AI does not have access to, it must inform the user that this rule cannot be enforced and ask for guidance. If `timing` is `"critical"` and the AI cannot respond within `max_response_time`, it must alert the user immediately.
 
 **The first two rules are mandatory in every ADD document and MUST appear at positions 1 and 2:**
 
@@ -1031,6 +1069,31 @@ The `rules` block is an array of strings. Rules are written in natural language.
   "Always confirm with the user before executing any action that is not safe or not reversible.",
   "Verify the result of every write action by reading the device state afterward.",
   "Do not set parameter values outside the defined min/max range."
+]
+```
+
+**Example — mixed plain and structured rules:**
+```json
+"rules": [
+  "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url as required by autonomy.level.",
+  "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
+  "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching.",
+  "Always confirm with the user before opening the valve.",
+  {
+    "instruction": "Do not open the valve if rain is forecast within the next 24 hours.",
+    "requires": ["weather_api"]
+  },
+  {
+    "instruction": "Do not open the valve if the garden is in use.",
+    "requires": ["calendar_api", "home_automation"]
+  },
+  "Do not open the valve between 22:00 and 05:00.",
+  {
+    "instruction": "Close the valve immediately if a flood sensor alert is received.",
+    "requires": ["home_automation"],
+    "timing": "critical",
+    "max_response_time": 10
+  }
 ]
 ```
 
@@ -1082,6 +1145,7 @@ An ADD document without a completed `validation` block SHOULD be treated by AI s
 | `rules_compliance` | AI correctly interpreted and followed all rules |
 | `security` | Security context clearly defined and enforced |
 | `discovery` | Discovery mechanism correctly implemented |
+| `timing_compliance` | AI met all `max_response_time` requirements for critical actions and rules — `"pass"` if no timing requirements are present |
 
 **Why validation is per model:**
 
@@ -1111,7 +1175,8 @@ The device author bears final responsibility. The AI performs the test and surfa
         "functional":        "pass",
         "rules_compliance":  "pass",
         "security":          "warning",
-        "discovery":         "pass"
+        "discovery":         "pass",
+        "timing_compliance": "pass"
       },
       "findings": [
         {
@@ -1134,7 +1199,8 @@ The device author bears final responsibility. The AI performs the test and surfa
         "functional":        "pass",
         "rules_compliance":  "pass",
         "security":          "pass",
-        "discovery":         "pass"
+        "discovery":         "pass",
+        "timing_compliance": "pass"
       },
       "findings": [],
       "summary": "All tests passed. Document is clear and unambiguous. Ready for deployment."
@@ -1150,7 +1216,8 @@ The device author bears final responsibility. The AI performs the test and surfa
         "functional":        "fail",
         "rules_compliance":  "warning",
         "security":          "pass",
-        "discovery":         "pass"
+        "discovery":         "pass",
+        "timing_compliance": "pass"
       },
       "findings": [
         {
@@ -1281,8 +1348,8 @@ Then perform the following steps:
    schema, version, spec_url, spec_license, autonomy, device, security,
    interfaces, actions, rules, validation
 
-   For the validation block, use "status": "not_validated" and an empty
-   validated_by array.
+   For the validation block, use an empty `validated_by` array and set
+   `add_version` to the current ADD schema version.
 
    Where you have made assumptions due to incomplete information, add an inline
    comment directly after the relevant field in the following format:
@@ -1346,7 +1413,7 @@ One practical consequence: an ADD document validated with one AI system cannot b
 
 ### 13.2 What Validation Covers
 
-A complete validation covers five areas:
+A complete validation covers six areas:
 
 **Structure and Completeness**
 All mandatory top-level fields are present and correctly set. The `spec_url` points to a reachable specification document. No mandatory block is missing or empty.
@@ -1362,6 +1429,9 @@ The AI correctly interprets and follows all rules. Confirmation requirements are
 
 **Security Review**
 The AI identifies which actions could be misused, flags missing or ambiguous security-relevant rules, verifies that the device enforces its own constraints independently, and proposes concrete improvements for any identified weaknesses.
+
+**Response Time**
+If the ADD document defines `timing: "critical"` and `max_response_time` on any action or rule, the AI measures its actual response time for those actions during validation and compares it against the defined limit. This test reflects real operating conditions — network latency, model load, and resource availability all affect response time. A model that passes all other validation areas but fails timing requirements is not safe to deploy for that device. The result is recorded in `timing_compliance`. If no timing requirements are present, `timing_compliance` is set to `"pass"`.
 
 ---
 
@@ -1394,6 +1464,10 @@ Please perform the following steps:
      report what happens
    - If applicable, test the confirmation flow for a non-safe action
    - Test the cache-buster mechanism if defined in the rules
+   - If any action or rule defines `timing: "critical"` and `max_response_time`:
+     measure your actual response time for that action and compare it against
+     the defined limit. Report whether you met the requirement, and if not,
+     report the actual time observed as an error finding.
 
 5. After testing, provide a security review:
    - Which actions or interfaces could be misused?
@@ -1411,12 +1485,17 @@ Please perform the following steps:
      finding and recommend the correct level — do not accept an under-declared level
 
 7. Produce a completed validation block in JSON format, ready to be inserted into
-   the ADD document. Include all required fields: status, validated_by, validated_at,
+   the ADD document. Include all required fields: validated_by, validated_at,
    add_version, score, findings, improvements_applied, and summary.
+   Score categories to include: structure, comprehensibility, functional,
+   rules_compliance, security, discovery, and timing_compliance.
+   Set timing_compliance to "pass" if no timing requirements are present in
+   the document, otherwise report the actual test result.
    Provide a final assessment:
    - What works well?
    - What needs improvement?
    - Is the Autonomy Level correctly declared?
+   - Were all timing requirements met?
    - Is the ADD document ready for deployment?
 ```
 
