@@ -132,33 +132,34 @@
     "validated_by": [
       {
         "name": "Claude",
-        "version": "claude-sonnet-4-5"
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T07:15:00Z",
+        "score": {
+          "structure": "pass",
+          "comprehensibility": "pass",
+          "functional": "pass",
+          "rules_compliance": "pass",
+          "security": "warning",
+          "discovery": "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [
+          {
+            "severity": "warning",
+            "category": "security",
+            "message": "The device requires no authentication. Any client on the local network can open the valve. Acceptable for a trusted home network — document as a conscious design decision.",
+            "resolved": false
+          }
+        ],
+        "summary": "Well-structured actuator description for a garden irrigation valve. All tested actions behaved as described. Device correctly rejected a duration value of 90 minutes. One security warning: no authentication configured, acceptable on a trusted local network. Ready for deployment."
       }
     ],
-    "validated_at": "2026-04-27T07:15:00Z",
     "add_version": "1.0",
-    "score": {
-      "structure": "pass",
-      "comprehensibility": "pass",
-      "functional": "pass",
-      "rules_compliance": "pass",
-      "security": "warning",
-      "discovery": "pass"
-    },
-    "findings": [
-      {
-        "severity": "warning",
-        "category": "security",
-        "message": "The device requires no authentication. Any client on the local network can open the valve. Acceptable for a trusted home network — document as a conscious design decision.",
-        "resolved": false
-      }
-    ],
     "improvements_applied": [
       "Added cache-buster rule for read requests.",
       "Added explicit warning rule for valve sessions exceeding 55 minutes.",
       "Clarified enforcement field to state the 60-minute limit is enforced by the device independently.",
       "Added doc_url_note pointing to relevant chapters in the device manual."
-    ],
-    "summary": "Well-structured actuator description for a garden irrigation valve. All tested actions behaved as described. Device correctly rejected a duration value of 90 minutes. One security warning: no authentication configured, acceptable on a trusted local network. Ready for deployment."
+    ]
   }
 }

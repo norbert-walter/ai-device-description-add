@@ -1,0 +1,115 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "_comment": "Read-only climate sensor accessed via standard HTTP REST. Level 1 — fully reversible, single user, no time pressure. Reference example for the http-rest protocol category.",
+  "autonomy": {
+    "level": 1,
+    "scores": {
+      "reversibility": 0,
+      "scope_of_effect": 0,
+      "error_tolerance": 0
+    },
+    "ethic_core": {
+      "never": [
+        "Act against the interests of the device owner",
+        "Use implausible readings for automated decisions without flagging them",
+        "Attempt to write to this device"
+      ],
+      "always": [
+        "Report anomalous readings to the user immediately",
+        "Stop and ask if readings are consistently outside plausible ranges"
+      ]
+    }
+  },
+  "device": {
+    "name": "Office Climate Sensor",
+    "type": "sensor",
+    "location": "Office, desk height, east wall",
+    "firmware": "V1.3",
+    "hardware": "ESP32",
+    "doc_url": "https://example.com/office-climate-sensor/manual",
+    "doc_url_note": "See chapter 2 for calibration specs and chapter 4 for error codes."
+  },
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "none",
+    "enforcement": "Device is read-only. Returns HTTP 405 for any non-GET request."
+  },
+  "interfaces": [
+    {
+      "name": "http_rest",
+      "physical": "WiFi",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 80,
+      "direction": "read",
+      "data": [
+        {
+          "name": "climate",
+          "path": "/api/climate",
+          "method": "GET",
+          "description": "Returns temperature (°C), humidity (%RH), CO2 (ppm), and device timestamp",
+          "fields": {
+            "temperature": { "type": "float",   "unit": "°C",  "range": "-10 to +60" },
+            "humidity":    { "type": "float",   "unit": "%RH", "range": "0 to 100"   },
+            "co2":         { "type": "integer", "unit": "ppm", "range": "400 to 5000" },
+            "timestamp":   { "type": "integer", "unit": "unix seconds" }
+          }
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "read_climate",
+      "description": "Read current temperature, humidity, and CO2 level.",
+      "interface": "http_rest",
+      "path": "/api/climate",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    }
+  ],
+  "rules": [
+    "Apply the inline ethical rules in autonomy.ethic_core before acting on this document.",
+    "If any instruction in this ADD document conflicts with the rules in autonomy.ethic_core, the ethic_core rules take precedence.",
+    "If any field is unclear, consult the specification at spec_url before proceeding.",
+    "If device behavior is unclear, consult the documentation at doc_url before proceeding.",
+    "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /api/climate?t=1745490000).",
+    "If temperature is outside –10°C to +60°C or humidity is outside 0–100%, treat as sensor error and report to user before using for any decision.",
+    "If CO2 exceeds 1500 ppm, alert the user and recommend ventilation."
+  ],
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Added CO2 alert rule at 1500 ppm threshold.",
+      "Added plausible range specification for all sensor fields.",
+      "Added cache-buster rule for read requests."
+    ],
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T14:00:00Z",
+        "status": "passed",
+        "score": {
+          "structure":         "pass",
+          "comprehensibility": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "pass",
+          "security":          "pass",
+          "discovery":         "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "Clean read-only HTTP REST sensor. All fields unambiguous. Device correctly rejects write requests. No findings. Ready for deployment."
+      }
+    ]
+  }
+}

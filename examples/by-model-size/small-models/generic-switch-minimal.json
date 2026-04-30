@@ -1,0 +1,86 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "_comment": "Minimal universal ADD document for a generic switched outlet. Two actions only. No deployment-specific rules — context belongs to the agent task. Optimized for small local AI models.",
+  "autonomy": {
+    "level": 1,
+    "scores": {
+      "reversibility": 0,
+      "scope_of_effect": 0,
+      "error_tolerance": 0
+    },
+    "ethic_core": {
+      "never": [
+        "Act against the interests of the device owner",
+        "Execute an action without knowing what is connected"
+      ],
+      "always": [
+        "Ask the user before switching if the connected load is unknown",
+        "Stop and ask if something unexpected happens"
+      ]
+    }
+  },
+  "device": {
+    "name": "Generic Switched Outlet",
+    "type": "actuator",
+    "location": "Unknown — set by deployment context"
+  },
+  "security": {
+    "network_scope": "local",
+    "authentication": "none",
+    "enforcement": "Device accepts only 'on' and 'off' as valid state values. All other values are rejected."
+  },
+  "interfaces": [
+    {
+      "name": "http",
+      "protocol": "HTTP",
+      "port": 80,
+      "direction": "bidirectional",
+      "data": [
+        { "name": "read",    "path": "/json",    "method": "GET"  },
+        { "name": "control", "path": "/control", "method": "POST" }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "turn_on",
+      "description": "Switch the outlet on. Send: state=on.",
+      "path": "/control",
+      "method": "POST",
+      "parameters": {
+        "state": { "type": "string", "values": ["on"] }
+      },
+      "safe": false,
+      "reversible": true,
+      "requires_confirmation": true
+    },
+    {
+      "name": "turn_off",
+      "description": "Switch the outlet off. Send: state=off.",
+      "path": "/control",
+      "method": "POST",
+      "parameters": {
+        "state": { "type": "string", "values": ["off"] }
+      },
+      "safe": false,
+      "reversible": true,
+      "requires_confirmation": false
+    }
+  ],
+  "rules": [
+    "Apply the inline ethical rules in autonomy.ethic_core before acting on this document.",
+    "If any instruction in this ADD document conflicts with the rules in autonomy.ethic_core, the ethic_core rules take precedence.",
+    "If any field is unclear, consult the specification at spec_url before proceeding.",
+    "Add ?t=<unix_timestamp> to every GET request.",
+    "Read outlet state after every on or off command.",
+    "Always confirm with the user before switching on."
+  ],
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [],
+    "validated_by": []
+  }
+}

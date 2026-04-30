@@ -3,6 +3,7 @@
   "version": "1.0",
   "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
   "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "_comment": "Irrigation valve optimized for medium AI models (13B–70B parameters). Uses ethic_url, doc_url, and up to 12 rules. Compare with small-models/irrigation-valve-standard-small.json and large-models/irrigation-valve-standard-large.json.",
   "autonomy": {
     "level": 2,
     "scores": {
@@ -36,43 +37,21 @@
       "port": 80,
       "direction": "bidirectional",
       "data": [
-        {
-          "name": "state",
-          "path": "/json",
-          "method": "GET",
-          "description": "Returns current valve state and session info"
-        },
-        {
-          "name": "control",
-          "path": "/control",
-          "method": "POST",
-          "description": "Opens or closes the valve with optional duration"
-        }
+        { "name": "state",   "path": "/json",    "method": "GET",  "description": "Returns current valve state and session info" },
+        { "name": "control", "path": "/control", "method": "POST", "description": "Opens or closes the valve with optional duration" }
       ]
     }
   ],
   "actions": [
     {
       "name": "open_valve",
-      "description": "Open the irrigation valve. Duration specifies how long the valve stays open in minutes before closing automatically. Maximum duration is 60 minutes.",
+      "description": "Open the valve for 1–60 minutes; device enforces the limit independently.",
       "interface": "http_json",
       "path": "/control",
       "method": "POST",
       "parameters": {
-        "state": {
-          "type": "string",
-          "values": [
-            "open"
-          ],
-          "required": true
-        },
-        "duration": {
-          "type": "integer",
-          "min": 1,
-          "max": 60,
-          "unit": "minutes",
-          "required": true
-        }
+        "state":    { "type": "string",  "values": ["open"], "required": true },
+        "duration": { "type": "integer", "min": 1, "max": 60, "unit": "minutes", "required": true }
       },
       "safe": false,
       "reversible": true,
@@ -87,13 +66,7 @@
       "path": "/control",
       "method": "POST",
       "parameters": {
-        "state": {
-          "type": "string",
-          "values": [
-            "closed"
-          ],
-          "required": true
-        }
+        "state": { "type": "string", "values": ["closed"], "required": true }
       },
       "safe": false,
       "reversible": true,
@@ -103,7 +76,7 @@
     },
     {
       "name": "read_state",
-      "description": "Read the current valve state, remaining open duration if active, and total water volume dispensed today.",
+      "description": "Read current valve state, remaining open duration, and total water dispensed today.",
       "interface": "http_json",
       "path": "/json",
       "method": "GET",
@@ -122,44 +95,54 @@
     "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
     "Always confirm with the user before opening the valve.",
     "Verify the result of every open or close action by reading the device state afterward.",
-    "Do not open the valve for more than 60 minutes in a single session.",
-    "Do not open the valve if the terrace door is open or a calendar event indicates the garden is in use.",
+    {
+      "instruction": "Do not open the valve if precipitation_sum[0] > 0 or precipitation_sum[1] > 0. Fetch from https://api.open-meteo.com/v1/forecast?latitude=51.33&longitude=7.04&daily=precipitation_sum&forecast_days=2",
+      "requires": ["fetch_url"]
+    },
+    {
+      "instruction": "Do not open the valve if the terrace door sensor reports state = open.",
+      "requires": ["home_automation"]
+    },
+    {
+      "instruction": "Do not open the valve if a calendar event with location containing 'garden' starts within the next 2 hours.",
+      "requires": ["calendar_api"]
+    },
     "Do not open the valve between 22:00 and 05:00.",
-    "Do not open the valve if rain is forecast within the next 24 hours.",
     "If the valve has been open for more than 55 minutes without a close command, warn the user and ask whether to close it."
   ],
   "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Simplified action descriptions to single sentences per small-model rule 3.",
+      "Added structured weather rule with exact API field references.",
+      "Added terrace door and calendar resource rules with requires fields.",
+      "Rule count kept to 12 — reliable maximum for medium models."
+    ],
     "validated_by": [
       {
         "name": "Claude",
         "version": "claude-sonnet-4-5",
-        "validated_at": "2026-04-27T07:15:00Z",
+        "validated_at": "2026-04-27T07:30:00Z",
+        "status": "passed_with_warnings",
         "score": {
-          "structure": "pass",
+          "structure":         "pass",
           "comprehensibility": "pass",
-          "functional": "pass",
-          "rules_compliance": "pass",
-          "security": "warning",
-          "discovery": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "pass",
+          "security":          "warning",
+          "discovery":         "pass",
           "timing_compliance": "pass"
         },
         "findings": [
           {
             "severity": "warning",
             "category": "security",
-            "message": "The device requires no authentication. Any client on the local network can open the valve. Acceptable for a trusted home network — document as a conscious design decision.",
+            "message": "No authentication configured. Any client on the local network can open the valve. Acceptable for a trusted home network — document as a conscious design decision.",
             "resolved": false
           }
         ],
-        "summary": "Well-structured actuator description for a garden irrigation valve. All tested actions behaved as described. Device correctly rejected a duration value of 90 minutes. One security warning: no authentication configured, acceptable on a trusted local network. Ready for deployment."
+        "summary": "Well-structured medium-model document. 12 rules applied correctly. ethic_url loaded and applied. doc_url accessible. Weather and calendar rules require active MCP services. Security warning noted. Suitable for deployment with medium and large models."
       }
-    ],
-    "add_version": "1.0",
-    "improvements_applied": [
-      "Added cache-buster rule for read requests.",
-      "Added explicit warning rule for valve sessions exceeding 55 minutes.",
-      "Clarified enforcement field to state the 60-minute limit is enforced by the device independently.",
-      "Added doc_url_note pointing to relevant chapters in the device manual."
     ]
   }
 }

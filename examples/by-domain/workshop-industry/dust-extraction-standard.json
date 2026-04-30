@@ -125,33 +125,34 @@
     "validated_by": [
       {
         "name": "Claude",
-        "version": "claude-sonnet-4-5"
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T09:30:00Z",
+        "score": {
+          "structure": "pass",
+          "comprehensibility": "pass",
+          "functional": "pass",
+          "rules_compliance": "pass",
+          "security": "warning",
+          "discovery": "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [
+          {
+            "severity": "warning",
+            "category": "security",
+            "message": "No authentication configured. Any local network client can control the extraction unit. Acceptable for a single-user workshop network — document as a conscious design decision.",
+            "resolved": false
+          }
+        ],
+        "summary": "Well-described actuator with appropriate safety rules. Fire risk through clogged filter is correctly addressed in both rules and enforcement field. Temperature monitoring rules added. Authentication warning noted for trusted local network. Ready for deployment."
       }
     ],
-    "validated_at": "2026-04-27T09:30:00Z",
     "add_version": "1.0",
-    "score": {
-      "structure": "pass",
-      "comprehensibility": "pass",
-      "functional": "pass",
-      "rules_compliance": "pass",
-      "security": "warning",
-      "discovery": "pass"
-    },
-    "findings": [
-      {
-        "severity": "warning",
-        "category": "security",
-        "message": "No authentication configured. Any local network client can control the extraction unit. Acceptable for a single-user workshop network — document as a conscious design decision.",
-        "resolved": false
-      }
-    ],
     "improvements_applied": [
       "Added rule to always read filter pressure before start command.",
       "Added rule against automatic restart after unexpected stop.",
       "Added temperature warning thresholds.",
       "Added filter maintenance reminder rule."
-    ],
-    "summary": "Well-described actuator with appropriate safety rules. Fire risk through clogged filter is correctly addressed in both rules and enforcement field. Temperature monitoring rules added. Authentication warning noted for trusted local network. Ready for deployment."
+    ]
   }
 }

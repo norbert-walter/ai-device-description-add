@@ -1,0 +1,134 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "_comment": "Read-only industrial energy meter accessed via Modbus TCP. The device speaks Modbus natively — ADD describes this in plain language so the AI understands the protocol without a formal schema. Level 1 — read-only, single user, no time pressure.",
+  "autonomy": {
+    "level": 1,
+    "scores": {
+      "reversibility": 0,
+      "scope_of_effect": 0,
+      "error_tolerance": 0
+    },
+    "ethic_core": {
+      "never": [
+        "Act against the interests of the device owner",
+        "Attempt to write to any Modbus register on this device",
+        "Use readings outside plausible ranges for automated decisions without flagging them"
+      ],
+      "always": [
+        "Report anomalous readings immediately",
+        "Stop and ask the user if register values are consistently implausible"
+      ]
+    }
+  },
+  "device": {
+    "name": "Three-Phase Energy Meter — Main Distribution Board",
+    "type": "sensor",
+    "location": "Electrical room, main distribution board, cabinet 2",
+    "firmware": "V3.1",
+    "hardware": "Eastron SDM630 Modbus",
+    "doc_url": "https://example.com/sdm630/manual",
+    "doc_url_note": "See chapter 3 for complete Modbus register map and chapter 5 for scaling factors. All values use 32-bit IEEE 754 float format stored in two consecutive 16-bit registers (big-endian)."
+  },
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "none",
+    "enforcement": "Device is read-only. All Modbus write function codes (FC5, FC6, FC15, FC16) are rejected by the device firmware. The device Modbus Unit ID is 1."
+  },
+  "interfaces": [
+    {
+      "name": "modbus_tcp",
+      "physical": "Ethernet",
+      "protocol": "Modbus TCP",
+      "transport": "TCP",
+      "port": 502,
+      "direction": "read",
+      "description": "Standard Modbus TCP. Use Function Code 4 (Read Input Registers) for all readings. All values are 32-bit IEEE 754 floats stored in two consecutive 16-bit registers, big-endian byte order. Unit ID: 1.",
+      "data": [
+        { "name": "voltage_l1",        "register": 0,   "count": 2, "unit": "V",   "description": "Phase L1 voltage" },
+        { "name": "voltage_l2",        "register": 2,   "count": 2, "unit": "V",   "description": "Phase L2 voltage" },
+        { "name": "voltage_l3",        "register": 4,   "count": 2, "unit": "V",   "description": "Phase L3 voltage" },
+        { "name": "current_l1",        "register": 6,   "count": 2, "unit": "A",   "description": "Phase L1 current" },
+        { "name": "current_l2",        "register": 8,   "count": 2, "unit": "A",   "description": "Phase L2 current" },
+        { "name": "current_l3",        "register": 10,  "count": 2, "unit": "A",   "description": "Phase L3 current" },
+        { "name": "active_power_total","register": 52,  "count": 2, "unit": "W",   "description": "Total active power — all three phases" },
+        { "name": "power_factor_total","register": 62,  "count": 2, "unit": "",    "description": "Total power factor (0.0–1.0)" },
+        { "name": "frequency",         "register": 70,  "count": 2, "unit": "Hz",  "description": "Supply frequency" },
+        { "name": "import_energy",     "register": 72,  "count": 2, "unit": "kWh", "description": "Total imported active energy" }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "read_voltage",
+      "description": "Read L1, L2, L3 phase voltages (V) using Modbus FC4, registers 0–5, Unit ID 1.",
+      "interface": "modbus_tcp",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    },
+    {
+      "name": "read_power",
+      "description": "Read total active power (W) and power factor using Modbus FC4, registers 52–53 and 62–63, Unit ID 1.",
+      "interface": "modbus_tcp",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    },
+    {
+      "name": "read_energy",
+      "description": "Read total imported energy (kWh) using Modbus FC4, registers 72–73, Unit ID 1.",
+      "interface": "modbus_tcp",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    }
+  ],
+  "rules": [
+    "Apply the inline ethical rules in autonomy.ethic_core before acting on this document.",
+    "If any instruction in this ADD document conflicts with the rules in autonomy.ethic_core, the ethic_core rules take precedence.",
+    "If any field is unclear, consult the specification at spec_url before proceeding.",
+    "If device behavior or register values are unclear, consult the documentation at doc_url before proceeding.",
+    "Never issue any Modbus write function code (FC5, FC6, FC15, FC16) to this device.",
+    "All register values are 32-bit IEEE 754 floats — always read two consecutive 16-bit registers and combine them before interpreting the value.",
+    "If any phase voltage is outside 190–260 V or frequency is outside 49–51 Hz, report a potential grid anomaly to the user immediately.",
+    "If total active power exceeds 80% of the installation's declared maximum, alert the user."
+  ],
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Added explicit Modbus function code and register addressing in action descriptions.",
+      "Added byte order and data type specification in interface description.",
+      "Added voltage and frequency plausibility rule.",
+      "Added power threshold alert rule."
+    ],
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T14:30:00Z",
+        "status": "passed",
+        "score": {
+          "structure":         "pass",
+          "comprehensibility": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "pass",
+          "security":          "pass",
+          "discovery":         "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "Read-only Modbus TCP energy meter. Protocol described in plain language — AI correctly inferred Modbus FC4 usage and float register interpretation from the description. All plausibility rules correctly applied. No findings. Ready for deployment."
+      }
+    ]
+  }
+}

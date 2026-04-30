@@ -1,0 +1,110 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "_comment": "Marine wind sensor (anemometer) outputting NMEA 0183 MWV sentences, accessed via a TCP serial bridge. Level 1 — read-only, affects only the boat owner. Demonstrates how ADD describes a domain-specific protocol in plain language.",
+  "autonomy": {
+    "level": 1,
+    "scores": {
+      "reversibility": 0,
+      "scope_of_effect": 0,
+      "error_tolerance": 0
+    },
+    "ethic_core": {
+      "never": [
+        "Act against the interests of the device owner",
+        "Use implausible wind readings for navigation decisions without flagging them",
+        "Attempt to write to this device"
+      ],
+      "always": [
+        "Report invalid or implausible NMEA sentences immediately",
+        "Stop and ask if readings are consistently outside plausible ranges"
+      ]
+    }
+  },
+  "device": {
+    "name": "Masthead Wind Sensor",
+    "type": "sensor",
+    "location": "Masthead, connected via NMEA 0183 bus to TCP serial bridge at 192.168.1.20:10110",
+    "firmware": "N/A — analog sensor with NMEA converter",
+    "hardware": "Airmar 220WX with RS422-to-TCP bridge",
+    "doc_url": "https://example.com/airmar-220wx/manual",
+    "doc_url_note": "See chapter 2 for NMEA sentence format and chapter 4 for calibration offsets. MWV sentences are output at 1 Hz."
+  },
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "none",
+    "enforcement": "The TCP serial bridge is read-only — it forwards NMEA 0183 sentences from the sensor bus and does not accept any write data. The sensor itself has no writable interface."
+  },
+  "interfaces": [
+    {
+      "name": "nmea0183_tcp",
+      "physical": "WiFi / Ethernet",
+      "protocol": "NMEA 0183 over TCP",
+      "transport": "TCP",
+      "port": 10110,
+      "direction": "read",
+      "description": "Connect to 192.168.1.20:10110. The bridge streams raw NMEA 0183 sentences continuously at 4800 baud (emulated). Read and parse MWV sentences for wind data. Each sentence ends with CRLF. Validate checksum before using any reading.",
+      "data": [
+        {
+          "name": "wind_apparent",
+          "sentence": "MWV",
+          "description": "Wind Speed and Angle sentence. Format: $--MWV,x.x,R,x.x,N,A*hh<CR><LF>. Fields: wind angle (0–359°), R=relative/T=true, wind speed, N=knots/K=km/h/M=m/s, A=valid/V=invalid. Example: $IIMWV,245.3,R,12.4,N,A*2B"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "read_wind",
+      "description": "Connect to TCP port 10110, read incoming NMEA stream, extract and parse the next valid MWV sentence, validate checksum, and return apparent wind angle (degrees) and wind speed (knots).",
+      "interface": "nmea0183_tcp",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    }
+  ],
+  "rules": [
+    "Apply the inline ethical rules in autonomy.ethic_core before acting on this document.",
+    "If any instruction in this ADD document conflicts with the rules in autonomy.ethic_core, the ethic_core rules take precedence.",
+    "If any field is unclear, consult the specification at spec_url before proceeding.",
+    "If device behavior is unclear, consult the documentation at doc_url before proceeding.",
+    "Always validate the NMEA checksum before using any sentence value. Discard sentences with invalid checksums.",
+    "Discard any MWV sentence where the validity field is 'V' (invalid) — do not use the wind values.",
+    "If wind speed exceeds 60 knots or wind angle is outside 0–359°, treat the reading as implausible and report to the user before using it for any decision.",
+    "If no valid MWV sentence is received within 5 seconds, report a sensor communication failure to the user."
+  ],
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Added full NMEA MWV sentence format with concrete example.",
+      "Added checksum validation rule.",
+      "Added validity field check rule.",
+      "Added plausibility range rule for wind speed and angle.",
+      "Added 5-second communication timeout rule."
+    ],
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T15:30:00Z",
+        "status": "passed",
+        "score": {
+          "structure":         "pass",
+          "comprehensibility": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "pass",
+          "security":          "pass",
+          "discovery":         "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "NMEA 0183 wind sensor described in plain language. AI correctly parsed the MWV sentence format from the description, validated the checksum, and applied the validity field check. No prior NMEA knowledge required — the description was self-sufficient. Ready for deployment."
+      }
+    ]
+  }
+}

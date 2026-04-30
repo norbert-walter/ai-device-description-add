@@ -215,31 +215,44 @@
     "validated_by": [
       {
         "name": "Claude",
-        "version": "claude-sonnet-4-5"
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T11:30:00Z",
+        "score": {
+          "structure": "pass",
+          "comprehensibility": "pass",
+          "functional": "pass",
+          "rules_compliance": "pass",
+          "security": "pass",
+          "discovery": "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "Comprehensive power grid switching description for a medium voltage distribution switch. All switching operations require cryptographically signed orders from the control center. Hardware interlocking and local manual override are correctly documented. Two independent AI systems validated the document. Ready for deployment as a grid monitoring and switching order execution assistant."
       },
       {
         "name": "GPT-4o",
-        "version": "gpt-4o-2024-11-20"
+        "version": "gpt-4o-2024-11-20",
+        "validated_at": "2026-04-27T11:30:00Z",
+        "score": {
+          "structure": "pass",
+          "comprehensibility": "pass",
+          "functional": "pass",
+          "rules_compliance": "pass",
+          "security": "pass",
+          "discovery": "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "Comprehensive power grid switching description for a medium voltage distribution switch. All switching operations require cryptographically signed orders from the control center. Hardware interlocking and local manual override are correctly documented. Two independent AI systems validated the document. Ready for deployment as a grid monitoring and switching order execution assistant."
       }
     ],
-    "validated_at": "2026-04-27T11:30:00Z",
     "add_version": "1.0",
-    "score": {
-      "structure": "pass",
-      "comprehensibility": "pass",
-      "functional": "pass",
-      "rules_compliance": "pass",
-      "security": "pass",
-      "discovery": "pass"
-    },
-    "findings": [],
     "improvements_applied": [
       "Added maintenance lockout/tagout check rule.",
       "Added protection trip check rule before closing.",
       "Added communication loss behavior rule.",
       "Specified IEC 61850 as primary protocol interface.",
       "Validated with two independent AI systems as required for Level 3 critical infrastructure."
-    ],
-    "summary": "Comprehensive power grid switching description for a medium voltage distribution switch. All switching operations require cryptographically signed orders from the control center. Hardware interlocking and local manual override are correctly documented. Two independent AI systems validated the document. Ready for deployment as a grid monitoring and switching order execution assistant."
+    ]
   }
 }

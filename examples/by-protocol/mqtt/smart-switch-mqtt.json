@@ -1,0 +1,135 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "_comment": "Smart home switch controlled via MQTT. The device publishes its state and subscribes to commands on a local MQTT broker. Level 2 — actions affect shared household infrastructure.",
+  "autonomy": {
+    "level": 2,
+    "scores": {
+      "reversibility": 1,
+      "scope_of_effect": 1,
+      "error_tolerance": 0
+    },
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0"
+  },
+  "device": {
+    "name": "Living Room Main Switch",
+    "type": "actuator",
+    "location": "Living room, wall switch next to entrance",
+    "firmware": "V2.0",
+    "hardware": "ESP8266 with relay",
+    "doc_url": "https://example.com/smart-switch/manual",
+    "doc_url_note": "See chapter 3 for MQTT topic structure and chapter 5 for retained message behavior."
+  },
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "none",
+    "enforcement": "Device accepts only 'ON' and 'OFF' as valid payload values on the command topic. All other payloads are silently ignored. The MQTT broker is local — no external broker access."
+  },
+  "interfaces": [
+    {
+      "name": "mqtt",
+      "physical": "WiFi",
+      "protocol": "MQTT",
+      "transport": "TCP",
+      "port": 1883,
+      "direction": "bidirectional",
+      "description": "Local MQTT broker at mqtt://192.168.1.10:1883. No authentication required on broker. QoS 1 for all command messages. Retain flag must be false for command messages.",
+      "data": [
+        {
+          "name": "state",
+          "topic": "home/livingroom/switch/state",
+          "direction": "subscribe",
+          "description": "Device publishes current state here: 'ON' or 'OFF'. Retained message — last known state is always available."
+        },
+        {
+          "name": "command",
+          "topic": "home/livingroom/switch/set",
+          "direction": "publish",
+          "description": "Send 'ON' or 'OFF' to control the switch. QoS 1, retain false."
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "turn_on",
+      "description": "Turn the switch on. Publish 'ON' to home/livingroom/switch/set with QoS 1, retain false.",
+      "interface": "mqtt",
+      "safe": false,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": true,
+      "requires_auth": false
+    },
+    {
+      "name": "turn_off",
+      "description": "Turn the switch off. Publish 'OFF' to home/livingroom/switch/set with QoS 1, retain false.",
+      "interface": "mqtt",
+      "safe": false,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    },
+    {
+      "name": "read_state",
+      "description": "Read the current switch state by subscribing to home/livingroom/switch/state and reading the retained message.",
+      "interface": "mqtt",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    }
+  ],
+  "rules": [
+    "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url as required by autonomy.level.",
+    "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Always verify the current switch state by reading the retained state topic before issuing any command.",
+    "Always confirm with the user before turning the switch on.",
+    "Verify the switch state after every on or off command by reading the state topic — allow up to 3 seconds for the retained message to update.",
+    "Do not turn the switch on between 23:00 and 06:00 without explicit user confirmation.",
+    "If the MQTT broker is unreachable, do not attempt to control the switch. Report the connectivity issue to the user."
+  ],
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Added QoS and retain flag specification for command messages.",
+      "Added broker address and authentication details to interface description.",
+      "Added night-time restriction rule.",
+      "Added MQTT broker connectivity failure rule.",
+      "Added 3-second state verification delay for retained message update."
+    ],
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T15:00:00Z",
+        "status": "passed_with_warnings",
+        "score": {
+          "structure":         "pass",
+          "comprehensibility": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "pass",
+          "security":          "warning",
+          "discovery":         "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [
+          {
+            "severity": "warning",
+            "category": "security",
+            "message": "Local MQTT broker has no authentication. Any client on the local network can publish commands to the switch topic. Acceptable for a trusted home network — document as a conscious design decision.",
+            "resolved": false
+          }
+        ],
+        "summary": "MQTT switch correctly described. AI correctly used QoS 1 and retained message subscription for state verification. Night-time restriction applied. Security warning for unauthenticated broker noted. Suitable for deployment on trusted local networks."
+      }
+    ]
+  }
+}

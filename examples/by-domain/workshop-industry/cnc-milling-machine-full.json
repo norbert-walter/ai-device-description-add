@@ -224,27 +224,28 @@
     "validated_by": [
       {
         "name": "Claude",
-        "version": "claude-sonnet-4-5"
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T10:30:00Z",
+        "score": {
+          "structure": "pass",
+          "comprehensibility": "pass",
+          "functional": "pass",
+          "rules_compliance": "pass",
+          "security": "pass",
+          "discovery": "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "Comprehensive CNC machine description with maximum Autonomy Level. AI role is correctly limited to job loading, monitoring, and alerting. Job start is exclusively operator-controlled. All safety interlocks are hardware-enforced and correctly documented. Ready for deployment as a production planning and monitoring assistant."
       }
     ],
-    "validated_at": "2026-04-27T10:30:00Z",
     "add_version": "1.0",
-    "score": {
-      "structure": "pass",
-      "comprehensibility": "pass",
-      "functional": "pass",
-      "rules_compliance": "pass",
-      "security": "pass",
-      "discovery": "pass"
-    },
-    "findings": [],
     "improvements_applied": [
       "Clarified that job start is exclusively operator-performed — not available as an AI action.",
       "Added approved_by as required parameter for load_job.",
       "Added tool wear threshold alert rule.",
       "Added maintenance overdue alert rule.",
       "Clarified stop_job as irreversible for the current workpiece."
-    ],
-    "summary": "Comprehensive CNC machine description with maximum Autonomy Level. AI role is correctly limited to job loading, monitoring, and alerting. Job start is exclusively operator-controlled. All safety interlocks are hardware-enforced and correctly documented. Ready for deployment as a production planning and monitoring assistant."
+    ]
   }
 }

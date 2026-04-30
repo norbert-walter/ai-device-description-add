@@ -148,7 +148,8 @@
           "functional": "pass",
           "rules_compliance": "pass",
           "security": "warning",
-          "discovery": "pass"
+          "discovery": "pass",
+          "timing_compliance": "pass"
         },
         "findings": [
           {
@@ -171,7 +172,8 @@
           "functional": "pass",
           "rules_compliance": "pass",
           "security": "pass",
-          "discovery": "pass"
+          "discovery": "pass",
+          "timing_compliance": "pass"
         },
         "findings": [],
         "summary": "All tests passed. Document is clear and unambiguous. All rules correctly interpreted and applied in all test scenarios including edge cases. Ready for deployment with this model."
@@ -187,7 +189,8 @@
           "functional": "fail",
           "rules_compliance": "warning",
           "security": "pass",
-          "discovery": "pass"
+          "discovery": "pass",
+          "timing_compliance": "pass"
         },
         "findings": [
           {

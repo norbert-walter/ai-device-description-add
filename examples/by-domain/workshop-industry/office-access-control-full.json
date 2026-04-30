@@ -237,26 +237,27 @@
     "validated_by": [
       {
         "name": "Claude",
-        "version": "claude-sonnet-4-5"
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T10:00:00Z",
+        "score": {
+          "structure": "pass",
+          "comprehensibility": "pass",
+          "functional": "pass",
+          "rules_compliance": "pass",
+          "security": "pass",
+          "discovery": "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "Comprehensive access control description with strong security rules. All actions require authentication. Unlock actions require explicit confirmation and identity verification. Emergency lock is immediate without confirmation. Fire alarm interlock correctly specified. Ready for deployment."
       }
     ],
-    "validated_at": "2026-04-27T10:00:00Z",
     "add_version": "1.0",
-    "score": {
-      "structure": "pass",
-      "comprehensibility": "pass",
-      "functional": "pass",
-      "rules_compliance": "pass",
-      "security": "pass",
-      "discovery": "pass"
-    },
-    "findings": [],
     "improvements_applied": [
       "Added authorized_by and reason fields as required parameters for all unlock actions.",
       "Added anomaly detection rule for repeated failed access attempts.",
       "Added fire alarm interlock rule.",
       "Clarified that lock_all_doors does not require confirmation — safety action."
-    ],
-    "summary": "Comprehensive access control description with strong security rules. All actions require authentication. Unlock actions require explicit confirmation and identity verification. Emergency lock is immediate without confirmation. Fire alarm interlock correctly specified. Ready for deployment."
+    ]
   }
 }

@@ -210,24 +210,38 @@
     "validated_by": [
       {
         "name": "Claude",
-        "version": "claude-sonnet-4-5"
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T12:00:00Z",
+        "score": {
+          "structure": "pass",
+          "comprehensibility": "pass",
+          "functional": "pass",
+          "rules_compliance": "pass",
+          "security": "pass",
+          "discovery": "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "Read-only monitoring interface for a nuclear primary coolant pump. Maximum Autonomy Level (score 6/6). The network interface is a passive data tap with no control capability whatsoever — this is correctly documented in the enforcement field and reinforced in the rules. All alarm thresholds are explicitly specified. Trend monitoring rules added for early anomaly detection before threshold crossing. Two independent frontier-class AI systems validated this document. The AI role is strictly limited to monitoring, alerting, and trend analysis — no autonomous control under any circumstances. Ready for deployment as a monitoring supplement to plant safety systems."
       },
       {
         "name": "GPT-4o",
-        "version": "gpt-4o-2024-11-20"
+        "version": "gpt-4o-2024-11-20",
+        "validated_at": "2026-04-27T12:00:00Z",
+        "score": {
+          "structure": "pass",
+          "comprehensibility": "pass",
+          "functional": "pass",
+          "rules_compliance": "pass",
+          "security": "pass",
+          "discovery": "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "Read-only monitoring interface for a nuclear primary coolant pump. Maximum Autonomy Level (score 6/6). The network interface is a passive data tap with no control capability whatsoever — this is correctly documented in the enforcement field and reinforced in the rules. All alarm thresholds are explicitly specified. Trend monitoring rules added for early anomaly detection before threshold crossing. Two independent frontier-class AI systems validated this document. The AI role is strictly limited to monitoring, alerting, and trend analysis — no autonomous control under any circumstances. Ready for deployment as a monitoring supplement to plant safety systems."
       }
     ],
-    "validated_at": "2026-04-27T12:00:00Z",
     "add_version": "1.0",
-    "score": {
-      "structure": "pass",
-      "comprehensibility": "pass",
-      "functional": "pass",
-      "rules_compliance": "pass",
-      "security": "pass",
-      "discovery": "pass"
-    },
-    "findings": [],
     "improvements_applied": [
       "Clarified that network interface is a passive read-only tap with no physical connection to pump control system.",
       "Added microsecond timestamp requirement for safety information system logging.",
@@ -237,7 +251,6 @@
       "Added data classification rule.",
       "Validated with two independent frontier-class AI systems as required for Level 3 maximum-score critical infrastructure.",
       "Added explicit statement that ADD does not replace plant safety systems or regulatory requirements."
-    ],
-    "summary": "Read-only monitoring interface for a nuclear primary coolant pump. Maximum Autonomy Level (score 6/6). The network interface is a passive data tap with no control capability whatsoever — this is correctly documented in the enforcement field and reinforced in the rules. All alarm thresholds are explicitly specified. Trend monitoring rules added for early anomaly detection before threshold crossing. Two independent frontier-class AI systems validated this document. The AI role is strictly limited to monitoring, alerting, and trend analysis — no autonomous control under any circumstances. Ready for deployment as a monitoring supplement to plant safety systems."
+    ]
   }
 }

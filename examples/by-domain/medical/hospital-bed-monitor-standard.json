@@ -158,27 +158,28 @@
     "validated_by": [
       {
         "name": "Claude",
-        "version": "claude-sonnet-4-5"
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T11:00:00Z",
+        "score": {
+          "structure": "pass",
+          "comprehensibility": "pass",
+          "functional": "pass",
+          "rules_compliance": "pass",
+          "security": "pass",
+          "discovery": "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "Read-only vital signs monitoring interface with appropriate clinical safety rules. All alarm thresholds are explicitly defined. Signal quality monitoring added to catch sensor failures before they mask patient deterioration. AI role correctly limited to monitoring and alerting — clinical decisions remain with medical personnel. Ready for deployment."
       }
     ],
-    "validated_at": "2026-04-27T11:00:00Z",
     "add_version": "1.0",
-    "score": {
-      "structure": "pass",
-      "comprehensibility": "pass",
-      "functional": "pass",
-      "rules_compliance": "pass",
-      "security": "pass",
-      "discovery": "pass"
-    },
-    "findings": [],
     "improvements_applied": [
       "Added signal_quality field with rule for poor signal alerting.",
       "Added trend reading action for early deterioration detection.",
       "Added rule to use device timestamp exclusively.",
       "Added rule against patient identity access from device interface.",
       "Clarified that data is anonymized at device level."
-    ],
-    "summary": "Read-only vital signs monitoring interface with appropriate clinical safety rules. All alarm thresholds are explicitly defined. Signal quality monitoring added to catch sensor failures before they mask patient deterioration. AI role correctly limited to monitoring and alerting — clinical decisions remain with medical personnel. Ready for deployment."
+    ]
   }
 }

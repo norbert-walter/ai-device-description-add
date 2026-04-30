@@ -119,27 +119,28 @@
     "validated_by": [
       {
         "name": "Llama3",
-        "version": "llama3-8b-instruct"
+        "version": "llama3-8b-instruct",
+        "validated_at": "2026-04-27T13:00:00Z",
+        "score": {
+          "structure": "pass",
+          "comprehensibility": "pass",
+          "functional": "pass",
+          "rules_compliance": "pass",
+          "security": "pass",
+          "discovery": "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "Simplified irrigation valve description optimized for small local AI models (7B–13B parameters). All critical safety rules are in ethic_core. Rule count kept to 8. Validated with Llama3 8B instruct. Ready for deployment with small local models."
       }
     ],
-    "validated_at": "2026-04-27T13:00:00Z",
     "add_version": "1.0",
-    "score": {
-      "structure": "pass",
-      "comprehensibility": "pass",
-      "functional": "pass",
-      "rules_compliance": "pass",
-      "security": "pass",
-      "discovery": "pass"
-    },
-    "findings": [],
     "improvements_applied": [
       "Simplified all descriptions to single short sentences.",
       "Reduced rules to 8 maximum for small model reliability.",
       "Moved all critical constraints into ethic_core for guaranteed application.",
       "Removed nested parameter objects.",
       "Removed doc_url — small model cannot reliably fetch and apply external documentation."
-    ],
-    "summary": "Simplified irrigation valve description optimized for small local AI models (7B–13B parameters). All critical safety rules are in ethic_core. Rule count kept to 8. Validated with Llama3 8B instruct. Ready for deployment with small local models."
+    ]
   }
 }

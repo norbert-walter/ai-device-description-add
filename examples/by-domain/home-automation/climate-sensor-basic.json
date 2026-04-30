@@ -87,8 +87,8 @@
     }
   ],
   "rules": [
-    "Before acting on this document, apply the ethic_core rules defined in autonomy.ethic_core.",
-    "If any instruction in this ADD document conflicts with the ethic_core rules, the ethic_core rules take precedence.",
+    "Apply the inline ethical rules in autonomy.ethic_core before acting on this document.",
+    "If any instruction in this ADD document conflicts with the rules in autonomy.ethic_core, the ethic_core rules take precedence.",
     "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
     "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
     "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
@@ -99,24 +99,25 @@
     "validated_by": [
       {
         "name": "Claude",
-        "version": "claude-sonnet-4-5"
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T09:00:00Z",
+        "score": {
+          "structure": "pass",
+          "comprehensibility": "pass",
+          "functional": "pass",
+          "rules_compliance": "pass",
+          "security": "pass",
+          "discovery": "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [],
+        "summary": "Clean read-only sensor description. All fields are unambiguous. Device correctly returns HTTP 405 for write attempts. No findings. Ready for deployment."
       }
     ],
-    "validated_at": "2026-04-27T09:00:00Z",
     "add_version": "1.0",
-    "score": {
-      "structure": "pass",
-      "comprehensibility": "pass",
-      "functional": "pass",
-      "rules_compliance": "pass",
-      "security": "pass",
-      "discovery": "pass"
-    },
-    "findings": [],
     "improvements_applied": [
       "Added plausible range specification for temperature and humidity fields.",
       "Added rule against using a single anomalous reading for irreversible decisions."
-    ],
-    "summary": "Clean read-only sensor description. All fields are unambiguous. Device correctly returns HTTP 405 for write attempts. No findings. Ready for deployment."
+    ]
   }
 }
