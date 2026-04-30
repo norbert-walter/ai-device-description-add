@@ -1,6 +1,6 @@
 # ADD – AI Device Description
 
-**A lightweight open standard that lets IoT devices describe themselves to AI systems — safely, completely, and without configuration.**
+**A lightweight open standard that enables IoT devices to describe themselves to AI systems — safely, completely, and without great effort.**
 
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
@@ -25,9 +25,9 @@ That is the only addition a device needs to become AI-ready.
 - **Self-describing devices** — the device carries its own context; the AI reads and acts
 - **Minimal implementation** — one endpoint, one JSON document, no framework required
 - **Protocol-agnostic** — describes any interface the device already uses
-- **AI-semantic** — written for AI interpretation, not rigid schema validation
+- **AI-semantic** — lightweight JSON framework, flexible device description without rigid rules
 - **Ethically structured** — three-tier autonomy system matched to deployment risk
-- **Purpose-built or universal** — rich context for dedicated devices; minimal shell for universal tools
+- **Purpose-built or universal** — comprehensive self-description for both specialized and universal devices
 - **Validated by AI** — the model that will use the document tests and signs off on it
 - **Open and decentralized** — CC BY 4.0, no patents, no licensing fees, no cloud dependency
 
