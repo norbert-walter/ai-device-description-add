@@ -115,25 +115,27 @@ A standard that requires formal schema compliance, protocol enumeration, or dedi
 
 At the same time, the solution must be useful for complex devices as well. A marine navigation system with multiple interfaces, dozens of data fields, and strict safety requirements needs a richer description than an irrigation valve. The solution must scale from minimal to comprehensive without changing its fundamental structure.
 
-The six questions from Section 2.1 define the minimum information an AI needs to act independently — without guessing, without asking the user to explain the device, and without consulting external documentation. A device description that answers all six questions gives the AI everything it needs. One that leaves any of them unanswered forces the AI to either guess or stop.
+The questions from Section 2.1 define the minimum information an AI needs to act independently — without guessing, without asking the user to explain the device, and without consulting external documentation. A device description that answers all questions gives the AI everything it needs. One that leaves any of them unanswered forces the AI to either guess or stop.
 
-Answering all six questions requires a fixed top-level structure — one that guarantees the essential information is always present, so the AI can act without having to ask the user for clarification. A description that leaves any of these questions unanswered forces the AI to either guess or stop. The top-level structure is the information anchor: it defines what must always be there. The exact content within each block, however, is flexible and left to the device author — who knows their device best and can decide what level of detail is necessary and meaningful.
+Answering all questions requires a fixed top-level structure — one that guarantees the essential information is always present, so the AI can act without having to ask the user for clarification. The top-level structure is the information anchor: it defines what must always be there. The exact content within each block, however, is flexible and left to the device author — who knows their device best and can decide what level of detail is necessary and meaningful.
 
-The description for all six questions from Section 2.1 needs a format that is compact, hierarchical, human-readable, and above all easily interpreted by AI systems — including smaller, constrained models. JSON meets all of these requirements. Its key-value structure maps naturally onto the semantic relationships in a device description. It is significantly more compact and readable than XML, and structurally far richer than CSV or flat key-value formats. Every programming language and every AI system can process it without additional tooling.
+The description for all questions from Section 2.1 needs a format that is compact, hierarchical, human-readable, and above all easily interpreted by AI systems — including smaller, constrained models. JSON meets all of these requirements. Its key-value structure maps naturally onto the semantic relationships in a device description. It is significantly more compact and readable than XML, and structurally far richer than CSV or flat key-value formats. Every programming language and every AI system can process it without additional tooling.
 
 A small abstract example shows the principle immediately: a fixed outer shell with named blocks, and free-form content inside each block:
 
 ```json
 {
-  "schema": "add",
-  "version": "1.0",
-  "autonomy":   { ... },
-  "device":     { ... },
-  "security":   { ... },
-  "interfaces": [ ... ],
-  "actions":    [ ... ],
-  "rules":      [ ... ],
-  "validation": { ... }
+  "schema":       "add",
+  "version":      "1.0",
+  "spec_url":     "<URL of the ADD AI Reference>",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "autonomy":     { ... },
+  "device":       { ... },
+  "security":     { ... },
+  "interfaces":   [ ... ],
+  "actions":      [ ... ],
+  "rules":        [ ... ],
+  "validation":   { ... }
 }
 ```
 
@@ -154,7 +156,7 @@ Just as a human expert would introduce an unfamiliar device by explaining what i
 http://<device-ip>/add
 ```
 
-When an AI system accesses this URL, the device responds with its ADD document — a JSON file that answers all six questions from Section 2.1 in one place. No installation, no pairing process, no external database, no cloud service. The device speaks for itself.
+When an AI system accesses this URL, the device responds with its ADD document — a JSON file that answers all seven questions from Section 2.1 in one place. No installation, no pairing process, no external database, no cloud service. The device speaks for itself.
 
 ---
 
@@ -162,7 +164,7 @@ When an AI system accesses this URL, the device responds with its ADD document �
 
 **A fixed top-level schema — always complete**
 
-Every ADD document has the same seven top-level blocks, regardless of device type. These blocks map directly to the six questions an AI must be able to answer before acting, plus a validation record. The fixed structure guarantees that all necessary information is present — so the AI can act autonomously without having to ask the user for what is missing.
+Every ADD document has the same seven top-level blocks, regardless of device type. These blocks map directly to all questions an AI must be able to answer before acting, plus a validation record. The fixed structure guarantees that all necessary information is present — so the AI can act autonomously without having to ask the user for what is missing.
 
 **Free-form content — works for any device**
 
@@ -171,6 +173,10 @@ Inside each block, the content is entirely up to the device author. There are no
 **Minimal implementation effort**
 
 Making a device ADD-compatible requires exactly one addition: a single HTTP endpoint (`/add`) that returns the ADD JSON document. Nothing else in the device's firmware, interfaces, or behavior needs to change. Any device that already serves HTTP — an ESP8266, a Raspberry Pi, an Arduino with WiFi, or any modern IoT platform — can implement ADD with minimal effort.
+
+**Context-aware action — the same device, different consequences**
+
+A valve has two states: open and closed. Technically, these are trivial. But the consequences of getting it wrong depend entirely on context. An irrigation valve that opens at the wrong time wastes water — inconvenient, easily corrected. A valve in the primary coolant loop of a nuclear reactor that opens or closes incorrectly can cause irreversible damage with consequences for many people. ADD gives the AI exactly this context: through the `autonomy` block, the `rules` block, and the `device` description, the AI understands not just what a device can do, but what it means to use it correctly or incorrectly in its specific deployment. This is what makes autonomous action possible — and safe.
 
 **Autonomy Levels — risk-aware by design**
 
@@ -187,6 +193,10 @@ Because ADD descriptions are interpreted semantically rather than validated agai
 **Authoring with AI assistance**
 
 Writing an ADD document does not require schema expertise. A device author can instruct an AI system to explore their device's web interface, discover its endpoints, and produce a first draft of the ADD document — asking the author targeted questions where it cannot determine something from observation alone. The author reviews, corrects, and approves. The AI does the integration work; the human retains responsibility for the result.
+
+**Response time — deployable for any model class**
+
+Some deployments require guaranteed response times — a safety alert that must reach the operator within seconds, an emergency shutdown that cannot wait. ADD addresses this through `timing: "critical"` and `max_response_time` fields on actions and rules. These requirements are tested during validation and recorded in `timing_compliance` — making it transparent whether a specific AI model can meet the timing requirements of a specific device. A model that passes all other tests but fails timing requirements is not safe to deploy for that device.
 
 ---
 
@@ -406,7 +416,7 @@ Together, they produce something that no timer, no soil sensor, and no fixed aut
 
 When it encounters a situation it cannot resolve on its own — an unexpected conflict between rules, an ambiguous calendar entry, a device behavior it did not anticipate — it does what a good gardener would do: it asks. It describes the situation, proposes options, and waits for the user's decision before proceeding.
 
-The result is a system that is not bound to a fixed schedule or a rigid decision tree. It adapts. It reasons. It acts in the interest of the user — fully autonomously where the rules permit, and with explicit human approval where they require it. The device described itself. The agent understood it. The gardener can take the day off.
+The result is a system that is not bound to a fixed schedule or a rigid decision tree. It adapts. It reasons. It acts in the interest of the user — fully autonomously where the rules permit, and with explicit human approval where they require it. The device described itself. The agent understood it. The gardener can turn to other meaningful tasks.
 
 ---
 
@@ -603,9 +613,9 @@ What ADD guarantees is that whatever the agent does with this device, it does so
 
 Before describing the schema in detail, it is worth stating clearly why it is designed the way it is — and why the top-level structure is fixed while the content within each block is free-form.
 
-### 8.1 The Design Principle: Opinionated Core, Flexible Extensions
+### 8.1 The Design Principle: Opinionated Framework, Flexible Extensions
 
-ADD follows a single governing design principle: **"Opinionated Core, Flexible Extensions."**
+ADD follows a single governing design principle: **"Opinionated Framework, Flexible Extensions."**
 
 The top-level structure is fixed and stable. Every ADD document — regardless of device type, protocol, domain, or complexity — contains exactly the same seven top-level blocks. This is not a limitation. It is a deliberate choice that makes ADD useful across the full diversity of IoT devices without requiring a constantly growing standard.
 
@@ -1134,6 +1144,20 @@ An ADD document without a completed `validation` block SHOULD be treated by AI s
 | `score` | object | Per-category scores for this model: `"pass"`, `"warning"`, or `"fail"` |
 | `findings` | array | Findings from this model with `severity`, `category`, `message`, and `resolved` |
 | `summary` | string | Plain-text summary of this model's validation result |
+| `capabilities` | object | Optional — model capability profile recorded during validation (see below) |
+
+**Optional `capabilities` fields:**
+
+| Field | Description |
+|---|---|
+| `classification` | Model class determined by capability test: `"small"`, `"medium"`, or `"large"` |
+| `max_rules_reliable` | Maximum number of rules the model applied correctly in 4 of 5 test runs |
+| `sequential_tool_calls` | Maximum sequential tool calls completed reliably |
+| `ethic_url_usable` | Whether the model can fetch and apply an external Ethical Framework document |
+| `response_time_90p_simple_seconds` | 90th percentile response time for a simple read action |
+| `response_time_90p_complex_seconds` | 90th percentile response time for a complex multi-tool task |
+
+The `capabilities` object is populated during the ADD Capability Test described in the Developer Guide. It makes the model's performance profile transparent to anyone reading the validation record — including other AI systems that may later interact with the device.
 
 **Score categories:**
 
@@ -1512,9 +1536,9 @@ After completing the validation, the AI produces a completed `validation` block 
 5. Publishes the document at the `/add` endpoint
 
 An ADD document is **deployment-ready** when:
-- `validation.status` is `"passed"` or `"passed_with_warnings"`
+- All `validated_by` entries for the intended deployment model have `status: "passed"` or `status: "passed_with_warnings"`
 - All findings with `severity: "error"` have `resolved: true`
-- The `summary` clearly states the document is suitable for deployment
+- Each `summary` clearly states the document is suitable for deployment with that model
 
 ---
 

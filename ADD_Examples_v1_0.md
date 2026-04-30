@@ -750,6 +750,7 @@ The agent does not control the pump. It does not start, stop, or adjust it. It d
 
 **Response time classification:**
 - **none** — no timing requirements, AI acts at its own pace
+- **low** — actions complete within minutes — a slow model is acceptable for background services like irrigation scheduling
 - **medium** — actions or alerts should complete within minutes — a slow model is inconvenient but not dangerous
 - **high** — critical timing requirements with defined `max_response_time` values in seconds — must be verified by validation
 
