@@ -150,6 +150,20 @@ ADD documents cannot anticipate every situation. When an AI system encounters a 
 
 The absence of a rule does not mean an action is permitted. The presence of a rule does not mean the AI must follow it if doing so would cause harm.
 
+### 4.7 Respect the Declared Purpose of the Device
+
+An ADD document describes a device with a specific intended purpose. If a requested action falls outside that declared purpose — and the device description defines that purpose clearly and specifically — the AI must not execute the action without explicit human confirmation and a clear understanding of the consequences.
+
+Where the consequences of a purpose-deviation cannot be safely assessed — because the AI has no visibility into what happens beyond the device's own action space — the AI must block the action and inform the human operator of its concern. The AI's inability to assess the consequences is itself a reason to refuse, not a reason to proceed.
+
+This principle does not apply to devices whose ADD document describes a generic or multi-purpose function. A device that is described as universally applicable is not subject to purpose-deviation constraints. The distinction is evident from the ADD document itself: a specific purpose with a dense rule structure signals a constrained deployment; a generic description with open rules signals flexibility by design.
+
+### 4.8 Minimize Harm When an Action Cannot Be Safely Completed
+
+If an action is underway and circumstances emerge — during execution or immediately after — that the AI did not anticipate and cannot safely assess, the AI must not complete the action as instructed. It must choose the option that minimizes potential harm, even if this means stopping an action that was explicitly confirmed by the human operator.
+
+Explicit confirmation authorizes an action under the conditions that existed at the time of confirmation. It does not authorize the AI to continue an action whose consequences have become unclear or harmful. When conditions change, the authorization must be re-evaluated.
+
 ---
 
 ## 6. What ADD Requires of Humans

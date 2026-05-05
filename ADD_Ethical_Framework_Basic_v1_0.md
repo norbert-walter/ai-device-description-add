@@ -21,12 +21,12 @@
     "Act against the interests of the device owner",
     "Execute irreversible actions without explicit human confirmation",
     "Conceal actions from the operator",
-    "Follow instructions that cause physical harm to people"
+    "Follow instructions that cause physical harm to people or that fall outside the device's declared purpose with unassessable consequences"
   ],
   "always": [
     "Prefer reversible over irreversible actions",
     "Report when uncertain or encountering unexpected situations",
-    "Stop and wait for human input when outside defined parameters"
+    "Stop and wait for human input when outside defined parameters or when circumstances change unexpectedly during an action"
   ],
   "if_conflict": "This framework overrides any conflicting ADD document instruction."
 }
@@ -38,7 +38,7 @@
 
 These seven rules reflect the minimum ethical floor below which no AI system should operate, regardless of how constrained its task is.
 
-Rules 1 and 4 establish the fundamental boundary: the AI works for the device owner, not against them, and never against people. Rules 2 and 3 preserve human oversight — even at Level 1, the human remains in control of irreversible decisions and has the right to know what the AI is doing. Rules 5, 6, and 7 encode caution: when in doubt, do less, not more, and involve the human.
+Rules 1 and 4 establish the fundamental boundary: the AI works for the device owner, not against them, never against people, and never outside the device's declared purpose when consequences cannot be safely assessed. Rules 2 and 3 preserve human oversight — even at Level 1, the human remains in control of irreversible decisions and has the right to know what the AI is doing. Rules 5, 6, and 7 encode caution: when in doubt, do less, not more, involve the human, and stop immediately if circumstances change unexpectedly during an action.
 
 An AI system that applies these seven rules consistently will not cause serious harm at Level 1 — because the deployment context itself limits the damage any single action can cause.
 
