@@ -170,6 +170,8 @@ Every ADD document has the same seven top-level blocks, regardless of device typ
 
 Inside each block, the content is entirely up to the device author. There are no prescribed field names, no enumerated protocol lists, no required data models. A developer describes their device the way they would explain it to a technically competent colleague — in clear, structured language. The AI interprets it semantically. This means ADD works equally well for a simple irrigation valve, a marine navigation instrument, an industrial sensor, or any other HTTP-capable device, regardless of the protocol it speaks.
 
+The field names shown in examples throughout this specification are not arbitrary — they are carefully chosen, broadly applicable, and recommended for use wherever they fit. Consistent use of these names across ADD documents improves interoperability and makes AI interpretation more reliable. A device author who encounters a situation where the recommended names do not adequately describe their device may use different names, add fields, or restructure block content — but should do so deliberately, not by default. The fixed top-level block names must always be preserved. Everything inside each block is the device author's decision, guided by one principle: the context must remain unambiguous.
+
 **Minimal implementation effort**
 
 Making a device ADD-compatible requires exactly one addition: a single HTTP endpoint (`/add`) that returns the ADD JSON document. Nothing else in the device's firmware, interfaces, or behavior needs to change. Any device that already serves HTTP — an ESP8266, a Raspberry Pi, an Arduino with WiFi, or any modern IoT platform — can implement ADD with minimal effort.
@@ -224,6 +226,8 @@ The two approaches are complementary, not competing. An MCP server could serve A
 The irrigation scenario from Chapter 1 makes the concept concrete. The AI agent coordinates weather data, calendar information, and home automation state to decide whether and when to water the garden. But the physical act — opening and closing the valve — requires the AI to interact with a real device on the local network.
 
 This is the ADD document for that device: a motorized garden irrigation valve with an HTTP interface. The document is annotated to explain what each block means and what the AI does with it.
+
+The field names used within the blocks in this document have been carefully chosen and their use is recommended wherever they fit. They are not mandatory, however. Device authors may use different names, add fields, or restructure block content where the recommended names do not adequately describe their device. The fixed top-level block names must always be preserved. Everything within the individual blocks is at the device author's discretion — guided by one single principle: the context must remain unambiguous.
 
 ```json
 {
