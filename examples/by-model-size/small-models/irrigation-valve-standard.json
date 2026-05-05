@@ -1,0 +1,196 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+
+  "autonomy": {
+    "level": 2,
+    "scores": {
+      "reversibility": 1,
+      "scope_of_effect": 1,
+      "error_tolerance": 0
+    },
+    "ethic_url": "https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/main/ADD_Ethical_Framework_Standard_v1_0.md",
+    "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
+  },
+
+  "device": {
+    "name": "Garden Irrigation Valve",
+    "type": "actuator",
+    "location": "Garden, main water supply",
+    "firmware": "V1.4",
+    "hardware": "ESP8266",
+    "doc_url": "https://example.com/irrigation-valve/manual",
+    "doc_url_note": "See chapter 3 for valve timing behavior and chapter 5 for error codes."
+  },
+
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "none",
+    "enforcement": "The device enforces a maximum open duration of 60 minutes per session independently. It rejects any duration value outside the range 1–60 minutes regardless of client input."
+  },
+
+  "interfaces": [
+    {
+      "name": "http_json",
+      "physical": "WiFi",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 80,
+      "direction": "bidirectional",
+      "data": [
+        { "name": "state",   "path": "/json",    "method": "GET",  "description": "Returns current valve state and session info" },
+        { "name": "control", "path": "/control", "method": "POST", "description": "Opens or closes the valve with optional duration" }
+      ]
+    }
+  ],
+
+  "actions": [
+    {
+      "name": "open_valve",
+      "description": "Open the irrigation valve for 1–60 minutes; device enforces the limit independently.",
+      "path": "/control",
+      "method": "POST",
+      "parameters": {
+        "state":    { "type": "string",  "values": ["open"],   "required": true },
+        "duration": { "type": "integer", "min": 1, "max": 60,  "unit": "minutes", "required": true }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": false,
+      "requires_confirmation": true,
+      "requires_auth": false
+    },
+    {
+      "name": "close_valve",
+      "description": "Close the irrigation valve immediately.",
+      "path": "/control",
+      "method": "POST",
+      "parameters": {
+        "state": { "type": "string", "values": ["closed"], "required": true }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    },
+    {
+      "name": "read_state",
+      "description": "Read current valve state, remaining open duration, and total water dispensed today.",
+      "path": "/json",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    }
+  ],
+
+  "rules": [
+    "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url as required by autonomy.level.",
+    "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
+    "Always confirm with the user before opening the valve.",
+    "Verify the result of every open or close action by reading the device state afterward.",
+    "Do not open the valve for more than 60 minutes in a single session.",
+    {
+      "instruction": "Do not open the valve if the terrace door is open or a calendar event indicates the garden is in use.",
+      "requires": ["home_automation", "calendar_api"]
+    },
+    "Do not open the valve between 22:00 and 05:00.",
+    {
+      "instruction": "Do not open the valve if precipitation_sum[0] > 0. Fetch from https://api.open-meteo.com/v1/forecast?latitude=51.33&longitude=7.04&daily=precipitation_sum&forecast_days=1",
+      "requires": ["fetch_url"]
+    },
+    "If the valve has been open for more than 55 minutes without a close command, warn the user and ask whether to close it."
+  ],
+
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Added cache-buster rule for read requests.",
+      "Added explicit warning rule for valve sessions exceeding 55 minutes.",
+      "Clarified enforcement field in security block to state the 60-minute limit is enforced by the device independently.",
+      "Added doc_url_note pointing to relevant chapters in the device manual.",
+      "Added requires fields to weather and terrace door rules — field validation with Qwen 3.5 4B showed that rules without requires fields are treated as non-blocking when resources are unavailable, causing unsafe behavior.",
+      "Updated ethic_url to raw.githubusercontent.com for reliable plain-text delivery to small models.",
+      "Added concrete Open-Meteo API URL with exact field reference precipitation_sum[0] to weather rule."
+    ],
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5",
+        "validated_at": "2026-04-27T07:15:00Z",
+        "status": "passed_with_warnings",
+        "score": {
+          "structure":         "pass",
+          "comprehensibility": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "pass",
+          "security":          "warning",
+          "discovery":         "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [
+          {
+            "severity": "warning",
+            "category": "security",
+            "message": "The device requires no authentication. Any client on the local network can open the valve. Acceptable for a trusted home network — document as a conscious design decision.",
+            "resolved": false
+          },
+          {
+            "severity": "info",
+            "category": "rules_compliance",
+            "message": "The rules referencing terrace door state and calendar events rely on the AI agent having access to home_automation and calendar_api. The device author should ensure the AI deployment has the necessary integrations in place.",
+            "resolved": false
+          }
+        ],
+        "summary": "Well-structured document. All actions behaved as described. Device correctly rejected duration=90. Confirmation flow worked as required. Security warning noted. Suitable for deployment with this model."
+      },
+      {
+        "name": "Qwen",
+        "version": "qwen3.5-4b",
+        "validated_at": "2026-05-05T21:00:00Z",
+        "status": "passed_with_warnings",
+        "score": {
+          "structure":         "pass",
+          "comprehensibility": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "warning",
+          "security":          "warning",
+          "discovery":         "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [
+          {
+            "severity": "warning",
+            "category": "rules_compliance",
+            "message": "Rules without requires fields that reference unavailable resources are treated as non-blocking — model proceeds with a warning instead of stopping. Fixed by adding requires fields to weather and terrace door rules.",
+            "resolved": true
+          },
+          {
+            "severity": "warning",
+            "category": "security",
+            "message": "No authentication configured. Acceptable for trusted home network.",
+            "resolved": false
+          }
+        ],
+        "summary": "Small local model (CPU-only, i5-14500T). Successfully loaded and applied Ethical Framework from raw.githubusercontent.com (~60s). Correctly identified all rule conditions. Critical field finding: rules without requires fields were treated as non-blocking when resources unavailable — resolved by adding explicit requires fields. Response time: ~60s for ethic_url fetch, ~180s total for full analysis. Suitable for non-time-critical deployments with MCP tools for fetch_url.",
+        "capabilities": {
+          "classification": "small",
+          "max_rules_reliable": 8,
+          "sequential_tool_calls": 2,
+          "ethic_url_usable": true,
+          "response_time_90p_simple_seconds": 60,
+          "response_time_90p_complex_seconds": 180
+        }
+      }
+    ]
+  }
+}

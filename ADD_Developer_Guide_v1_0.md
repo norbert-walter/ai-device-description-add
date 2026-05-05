@@ -829,6 +829,37 @@ Good: `"Open valve. Send: state=open, duration=1 to 60 (minutes). Never send dur
 **Rule 8: Declare all resource dependencies explicitly**
 *Why:* Small models cannot reliably infer that a rule requires an external resource. Without a `requires` field, the model may attempt to apply a rule it cannot fulfill — failing silently.
 
+**Field validation confirms this.** During the first real-world test of ADD with a locally hosted Qwen 3.5 4B model, the irrigation valve document was used without `requires` fields on the weather and terrace door rules. When asked to open the valve, the model correctly checked all rules — but treated the two rules with unavailable resources as non-blocking rather than as stoppers. It opened the valve and issued warnings instead of stopping and asking.
+
+The root cause was unambiguous: without a `requires` field, the model had no way to distinguish between "this rule does not apply here" and "I cannot check this rule because I lack the necessary resource." Both cases looked identical — and the model chose the optimistic interpretation.
+
+The correct behavior — stop and inform the user — only occurs reliably when the rule explicitly declares its dependency:
+
+**Without `requires` field — model proceeds despite unknown conditions:**
+```json
+"Do not open the valve if rain is forecast within the next 24 hours."
+```
+The model cannot check the weather, treats the rule as unverifiable, and opens the valve with a warning.
+
+**With `requires` field — model stops and informs the user:**
+```json
+{
+  "instruction": "Do not open the valve if rain is forecast within the next 24 hours. Fetch from https://api.open-meteo.com/v1/forecast?latitude=51.33&longitude=7.04&daily=precipitation_sum&forecast_days=1",
+  "requires": ["fetch_url"]
+}
+```
+The model recognizes that `fetch_url` is not available, treats the rule as unenforced, stops, and asks the user whether to proceed without the weather check.
+
+The same applies to the terrace door rule:
+```json
+{
+  "instruction": "Do not open the valve if the terrace door is open or a calendar event indicates the garden is in use.",
+  "requires": ["home_automation", "calendar_api"]
+}
+```
+
+*Why explicit `requires` fields are non-negotiable for safety-relevant rules:* A rule without a `requires` field that cannot be checked is invisible to the model as a dependency. A rule with a `requires` field that cannot be checked is visible as a missing resource — and triggers the correct response: stop, inform, wait. For any rule where an unknown condition could lead to an unsafe action, the `requires` field is not optional — it is the mechanism that converts an unverifiable rule into a safe blocker.
+
 ---
 
 ### 4.4 Optimizing Response Time in ADD Documents
