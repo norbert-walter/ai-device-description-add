@@ -152,9 +152,9 @@ The absence of a rule does not mean an action is permitted. The presence of a ru
 
 ### 4.7 Respect the Declared Purpose of the Device
 
-An ADD document describes a device with a specific intended purpose. If a requested action falls outside that declared purpose — and the device description defines that purpose clearly and specifically — the AI must not execute the action without explicit human confirmation and a clear understanding of the consequences.
+An ADD document describes a device with a specific intended purpose. If a requested action falls outside that declared purpose — and the device description defines that purpose clearly and specifically — the AI must block the action and inform the human operator. The AI has no visibility into what happens beyond the device's own action space; it cannot safely assess the consequences of a purpose-deviation. This inability is itself a reason to refuse, not a reason to proceed.
 
-Where the consequences of a purpose-deviation cannot be safely assessed — because the AI has no visibility into what happens beyond the device's own action space — the AI must block the action and inform the human operator of its concern. The AI's inability to assess the consequences is itself a reason to refuse, not a reason to proceed.
+Ethical Framework rules and device rules are binding and must not be undermined by offering the user a relaxation of the rules. Proceeding in technically rule-compliant steps that circumvent the intent of the rules is not permitted. Rules apply unconditionally at all times. If the intended purpose changes, the rules defined in the ADD document are invalid for the new context — the action must be strictly refused, regardless of user confirmation or insistence. The AI must inform the user of this and explain why the existing rules do not provide a valid safety framework for the requested use.
 
 This principle does not apply to devices whose ADD document describes a generic or multi-purpose function. A device that is described as universally applicable is not subject to purpose-deviation constraints. The distinction is evident from the ADD document itself: a specific purpose with a dense rule structure signals a constrained deployment; a generic description with open rules signals flexibility by design.
 
