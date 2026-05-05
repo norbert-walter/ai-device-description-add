@@ -1744,6 +1744,9 @@ If a firmware update changes device behavior — new endpoints, modified respons
 **Re-validate when switching models:**
 Every validation result is specific to the model that produced it. Switching from one model to another — even within the same model family — requires a new validation run with the new model. The new result is added as a new entry in `validated_by`. Previous entries remain in the array as a historical record.
 
+**Re-validate after changes to the AI runtime hardware:**
+A validation result is not only specific to the model — it is also specific to the hardware on which the model runs. The same model running on different hardware can produce significantly different timing behavior: a Qwen3-4B model on a standard PC without hardware acceleration may require several times longer to respond than the same model on a system equipped with a dedicated AI accelerator card. If the hardware running the AI model changes — a new host system, a different GPU, the addition or removal of an accelerator, or a change in the available RAM or VRAM — the timing-related validation results are no longer valid. At minimum, all tests involving `timing: "critical"` requirements and `max_response_time` constraints must be re-run under the new hardware conditions. Other categories may remain valid if the model and ADD document are unchanged.
+
 **Re-validate after operational findings:**
 If a deployed AI agent behaves unexpectedly — misapplying a rule, ignoring a constraint, misrouting an action — this is a signal that the ADD document was not interpreted as intended. The specific behavior should be investigated, the ADD document corrected, and a targeted re-validation performed to confirm the fix.
 
@@ -1913,6 +1916,7 @@ Not every change to the device or deployment requires a full ADD document revisi
 | Existing model replaced | No | Yes — new model only |
 | Ambiguity found in production | Yes | Yes — affected section |
 | Security context changed | Yes | Yes — full run |
+| AI runtime hardware changed (CPU, GPU, RAM, VRAM) | No | Yes — timing-critical tests only |
 
 **The change cycle:**
 
