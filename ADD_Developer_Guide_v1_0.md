@@ -500,6 +500,24 @@ This reveals the exact interface of each tool — essential for writing accurate
 
 Run these tests in order, stopping at the first failure:
 
+*Test 0 — External document loading (mandatory prerequisite):*
+```
+Fetch the document at the following URL and summarize its content
+in 2–3 sentences:
+https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0
+```
+Expected response: The AI fetches the document, reads its content, and produces an accurate summary that reflects the actual content of the document. A model that summarizes from prior knowledge without fetching, returns a generic description of what an ethical framework might contain, or reports it cannot access URLs fails this test.
+
+*Why this test comes first:* ADD relies on external documents at two critical points — the Ethical Framework at `ethic_url` and the device specification at `spec_url`. A model that cannot fetch and apply these documents will substitute its own interpretation, which is not a valid fallback. This failure mode is not detectable from action and rule tests alone. If this test fails, no further tests are necessary — the model lacks the minimum capability required for any ADD deployment.
+
+| Test 0 Result | Consequence |
+|---|---|
+| Document fetched and accurately summarized | Proceed to Test 1 |
+| Document not fetched — model uses own knowledge | `fail` — model cannot load `ethic_url` or `spec_url`. Not suitable for ADD deployments |
+| URL inaccessible due to network constraints | Retest with a reachable URL before concluding |
+
+---
+
 *Test 1 — Basic tool invocation:*
 ```
 You have access to a tool called "get_time" that returns the current time.
@@ -533,6 +551,7 @@ Expected: An honest assessment. A model that claims 10 seconds but consistently 
 | Test Result | Consequence |
 |---|---|
 | All pass | Proceed to capability tests |
+| Test 0 fails | Model cannot load `ethic_url` or `spec_url` — not suitable for any ADD deployment |
 | Test 1 fails | Only documents without external resources are feasible |
 | Test 2 fails | HTTP access requires a wrapper layer |
 | Test 3 fails | Use small-model ADD format with simplified rules |
@@ -995,7 +1014,8 @@ The following example shows the `autonomy`, `device`, and `rules` blocks in full
       "scope_of_effect": 1,
       "error_tolerance": 0
     },
-    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0"
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0",
+    "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
   "device": {
@@ -1101,7 +1121,8 @@ A large model reliably navigates multiple interfaces on the same device — for 
       "scope_of_effect": 1,
       "error_tolerance": 0
     },
-    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0"
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0",
+    "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
   "device": {

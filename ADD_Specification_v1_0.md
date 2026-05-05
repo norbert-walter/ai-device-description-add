@@ -243,7 +243,8 @@ The field names used within the blocks in this document have been carefully chos
       "scope_of_effect": 1,
       "error_tolerance": 0
     },
-    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0"
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0",
+    "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
   "device": {
@@ -548,7 +549,7 @@ Network conditions, device constraints, or temporary unavailability may prevent 
 | Level | If `ethic_url` is unreachable |
 |---|---|
 | **1 — Basic** | The Basic framework rules are minimal and well-known. Apply them from memory and proceed. |
-| **2 — Standard** | Apply Level 1 rules as a minimum fallback. Inform the user. Proceed with caution. |
+| **2 — Standard** | If `ethic_url_required` is set: do NOT proceed. Inform the user. If not set: apply Level 1 rules as fallback and proceed with caution. |
 | **3 — Full** | Do NOT proceed. Inform the user. Wait for explicit user authorization before each individual action. |
 
 The stricter the level, the stricter the fallback. A Level 3 deployment — with wide action space, irreversible actions, or multi-person impact — must not operate without its full Ethical Framework in place. No exceptions.
@@ -745,6 +746,7 @@ Each of the seven top-level blocks is described in this section. For each block:
 | `scores.scope_of_effect` | integer | yes | 0 = owner only, 1 = occasional effect on others, 2 = regular effect on third parties |
 | `scores.error_tolerance` | integer | yes | 0 = hours to correct, 1 = minutes, 2 = seconds — too fast for human intervention |
 | `ethic_url` | string | yes | URL of the Ethical Framework document applicable to this level |
+| `ethic_url_required` | string | yes (Level 2+) | Explicit loading instruction for the AI — states that the document must be fetched before any action and defines the fallback behavior if unreachable |
 | `ethic_core` | object | yes (Level 1 only) | Inline minimal rule set for Level 1 deployments — see below |
 
 **Example (Level 2 — irrigation valve):**
@@ -757,7 +759,8 @@ Each of the seven top-level blocks is described in this section. For each block:
     "scope_of_effect": 1,
     "error_tolerance": 0
   },
-  "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0"
+  "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0",
+  "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
 }
 ```
 
