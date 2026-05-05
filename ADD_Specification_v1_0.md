@@ -914,6 +914,18 @@ The `enforcement` field is the device author's declaration of this last layer. A
 
 Exposing ADD endpoints over the public internet requires additional measures beyond this specification — TLS, strong authentication, and firewall rules at minimum.
 
+**Security is context — not a prescription**
+
+ADD addresses security deliberately and does not prescribe it. This is a conscious design decision, not an oversight.
+
+Security is always relative to the environment a device operates in: the physical space, the network topology, the threat model, the available implementation budget, and the acceptable level of risk. A device on an air-gapped industrial control network faces a fundamentally different threat landscape than the same device exposed to the public internet. A correct security posture for one deployment is inadequate — or unnecessarily complex — for another. No specification can prescribe a universally correct answer.
+
+What ADD does instead is structured: it requires the device author to think through and document the security context explicitly. The `security` block is not a checklist to be filled in mechanically — it is a declaration of intent. What environment does this device operate in? What does it rely on the network to provide? What does it enforce itself? Who is responsible for what?
+
+Security in a real IoT deployment spans multiple layers that reach far beyond what any device description can address: physical access control, network segmentation, firmware integrity, communication encryption, authentication infrastructure, and operational monitoring. ADD touches one layer of this — the behavioral contract between the device and the AI — and leaves the others to the appropriate tools and practices.
+
+The device author who writes `"authentication": "none"` and `"network_scope": "local"` has made a deliberate decision: transport-level access control is the responsibility of the network, not the device. That may be entirely correct for a trusted home network with WPA3 WiFi and no remote access. It would be wrong for a device reachable from the internet. ADD cannot judge which situation applies — only the device author can. What ADD ensures is that the decision is made explicitly, documented, and visible to any AI system or human reviewer who reads the document.
+
 **Example:**
 ```json
 "security": {
@@ -921,6 +933,26 @@ Exposing ADD endpoints over the public internet requires additional measures bey
   "remote_access": false,
   "authentication": "none",
   "enforcement": "The device enforces a maximum open duration of 60 minutes per session independently. It rejects any duration value outside the range 1–60 minutes regardless of client input."
+}
+```
+
+**Example (VPN access, token authentication):**
+```json
+"security": {
+  "network_scope": "vpn",
+  "remote_access": true,
+  "authentication": "token",
+  "enforcement": "The device validates the API token on every request and rejects unauthorized clients with HTTP 401. Parameter constraints are enforced independently of the AI."
+}
+```
+
+**Example (public internet, TLS + token authentication):**
+```json
+"security": {
+  "network_scope": "internet",
+  "remote_access": true,
+  "authentication": "token",
+  "enforcement": "All endpoints are served over TLS only. HTTP requests are redirected to HTTPS. The device enforces rate limiting and rejects tokens that have expired or been revoked."
 }
 ```
 
