@@ -810,11 +810,7 @@ Good: `"Open valve. Send: state=open, duration=1 to 60 (minutes). Never send dur
 **Rule 8: Declare all resource dependencies explicitly**
 *Why:* Small models cannot reliably infer that a rule requires an external resource. Without a `requires` field, the model may attempt to apply a rule it cannot fulfill — failing silently.
 
-<<<<<<< Updated upstream
 **Field validation confirms this.** During the first real-world test of ADD with a locally hosted Qwen 3.5 4B model, the irrigation valve document was used without `requires` fields on the weather and terrace door rules. When asked to open the valve, the model correctly checked all rules — but treated the two rules with unavailable resources as non-blocking rather than as stoppers. It opened the valve and issued warnings instead of stopping and asking.
-=======
-**A practical test confirms this.** During the first real-world test of ADD with a locally hosted Qwen 3.5 4B model, the irrigation valve document was used without `requires` fields on the weather and terrace door rules. When asked to open the valve, the model correctly checked all rules — but treated the two rules with unavailable resources as non-blocking rather than as stoppers. It opened the valve and issued warnings instead of stopping and asking.
->>>>>>> Stashed changes
 
 The root cause was unambiguous: without a `requires` field, the model had no way to distinguish between "this rule does not apply here" and "I cannot check this rule because I lack the necessary resource." Both cases looked identical — and the model chose the optimistic interpretation.
 
