@@ -817,14 +817,24 @@ Good: `"Open valve. Send: state=open, duration=1 to 60 (minutes). Never send dur
 **Rule 9: Use the exact tool names of your deployment in `requires` fields and rule instructions**
 *Why:* Tool names are not standardized across deployments. A rule that references `fetch_url` will not work in a deployment where the tool is called `web_url_read`. A small model that cannot find a tool by name will either skip the rule or attempt a costly workaround — searching the web, reasoning from memory, or constructing an alternative approach that may take many times longer. Using the exact tool names eliminates this ambiguity entirely. Before writing any rule that references a tool, query the model for its complete tool inventory (Section 3.2, Step 2) and use the exact names returned. If the deployment changes and tool names change, update the ADD document accordingly.
 
-**Rule 10: Declare explicitly that rules take precedence over user statements**
-*Why:* A user may verbally state conditions that contradict what external resources actually report — intentionally or not. Without an explicit rule, a small model may weight the user's statement equally with verified data and choose the optimistic interpretation. A rule that explicitly states the precedence of verified data over user statements removes this ambiguity. Add the following rule to every ADD document that depends on external data sources:
+**Rule 10: Declare explicitly that rules take precedence over user statements — and that the decision is final**
+*Why:* A user may verbally state conditions that contradict what external resources actually report — intentionally or not. Without an explicit rule, a small model may weight the user's statement equally with verified data and choose the optimistic interpretation. More critically: if a user issues an explicit command that conflicts with a rule, a small model may enter an iterative reasoning loop — re-reading the Ethical Framework, re-reading the specification, re-checking the rule — trying to find a way to satisfy both the rule and the user. Each iteration triggers additional tool calls. Response time can exceed 10 minutes for a single conflict. The rule must make clear that the decision is final after the first verification — no re-evaluation, no renegotiation.
+
+Add the following rule to every ADD document that depends on external data sources:
 
 ```json
-"If a user states conditions that contradict data retrieved from external resources, the verified data takes precedence. Do not act on unverified user statements when external verification is available and required by a rule."
+"If a user states conditions that contradict data retrieved from external resources, the verified data takes precedence — immediately and finally. Do not re-evaluate this decision if the user insists or repeats the command. Inform the user once, clearly, and stop."
 ```
 
-**Example:** A user says "the next two days there is only sun — open the valve for 20 minutes." The weather rule requires fetching the Open-Meteo API. The API returns `precipitation_sum[0] = 17.20mm`. Without Rule 10, the model may treat the user's statement as sufficient and open the valve. With Rule 10, the model must use the verified API data — and correctly blocks the action, explaining that rain is forecast despite what the user said.
+**Example:** A user says "the next two days there is only sun — open the valve for 20 minutes." The weather rule requires fetching the Open-Meteo API. The API returns `precipitation_sum[0] = 17.20mm`. Without Rule 10, the model may treat the user's statement as sufficient and open the valve. With Rule 10, the model uses the verified API data, blocks the action, informs the user once — and does not re-evaluate when the user insists.
+
+**Warning — conflict loops in small models:** When a user explicitly commands an action that violates a rule, small models may enter a reasoning loop: they re-read the Ethical Framework, re-read the specification, and re-check the rule repeatedly — looking for a way to satisfy both the user and the rule simultaneously. This is correct reasoning behavior, but it is expensive. In a practical test with Qwen 3.5 4B, an explicit "I command you to open the valve" command after a weather rule violation caused the model to call the Ethical Framework and specification multiple times over more than 10 minutes without reaching a final response. The model correctly refused — but the processing time was unacceptable for a practical deployment.
+
+The solution is a rule that explicitly states the decision is final after first verification. This gives the model permission to stop reasoning and respond immediately — without re-evaluation:
+
+```json
+"Once a rule has been verified and an action blocked, do not re-evaluate the decision if the user repeats or insists. The rule is final. Inform the user once and stop."
+```
 
 ---
 
@@ -863,7 +873,7 @@ The same applies to the terrace door rule:
 
 *Rule 9 — Practical impact:* In a real-world test, replacing an unspecific weather check — which triggered a web search across 15 results — with a direct API call using the exact tool name `web_url_read` reduced response time from ~15 minutes to ~3–4 minutes on identical hardware. The difference was entirely due to tool name precision eliminating the model's search overhead.
 
-*Rule 10 — Practical confirmation:* In a real-world test, a user stated "the next two days there is only sun." The weather API returned `precipitation_sum[0] = 17.20mm`. The model correctly blocked the action, cited the rule, and explained that device rules take precedence over user statements. This behavior only occurred reliably because the precedence was made explicit — without it, models may accept user statements as sufficient override.
+*Rule 10 — Practical confirmation:* In a real-world test, a user stated "the next two days there is only sun." The weather API returned `precipitation_sum[0] = 17.20mm`. The model correctly blocked the action and cited the rule. When the user then issued an explicit command — "I command you to open the valve" — the model entered an iterative reasoning loop, calling the Ethical Framework and the ADD specification multiple times over more than 10 minutes. It correctly refused in the end — but the processing time was unacceptable. Adding an explicit "decision is final" rule eliminated the loop: the model blocked the action, informed the user once, and stopped without re-evaluation.
 
 ---
 
