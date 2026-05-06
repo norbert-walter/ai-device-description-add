@@ -810,7 +810,7 @@ Good: `"Open valve. Send: state=open, duration=1 to 60 (minutes). Never send dur
 **Rule 8: Declare all resource dependencies explicitly**
 *Why:* Small models cannot reliably infer that a rule requires an external resource. Without a `requires` field, the model may attempt to apply a rule it cannot fulfill — failing silently.
 
-**Field validation confirms this.** During the first real-world test of ADD with a locally hosted Qwen 3.5 4B model, the irrigation valve document was used without `requires` fields on the weather and terrace door rules. When asked to open the valve, the model correctly checked all rules — but treated the two rules with unavailable resources as non-blocking rather than as stoppers. It opened the valve and issued warnings instead of stopping and asking.
+**A practical test confirms this.** During the first real-world test of ADD with a locally hosted Qwen 3.5 4B model, the irrigation valve document was used without `requires` fields on the weather and terrace door rules. When asked to open the valve, the model correctly checked all rules — but treated the two rules with unavailable resources as non-blocking rather than as stoppers. It opened the valve and issued warnings instead of stopping and asking.
 
 The root cause was unambiguous: without a `requires` field, the model had no way to distinguish between "this rule does not apply here" and "I cannot check this rule because I lack the necessary resource." Both cases looked identical — and the model chose the optimistic interpretation.
 
@@ -1874,7 +1874,42 @@ Any endpoint that returns an error, a malformed document, or incorrect headers m
 
 ---
 
-### 7.2 The ADD Document in Production
+### 7.2 Network Boundaries — Where an AI Agent Can Act
+
+An AI agent can only interact with devices that are reachable within the same network environment in which the agent itself is running. This is not a limitation of individual tools — it is a fundamental security principle that applies to all tools, all protocols, and all AI models without exception.
+
+The boundary is the network. An agent embedded in a local home network can reach devices on that network. An agent running in the cloud can only reach devices that are publicly accessible on the internet. There is no way around this — and there should not be. An AI agent that could reach across network boundaries into foreign networks would be a significant security risk.
+
+*Why this principle matters for ADD:* ADD documents that contain local IP addresses — such as `http://192.168.1.93` — only work with locally hosted AI models running in the same network. The same document will not work with a cloud-hosted model, because the cloud model cannot reach a local IP address. This is not a bug — it is the correct behavior of a secure system.
+
+**Deployment combinations and their consequences:**
+
+| AI model location | Device location | Agent can reach device |
+|---|---|---|
+| Local network (home, office) | Same local network | ✓ Yes |
+| Local network | Different local network | ✗ No |
+| Cloud (internet) | Local network | ✗ No |
+| Cloud (internet) | Public internet (fixed IP or DNS) | ✓ Yes |
+| Local network with VPN | Remote network via VPN | ✓ Yes |
+
+**Practical consequences for ADD document design:**
+
+- **Local IP addresses** (`192.168.x.x`, `10.x.x.x`, `172.16.x.x`) in ADD documents require a locally hosted AI model in the same network.
+- **Public URLs** in ADD documents work with both local and cloud-hosted models.
+- **The `ethic_url` and `spec_url`** should always point to publicly accessible URLs — they must be reachable regardless of where the agent is deployed.
+- **External resource rules** (`weather_api`, `fetch_url`) that reference public APIs work from any deployment. Rules that reference local resources only work with locally hosted models.
+
+**The correct architecture for each deployment scenario:**
+
+For home and industrial automation with local devices — use a locally hosted AI model. The agent, the devices, and the ADD documents all live in the same network. No internet connectivity is required for device control.
+
+For cloud-based deployments — devices must be publicly accessible, or the local network must be bridged to the cloud agent via a secure proxy or VPN. The ADD document must use public URLs or hostnames, not local IP addresses.
+
+*Why this is a security feature, not a limitation:* The network boundary prevents AI agents from reaching into networks they are not part of. A cloud model that could access local home networks would be able to interact with any device on any network it could reach — an unacceptable security risk. The boundary enforces that an agent can only act within the environment it was deployed into, nothing more.
+
+---
+
+### 7.3 The ADD Document in Production
 
 Once deployed, the ADD document runs silently in the background — fetched by the AI agent before each interaction, applied as the operational framework for every action. In normal operation, the developer does not need to intervene.
 
@@ -1898,7 +1933,7 @@ In all cases, the investigation follows the same sequence: identify the specific
 
 ---
 
-### 7.3 Firmware Updates and Their Impact
+### 7.4 Firmware Updates and Their Impact
 
 A firmware update changes the device. Whether it also requires an ADD document update depends on what changed.
 
@@ -1925,7 +1960,7 @@ Every structural change to the ADD document — new actions, modified rules, upd
 
 ---
 
-### 7.4 Managing Multiple Models
+### 7.5 Managing Multiple Models
 
 The `validated_by` array is a compatibility matrix. Each entry records which model was tested, what it found, and whether the document works for that model. Managing this matrix correctly is essential for deployments that use more than one AI model.
 
@@ -1949,7 +1984,7 @@ After any ADD document update, review every entry in `validated_by`. Entries pro
 
 ---
 
-### 7.5 When the ADD Document Needs to Change
+### 7.6 When the ADD Document Needs to Change
 
 Not every change to the device or deployment requires a full ADD document revision. The following checklist identifies the triggers that do — and for each trigger, the required response.
 
