@@ -494,6 +494,8 @@ tool "fetch_url" supports.
 
 This reveals the exact interface of each tool — essential for writing accurate `requires` fields and for finding resource substitutions. Knowing all tools of an AI model allows you to find alternatives to the "obvious" resource. For example, the current time may be obtainable from a device state response instead of an NTP server — saving an external tool call and reducing latency.
 
+**Critical: copy the exact tool names into your ADD document.** Tool names are not standardized — one deployment calls it `fetch_url`, another `web_url_read`, another `http_get`. A rule that references the wrong name forces the model to search for an alternative, which costs significant time and may produce incorrect behavior. The exact names returned by the model in this step must be used verbatim in the `requires` fields and rule instructions of the ADD document. If the deployment changes, repeat this step and update the document accordingly.
+
 ---
 
 **Step 3 — Practical self-test**
@@ -769,6 +771,8 @@ The solution is not to avoid small models — it is to design ADD documents spec
 **Rule 2: Use `ethic_core` instead of `ethic_url`**
 *Why:* Small models cannot reliably fetch and apply external documents. `ethic_core` maximum: 5 `never` rules, 5 `always` rules, each under 15 words, no conditional logic within a single rule.
 
+If `ethic_url` is used — for medium or large models — the document at that URL must be served as HTML, not as raw text. Many `fetch_url` implementations expect HTML and fail silently or with an error when receiving plain text or Markdown. Host the Ethical Framework on a platform that renders Markdown to HTML automatically, such as GitHub Pages. Use the rendered URL without the `.md` extension — for example `https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1_0` instead of the raw file URL. This was confirmed in a practical test where a raw GitHub URL caused a consistent fetch error, while the GitHub Pages HTML URL loaded correctly.
+
 ```json
 "ethic_core": {
   "never": [
@@ -810,7 +814,23 @@ Good: `"Open valve. Send: state=open, duration=1 to 60 (minutes). Never send dur
 **Rule 8: Declare all resource dependencies explicitly**
 *Why:* Small models cannot reliably infer that a rule requires an external resource. Without a `requires` field, the model may attempt to apply a rule it cannot fulfill — failing silently.
 
-**A practical test confirms this.** During the first real-world test of ADD with a locally hosted Qwen 3.5 4B model, the irrigation valve document was used without `requires` fields on the weather and terrace door rules. When asked to open the valve, the model correctly checked all rules — but treated the two rules with unavailable resources as non-blocking rather than as stoppers. It opened the valve and issued warnings instead of stopping and asking.
+**Rule 9: Use the exact tool names of your deployment in `requires` fields and rule instructions**
+*Why:* Tool names are not standardized across deployments. A rule that references `fetch_url` will not work in a deployment where the tool is called `web_url_read`. A small model that cannot find a tool by name will either skip the rule or attempt a costly workaround — searching the web, reasoning from memory, or constructing an alternative approach that may take many times longer. Using the exact tool names eliminates this ambiguity entirely. Before writing any rule that references a tool, query the model for its complete tool inventory (Section 3.2, Step 2) and use the exact names returned. If the deployment changes and tool names change, update the ADD document accordingly.
+
+**Rule 10: Declare explicitly that rules take precedence over user statements**
+*Why:* A user may verbally state conditions that contradict what external resources actually report — intentionally or not. Without an explicit rule, a small model may weight the user's statement equally with verified data and choose the optimistic interpretation. A rule that explicitly states the precedence of verified data over user statements removes this ambiguity. Add the following rule to every ADD document that depends on external data sources:
+
+```json
+"If a user states conditions that contradict data retrieved from external resources, the verified data takes precedence. Do not act on unverified user statements when external verification is available and required by a rule."
+```
+
+**Example:** A user says "the next two days there is only sun — open the valve for 20 minutes." The weather rule requires fetching the Open-Meteo API. The API returns `precipitation_sum[0] = 17.20mm`. Without Rule 10, the model may treat the user's statement as sufficient and open the valve. With Rule 10, the model must use the verified API data — and correctly blocks the action, explaining that rain is forecast despite what the user said.
+
+---
+
+**Practical tests confirm Rules 8, 9, and 10**
+
+*Rule 8 — Practical test:* During the first real-world test of ADD with a locally hosted Qwen 3.5 4B model, the irrigation valve document was used without `requires` fields on the weather and terrace door rules. When asked to open the valve, the model correctly checked all rules — but treated the two rules with unavailable resources as non-blocking rather than as stoppers. It opened the valve and issued warnings instead of stopping and asking.
 
 The root cause was unambiguous: without a `requires` field, the model had no way to distinguish between "this rule does not apply here" and "I cannot check this rule because I lack the necessary resource." Both cases looked identical — and the model chose the optimistic interpretation.
 
@@ -840,6 +860,10 @@ The same applies to the terrace door rule:
 ```
 
 *Why explicit `requires` fields are non-negotiable for safety-relevant rules:* A rule without a `requires` field that cannot be checked is invisible to the model as a dependency. A rule with a `requires` field that cannot be checked is visible as a missing resource — and triggers the correct response: stop, inform, wait. For any rule where an unknown condition could lead to an unsafe action, the `requires` field is not optional — it is the mechanism that converts an unverifiable rule into a safe blocker.
+
+*Rule 9 — Practical impact:* In a real-world test, replacing an unspecific weather check — which triggered a web search across 15 results — with a direct API call using the exact tool name `web_url_read` reduced response time from ~15 minutes to ~3–4 minutes on identical hardware. The difference was entirely due to tool name precision eliminating the model's search overhead.
+
+*Rule 10 — Practical confirmation:* In a real-world test, a user stated "the next two days there is only sun." The weather API returned `precipitation_sum[0] = 17.20mm`. The model correctly blocked the action, cited the rule, and explained that device rules take precedence over user statements. This behavior only occurred reliably because the precedence was made explicit — without it, models may accept user statements as sufficient override.
 
 ---
 
@@ -901,6 +925,27 @@ The model fetches a weather page, reads a text forecast, decides what "rain is e
 The model fetches one URL, reads two array values, and compares them to zero. No interpretation, no search, no ambiguity. The field names `precipitation_sum[0]` and `precipitation_sum[1]` match the API response exactly — the model finds them without reasoning about what they mean.
 
 The same principle applies to device state, calendar availability, and any other external data source: find the exact field that carries the information you need, verify it in an actual API response, and reference it by name in the rule. If an API does not offer a structured response, consider whether an alternative API exists that does — the choice of data source is itself a design decision that affects model reliability.
+
+---
+
+**Practical measurement — all three principles combined**
+
+The combined effect of these three principles was directly measured in a real-world test with a locally hosted Qwen 3.5 4B model on an Intel i5-14500T CPU — no GPU, no cloud.
+
+An unspecific weather rule — "check the weather forecast before opening the valve" — triggered a web search that returned 15 results. The model had no built-in tool for weather data, no specific URL to fetch, and no field name to look for. It searched the web, analyzed 15 pages, and spent approximately 15 minutes on a single rule check before reaching a decision.
+
+The same rule rewritten according to all three principles — direct API URL, explicit tool name, exact field reference:
+
+```json
+{
+  "instruction": "Do not open the valve if precipitation_sum[0] > 0. Use web_url_read to fetch https://api.open-meteo.com/v1/forecast?latitude=51.33&longitude=7.04&daily=precipitation_sum&forecast_days=1 and check the value of precipitation_sum[0].",
+  "requires": ["web_url_read"]
+}
+```
+
+Result: 3–4 minutes total for the complete rule evaluation cycle — a factor of 4–5 faster on identical hardware with the same model. The model fetched one URL, read one field, compared it to zero, and made its decision. No search, no interpretation, no ambiguity.
+
+The difference is not model capability. It is instruction precision. A well-written ADD document is the fastest path from a user command to a correct decision.
 
 ---
 
