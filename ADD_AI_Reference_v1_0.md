@@ -193,9 +193,23 @@ Array of permitted operations. Each entry is free-form.
 | `reversible` | `true` = action can be undone |
 | `idempotent` | `true` = repeated execution produces same result |
 | `requires_confirmation` | `true` = MUST obtain explicit user approval before executing |
+| `confirmation_scope` | Defines when confirmation is required — see table below |
 | `requires_auth` | `true` = authentication required |
 | `timing` | `"critical"` = must execute without delay — omit if not time-sensitive |
 | `max_response_time` | Maximum response time in seconds — binding when `timing` is `"critical"` |
+
+**`confirmation_scope` values:**
+
+| Value | Meaning | Typical use |
+|---|---|---|
+| `"per_action"` | Confirmation required before every action — default when omitted | Purpose-built devices, all levels |
+| `"session"` | Confirmation required once per conversation session | Universal devices, Level 1 |
+| `"context"` | Confirmation required once per deployment context — re-confirm when context changes | Universal devices, Level 1, recurring tasks |
+| `"autonomous"` | No confirmation required for routine actions — confirm only when a rule cannot be verified or an unexpected situation arises | Autonomous agents, Level 2–3 |
+
+**Context change detection for `"context"` scope:** You must actively monitor for context changes during a session. A context change occurs when the purpose, location, connected load, or user intent changes from what was confirmed at the start. When a context change is detected, discard the previous confirmation and ask again before proceeding.
+
+**`"autonomous"` scope requires Level 2 or 3.** Using `confirmation_scope: "autonomous"` with Level 1 is not permitted — Level 1 requires the user to remain in control of every consequential action. Autonomous operation is only safe when the Ethical Framework is fully loaded and all conditions can be verified independently.
 
 Enforce all parameter constraints yourself before sending any request. Do not rely solely on the device to reject out-of-range values.
 

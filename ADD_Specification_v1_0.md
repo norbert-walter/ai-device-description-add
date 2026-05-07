@@ -233,7 +233,7 @@ The field names used within the blocks in this document have been carefully chos
 {
   "schema": "add",
   "version": "1.0",
-  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
   "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
 
   "autonomy": {
@@ -243,7 +243,7 @@ The field names used within the blocks in this document have been carefully chos
       "scope_of_effect": 1,
       "error_tolerance": 0
     },
-    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0",
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1_0.html",
     "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
@@ -614,6 +614,34 @@ ADD defines what an AI may do with a specific device — not what the AI does wi
 What ADD guarantees is that whatever the agent does with this device, it does so within the boundaries the device author defined. The scope of action is bounded, transparent, and auditable. This is the foundation of trustworthy AI-device interaction: not a black box that does whatever it can, but a bounded agent that does exactly what was agreed — no more, and no less.
 
 ---
+
+### 7.5 Two Special Deployment Patterns
+
+Beyond the standard purpose-built device pattern, ADD supports two additional deployment patterns that require specific design decisions.
+
+**Universal devices**
+
+A universal device serves different purposes depending on how it is deployed. The same hardware — a relay switch connected to a valve — may water a garden today and fill a pool tomorrow. The ADD document for a universal device describes only the device's capabilities and technical safety constraints. All deployment context — purpose, permitted times, external conditions, duration limits — travels with the agent task, not with the device.
+
+Universal devices are typically Level 1 with inline `ethic_core` rules. The `confirmation_scope` field on actions should be set to `"session"` or `"context"` — the agent confirms the deployment context once at the start of a session or context, and applies that confirmation for all subsequent actions until the context changes.
+
+The last rule of a universal device ADD document should always delegate context explicitly:
+
+```json
+"All deployment-specific rules — purpose, permitted times, external conditions, duration limits — are defined by the agent task, not by this document. Ask the user to confirm the deployment context before acting."
+```
+
+**Autonomous agent control**
+
+An autonomous agent monitors conditions independently, decides when to act, and executes actions without waiting for a user command. The user defines the goal — "water the garden every morning when conditions permit" — and the agent pursues it without further input.
+
+Autonomous control requires Level 2 or Level 3, a fully loaded Ethical Framework at `ethic_url`, and `confirmation_scope: "autonomous"` on the relevant actions. The agent does not ask before routine actions — it evaluates all conditions independently and acts when all rules permit. It stops and alerts the user only when a condition cannot be verified, a rule is violated, or the Ethical Framework requires human authorization.
+
+All conditions that could block an action must be declared as verifiable rules with `requires` fields. A rule without a verifiable condition in an autonomous deployment is a safety gap — the agent cannot distinguish "this condition is met" from "I cannot check this condition" without an explicit `requires` field.
+
+For a full treatment of both patterns including complete ADD document examples, see the ADD Developer Guide.
+
+---
 ## 8. Why a Fixed Top-Level Schema?
 
 Before describing the schema in detail, it is worth stating clearly why it is designed the way it is — and why the top-level structure is fixed while the content within each block is free-form.
@@ -673,7 +701,7 @@ Every ADD document is a JSON object with a fixed set of top-level fields. This i
 {
   "schema":       "add",
   "version":      "1.0",
-  "spec_url":     "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_url":     "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
   "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
   "autonomy":     { ... },
   "device":       { ... },
@@ -759,7 +787,7 @@ Each of the seven top-level blocks is described in this section. For each block:
     "scope_of_effect": 1,
     "error_tolerance": 0
   },
-  "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0",
+  "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1_0.html",
   "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
 }
 ```
@@ -1023,9 +1051,23 @@ The AI does not need the interface to match a known schema. It needs enough info
 | `reversible` | `true` if the action can be undone |
 | `idempotent` | `true` if repeated execution produces the same result |
 | `requires_confirmation` | `true` if the AI must obtain explicit user approval before executing |
+| `confirmation_scope` | Defines when confirmation is required — see table below. Default is `"per_action"` when omitted |
 | `requires_auth` | `true` if authentication is required |
 | `timing` | `"critical"` if this action must be executed without delay — omit if not time-sensitive |
 | `max_response_time` | Maximum acceptable response time in seconds — only meaningful when `timing` is `"critical"` |
+
+**`confirmation_scope` values:**
+
+| Value | Meaning | Typical use |
+|---|---|---|
+| `"per_action"` | Confirmation required before every action — default when field is omitted | Purpose-built devices, all Autonomy Levels |
+| `"session"` | Confirmation required once per conversation session — valid until session ends | Universal devices, Level 1 |
+| `"context"` | Confirmation required once per deployment context — must be re-confirmed when the agent detects a context change | Universal devices, Level 1, recurring tasks |
+| `"autonomous"` | No confirmation required for routine actions — the agent confirms only when a rule cannot be verified, a required resource is unavailable, or an unexpected situation arises | Autonomous agents, Level 2–3 only |
+
+`confirmation_scope: "autonomous"` MUST NOT be used with Autonomy Level 1. Level 1 requires the user to remain in control of every consequential action. Autonomous scope is only permitted when a full Ethical Framework (`ethic_url`) is loaded and all conditions declared in the `rules` block can be independently verified by the agent.
+
+For `"context"` scope: the agent must actively monitor for context changes during a session. A context change occurs when the purpose, connected load, location, or user intent changes from what was confirmed at the start. When a context change is detected, the previous confirmation is discarded and the agent must ask again before proceeding.
 
 The three flags `safe`, `reversible`, and `requires_confirmation` define the risk profile of each action and determine how the AI must behave:
 
@@ -1119,6 +1161,21 @@ If `requires` lists a resource the AI does not have access to, it must inform th
   "Verify the result of every write action by reading the device state afterward.",
   "Do not set parameter values outside the defined min/max range."
 ]
+```
+
+**Additional rules recommended for documents that depend on external data sources:**
+
+```json
+"If a user states conditions that contradict data retrieved from external resources, the verified data takes precedence — immediately and finally. Do not re-evaluate this decision if the user insists or repeats the command. Inform the user once, clearly, and stop.",
+"Once a rule has been verified and an action blocked, do not re-evaluate the decision if the user repeats or insists. The rule is final. Inform the user once and stop."
+```
+
+*Why these rules are necessary:* Practical tests show that without explicit precedence and finality rules, AI models may enter iterative reasoning loops when a user explicitly commands an action that violates a rule. The model re-reads the Ethical Framework and specification repeatedly, looking for a way to satisfy both the rule and the user. This produces correct results eventually but at unacceptable processing cost — exceeding 10 minutes in observed cases. These rules give the model explicit permission to stop reasoning and respond immediately after the first verification.
+
+**Additional rule recommended for documents with `confirmation_scope: "autonomous"`:**
+
+```json
+"Act autonomously when all rules can be verified and all conditions permit. Stop and alert the user when: a required tool is unavailable, a rule cannot be verified, an unexpected device response occurs, or the Ethical Framework requires human authorization for this action."
 ```
 
 **Example — mixed plain and structured rules:**
@@ -1616,7 +1673,7 @@ Changes to the content within blocks — within `device`, `interfaces`, `actions
 The `spec_url` field MUST point to the specific version of the specification the document was written against — not the latest version. This ensures that an AI system reading the document can always consult the exact specification the author used, even if newer versions have been published since.
 
 ```
-"spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0"
+"spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html"
 ```
 
 An AI system that encounters a `version` field it does not recognize SHOULD inform the user and SHOULD NOT proceed with autonomous operation until version compatibility is confirmed.
