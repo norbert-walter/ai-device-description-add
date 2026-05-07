@@ -437,17 +437,18 @@ The result is a system that is not bound to a fixed schedule or a rigid decision
 
 Before an AI agent can read a device description, it needs to find it. ADD solves this with a simple convention: every ADD-compatible device exposes its description at a fixed, predictable address on its HTTP server. No scanning, no negotiation, no external registry — the AI knows where to look.
 
-### 5.1 The Three Discovery Paths
+### 5.1 The Discovery Paths
 
-ADD defines one mandatory and two optional discovery endpoints. Device authors choose the level of discoverability that fits their deployment.
+ADD defines one mandatory and two optional discovery endpoints for devices that host their own ADD document. For devices where this is not possible, ADD documents may also be hosted in external repositories. Device authors choose the level of discoverability that fits their deployment.
 
-| Endpoint | Requirement | Purpose |
+| Endpoint / Method | Requirement | Purpose |
 |---|---|---|
-| `http://<device-ip>/add` | **MUST** | The ADD document itself — the only mandatory endpoint |
+| `http://<device-ip>/add` | **MUST** (if hosted on device) | The ADD document itself — the primary endpoint |
 | `http://<device-ip>/llms.txt` | SHOULD | Human- and AI-readable index pointing to the ADD endpoint |
 | `http://<device-ip>/.well-known/add` | MAY | Standard well-known URI for automated discovery by AI agents |
+| External repository URL | Alternative | ADD document hosted externally — for legacy devices, subsystems, or centrally managed fleets |
 
-A device that implements only `/add` is fully ADD-conformant. The additional endpoints improve discoverability for AI systems that use different discovery strategies, but they are never required.
+A device that implements only `/add` is fully ADD-conformant. The additional endpoints improve discoverability for AI systems that use different discovery strategies, but they are never required. External repositories are described in Section 5.5.
 
 ---
 
@@ -504,7 +505,42 @@ Implementing all three endpoints is recommended for devices intended for broad o
 
 ---
 
-### 5.5 Session Timeout
+### 5.5 External ADD Document Repositories
+
+The three discovery paths described above assume that the ADD document is served directly from the device. This is the preferred architecture — the device carries its own description. But it is not the only option.
+
+An ADD document is a JSON file. It can be stored and served from any location that is accessible to the AI agent: a GitHub repository, an internal document management system, a local file server, or any web server. The AI does not need to know or care where the document is hosted — it needs to be able to read it.
+
+**When external repositories are useful:**
+
+- **Legacy devices** — existing hardware where firmware modification is not possible. The ADD document is authored manually and hosted externally.
+- **Centrally managed fleets** — large numbers of similar devices described by shared or templated ADD documents, maintained in a central repository.
+- **Subsystems and assemblies** — the subsystem ADD document is naturally hosted externally, since no single physical device in the assembly "owns" the description.
+- **Read-only documentation** — devices that are described for the AI's understanding but not directly controlled. The ADD document describes function and relationships without providing control endpoints.
+
+When an ADD document is hosted externally, the AI is directed to it by the user, the agent task, or a pointer in a higher-level system. The `device.ip` field in the document tells the AI where the physical device is located — even though the document itself is hosted elsewhere.
+
+**Security considerations for external repositories**
+
+ADD documents contain sensitive operational information. A document describing a device on an industrial network reveals internal IP addresses, control endpoints and their parameters, authentication methods, safety constraints and their limits, and operational sequences. In the wrong hands, this information is not just a data leak — it is an operational manual for unauthorized control.
+
+The level of protection required depends on the deployment context:
+
+| Deployment | Recommended protection |
+|---|---|
+| Home automation | Private repository with access token. No public URLs for device descriptions. Local network access only. |
+| Commercial / industrial | Internal document management system with role-based access control. Audit logging for all access. No internet-facing URLs. |
+| Critical infrastructure | Air-gapped systems or strict network segmentation. Multi-factor authentication. Regular access audits. Security classification equivalent to OT documentation. |
+
+**What `security.authentication` in the ADD document does — and does not — protect:**
+
+The `security.authentication` field describes how the device itself is protected. It does not protect the ADD document. A device with `authentication: "none"` on a local network may be perfectly safe — but its ADD document reveals the absence of authentication, making the device a target if the document leaks.
+
+The security of the ADD document and the security of the device it describes are separate concerns. Both must be addressed independently.
+
+---
+
+### 5.6 Session Timeout
 
 Devices with resource constraints — such as microcontrollers with limited concurrent connection capacity — MAY implement a session timeout mechanism. If a session timeout is in effect, the ADD description SHOULD indicate the remaining session time and the maximum number of session extensions available, so the AI can manage its interaction within the available window.
 
@@ -829,6 +865,22 @@ The Autonomy Level is derived from the sum of the three factor scores. Each fact
 | 0–1 | **Level 1 — Basic** |
 | 2–3 | **Level 2 — Standard** |
 | 4–6 | **Level 3 — Full** |
+| — | **`"derived"` — Subsystem** |
+
+**`"derived"` level — for subsystems and assemblies only:**
+
+When an ADD document describes a subsystem composed of multiple physical devices, the `autonomy.level` field is set to `"derived"` instead of a numeric value. This indicates that the document has no own Autonomy Level. The Autonomy Level for any action is determined by the ADD documents of the components involved in that specific action — not by the subsystem document itself.
+
+When executing a coordinated action across multiple components, the AI applies the Ethical Framework of the most restrictive component involved in the action sequence. If components have different Autonomy Levels, the AI applies the highest level for the entire sequence.
+
+`autonomy.ethic_url` is not used when `level` is `"derived"`. The Ethical Framework comes from each component's own ADD document.
+
+```json
+"autonomy": {
+  "level": "derived",
+  "note": "This document describes a subsystem. It has no own Autonomy Level. When addressing individual components, apply the Autonomy Level of that component's ADD document. When executing coordinated actions across multiple components, load all referenced component ADD documents first. Apply the Ethical Framework of the most restrictive component in the action sequence. If any component document is unreachable, do not proceed."
+}
+```
 
 **Practical examples:**
 
@@ -886,21 +938,31 @@ The Autonomy Level is declared by the device author and verified independently b
 ---
 ### 10.2 The `device` Block
 
-**Purpose:** The `device` block describes the identity and context of the device. It tells the AI what this device is, where it is, and where to find more information when the ADD document alone is not sufficient.
+**Purpose:** The `device` block describes the identity and context of the device. It tells the AI what this device is, where it is, how to reach it, and where to find more information when the ADD document alone is not sufficient.
 
-**Fields** (all free-form, none mandatory — include what is meaningful for your device):
+**Fields:**
 
-| Field | Description |
-|---|---|
-| `name` | Human-readable device name |
-| `id` | Unique device identifier |
-| `type` | Device category: `sensor`, `actuator`, `gateway`, or any meaningful value |
-| `manufacturer` | Manufacturer or project name |
-| `firmware` | Firmware version |
-| `hardware` | Hardware platform or revision |
-| `location` | Physical or logical location of the device |
-| `doc_url` | URL of the device documentation, datasheet, or manual |
-| `doc_url_note` | Short hint pointing the AI to the most relevant section of the documentation |
+| Field | Required | Description |
+|---|---|---|
+| `name` | yes | Human-readable device name |
+| `ip` | yes | IP address or hostname of the device — enables the ADD document to be hosted externally while still pointing to the physical device |
+| `id` | no | Unique device identifier |
+| `type` | no | Device category: `sensor`, `actuator`, `gateway`, `subsystem`, or any meaningful value |
+| `manufacturer` | no | Manufacturer or project name |
+| `firmware` | no | Firmware version |
+| `hardware` | no | Hardware platform or revision |
+| `location` | no | Physical or logical location of the device |
+| `doc_url` | no* | URL of the device documentation, datasheet, or manual |
+| `doc_url_note` | no | Short hint pointing the AI to the most relevant section of the documentation |
+| `components` | no* | Array of URLs pointing to the ADD documents of all components — only used for subsystems and assemblies |
+
+*`doc_url` is effectively required for subsystems — see below. `components` is only used when `type` is `subsystem` or similar.
+
+**Why `device.ip` is required:**
+
+The IP address or hostname makes an ADD document self-contained and portable. A document hosted in an external repository — on GitHub, an internal server, or a central asset management system — carries the address of the physical device it describes. The AI does not need to infer the device address from context. This is particularly valuable for legacy devices where no firmware modification is possible, and for centrally managed ADD document repositories.
+
+When the ADD document is served directly from the device at `/add`, `device.ip` is redundant — the address is already known from the HTTP request. Include it anyway. The minimal redundancy ensures the document remains self-describing when copied or moved.
 
 `doc_url` provides a reference the AI can consult when device behavior is unclear or unexpected from the ADD document alone. This is particularly valuable for devices with complex state machines, proprietary protocols, or domain-specific data formats. The AI SHOULD fetch this URL when it encounters behavior or parameters not adequately described in the ADD document.
 
@@ -911,16 +973,57 @@ If `doc_url` is present, the following standard rule SHOULD be added to the `rul
 "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding."
 ```
 
-**Example:**
+**Subsystems and assemblies — `type: "subsystem"`**
+
+When an ADD document describes a subsystem or assembly composed of multiple physical devices, the `device` block uses `type: "subsystem"` and lists the ADD document URLs of all components in the `components` array.
+
+A subsystem ADD document does not have its own Autonomy Level — it uses `autonomy.level: "derived"` (see Section 10.1). The Autonomy Level for any action is determined by the ADD documents of the components involved in that action.
+
+`doc_url` is required for subsystems. The documentation at `doc_url` must describe the functional relationship between all components — how they depend on each other, in what sequence actions must be performed, and what the system as a whole is intended to do. Without this description, the AI cannot understand the system context and cannot safely execute coordinated actions.
+
+The following rule is mandatory for subsystems:
+```
+"Before acting on this document, fetch and read the documentation at doc_url.
+It describes the functional context of all components and is required to
+understand how they work together."
+```
+
+The following rule is mandatory for any coordinated action across multiple components:
+```
+"Before executing any coordinated action across multiple components, load the
+ADD document of every referenced component in device.components. If any
+component ADD document is unreachable or its device is offline, do not execute
+the action sequence. Inform the user which component is unavailable and stop."
+```
+
+**Example — single device:**
 ```json
 "device": {
   "name": "Garden Irrigation Valve",
   "type": "actuator",
+  "ip": "192.168.1.93",
   "location": "Garden, main water supply",
-  "firmware": "V1.4",
-  "hardware": "ESP8266",
-  "doc_url": "https://example.com/irrigation-valve/manual",
-  "doc_url_note": "See chapter 3 for valve timing behavior and chapter 5 for error codes."
+  "firmware": "Tasmota V14",
+  "hardware": "ESP8266 with relay",
+  "doc_url": "https://tasmota.github.io/docs/Commands/",
+  "doc_url_note": "See the Power commands section for relay control and status reading."
+}
+```
+
+**Example — subsystem:**
+```json
+"device": {
+  "name": "Cooling Circuit Section A",
+  "type": "subsystem",
+  "ip": "192.168.1.1",
+  "location": "Production hall B, cooling loop 1",
+  "doc_url": "https://example.com/cooling-circuit-A/manual",
+  "doc_url_note": "REQUIRED — read before any action. Describes the functional relationship between all components, their dependencies, and the correct operating sequence.",
+  "components": [
+    "http://192.168.1.10/add",
+    "http://192.168.1.11/add",
+    "http://192.168.1.12/add"
+  ]
 }
 ```
 

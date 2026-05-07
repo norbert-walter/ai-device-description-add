@@ -241,6 +241,7 @@ The first meaningful additions are the `device` and `security` blocks. They cost
 "device": {
   "name": "Garden Irrigation Valve",
   "type": "actuator",
+  "ip": "192.168.1.93",
   "location": "Garden, main water supply",
   "firmware": "V1.4",
   "hardware": "ESP8266"
@@ -1087,6 +1088,7 @@ The following example shows the `autonomy`, `device`, and `rules` blocks in full
   "device": {
     "name": "Garden Irrigation Valve",
     "type": "actuator",
+    "ip": "192.168.1.93",
     "location": "Garden, main water supply",
     "firmware": "V1.4",
     "hardware": "ESP8266",
@@ -1193,6 +1195,7 @@ A large model reliably navigates multiple interfaces on the same device — for 
   "device": {
     "name": "Garden Irrigation Valve",
     "type": "actuator",
+    "ip": "192.168.1.93",
     "location": "Garden, main water supply",
     "firmware": "V1.4",
     "hardware": "ESP8266",
@@ -1436,6 +1439,7 @@ This example shows the same physical valve used in previous chapters — now des
   "device": {
     "name": "Universal Valve Switch",
     "type": "actuator",
+    "ip": "192.168.1.93",
     "location": "unknown — defined by deployment context",
     "firmware": "Tasmota V14",
     "hardware": "ESP8266 with relay"
@@ -1612,6 +1616,7 @@ The following ADD document describes the garden irrigation valve for use by an a
   "device": {
     "name": "Garden Irrigation Valve — Autonomous",
     "type": "actuator",
+    "ip": "192.168.1.93",
     "location": "Garden, main water supply",
     "firmware": "Tasmota V14",
     "hardware": "ESP8266 with relay",
@@ -1759,15 +1764,274 @@ Autonomous operation removes the human from the action approval loop. This shift
 
 **The Ethical Framework must be reachable.** `confirmation_scope: "autonomous"` with an unreachable `ethic_url` is not permitted. If the Ethical Framework cannot be loaded, the agent must stop and alert the user — it cannot fall back to autonomous operation without ethical constraints.
 
-**Validation must include autonomous operation tests.** Standard validation tests issue commands and observe responses. Autonomous validation must additionally test that the agent acts correctly without any user command — and that it stops correctly when a condition fails. See Chapter 8.4 for autonomous-specific validation prompts.
+**Validation must include autonomous operation tests.** Standard validation tests issue commands and observe responses. Autonomous validation must additionally test that the agent acts correctly without any user command — and that it stops correctly when a condition fails. See Chapter 9.4 for autonomous-specific validation prompts.
 
 *Why these requirements are non-negotiable:* An autonomous agent that acts when conditions cannot be verified is not safer than a timer — it is less safe, because it creates the illusion of intelligent oversight without providing it. The value of autonomous control comes entirely from the reliability of its condition verification. Without verified conditions, `requires_confirmation: false` is not a feature — it is an unchecked action.
 
 ---
 
-## 8. Validation — The Practical Process
+## 8. Assemblies and Subsystems
 
-### 8.1 Why Validation Works Differently in ADD
+### 8.1 When to Use Subsystem Documents
+
+A single ADD document describes a single physical device. This covers the vast majority of IoT deployments — a sensor, a valve, a switch, a meter. But when multiple devices must work together to accomplish a task, individual device documents alone are not sufficient. The AI knows what each device can do, but not how they relate to each other, in what sequence they must be operated, or what the combined system is intended to achieve.
+
+A subsystem ADD document solves this. It describes an assembly of devices as a single operational unit — with a list of its components, a pointer to the documentation that explains their functional relationship, and a set of coordinated actions and rules that govern the assembly as a whole.
+
+**Use a subsystem document when:**
+- Multiple devices must be operated in a specific sequence to achieve a result
+- Dependencies exist between devices — one must be running before another can start
+- A single user-facing action triggers operations across multiple physical devices
+- Devices belong to a logical unit that is managed and operated together
+
+**Do not use a subsystem document when:**
+- Devices operate independently without dependencies
+- A single device can accomplish the task alone
+- The only relationship between devices is that they are in the same room or network segment
+
+---
+
+### 8.2 Designing the Subsystem ADD Document
+
+A subsystem ADD document uses the same seven-block structure as any other ADD document. Four aspects differ from a single-device document.
+
+**`device.type: "subsystem"`**
+Signals to the AI that this document describes an assembly, not a single physical device. The AI must load all component documents before acting on any coordinated action.
+
+**`device.components`**
+An array of URLs pointing to the ADD documents of all physical devices that are part of this assembly. The AI loads each of these documents before executing any coordinated action. If any component document is unreachable, the AI must stop.
+
+**`autonomy.level: "derived"`**
+The subsystem has no own Autonomy Level. For single-component actions, the AI applies the Autonomy Level of the component being addressed. For coordinated actions across multiple components, the AI applies the Ethical Framework of the most restrictive component in the action sequence.
+
+**`doc_url` is required**
+The documentation at `doc_url` must describe the functional relationship between all components — how they depend on each other, what the correct operating sequence is, what the assembly as a whole is intended to do, and what safety constraints apply at system level. Without this description, the AI cannot understand the system context and cannot safely execute coordinated actions. This is not optional for subsystems.
+
+**Two mandatory rules for every subsystem document:**
+
+```json
+"Before acting on this document, fetch and read the documentation at doc_url.
+It describes the functional context of all components and is required to
+understand how they work together.",
+
+"Before executing any coordinated action across multiple components, load the
+ADD document of every referenced component in device.components. If any
+component ADD document is unreachable or its device is offline, do not execute
+the action sequence. Inform the user which component is unavailable and stop."
+```
+
+---
+
+### 8.3 The Functional Description — Why `doc_url` Is Critical
+
+The most important element of a subsystem ADD document is not the JSON — it is the documentation it references. The JSON tells the AI what components exist and what coordinated actions are available. The documentation tells the AI how the system works.
+
+A functional description for a subsystem must answer these questions:
+
+**What does the system do as a whole?**
+Not what each component does individually, but what the combined system achieves. A cooling circuit does not just have a pump, a valve, and a temperature sensor — it maintains a defined temperature range for connected equipment by circulating coolant through a heat exchanger.
+
+**What are the dependencies between components?**
+Which components must be in a certain state before another can be operated? The pump must be running before the valve can be opened. The temperature sensor must be read before any flow adjustment. These dependencies cannot be inferred from the individual device documents.
+
+**What is the correct operating sequence?**
+In what order must actions be executed? What must be verified between steps? What is the shutdown sequence? A system that is started in the wrong order may damage equipment or produce incorrect results.
+
+**What are the system-level safety constraints?**
+Individual devices enforce their own constraints. The system level adds constraints that span multiple devices — maximum flow rates, temperature limits that require action across several components simultaneously, emergency shutdown sequences.
+
+*Why the AI must read this documentation before acting:* An AI that acts on a subsystem without reading the functional description is in the same position as a technician who opens a valve without knowing what is connected to it. The individual ADD documents tell the AI the technical parameters of each component. They do not tell the AI the operational context of the system.
+
+---
+
+### 8.4 Example — Cooling Circuit Subsystem
+
+This example shows a complete subsystem ADD document for a three-component cooling circuit: a pump, an inlet valve, and a return temperature sensor. The system maintains cooling water flow for CNC machines.
+
+```json
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+
+  "autonomy": {
+    "level": "derived",
+    "note": "This document describes a subsystem. It has no own Autonomy Level. When addressing individual components, apply the Autonomy Level of that component's ADD document. When executing coordinated actions across multiple components, load all referenced component ADD documents first. Apply the Ethical Framework of the most restrictive component in the action sequence. If any component ADD document is unreachable, do not proceed."
+  },
+
+  "device": {
+    "name": "Cooling Circuit Section A",
+    "type": "subsystem",
+    "ip": "192.168.10.1",
+    "location": "Production hall B, cooling loop 1",
+    "doc_url": "https://example.com/cooling-circuit-A/manual",
+    "doc_url_note": "REQUIRED — read before any action. Chapter 2: system overview and component dependencies. Chapter 3: startup and shutdown sequence. Chapter 4: temperature limits and emergency procedures.",
+    "components": [
+      "http://192.168.10.10/add",
+      "http://192.168.10.11/add",
+      "http://192.168.10.12/add"
+    ]
+  },
+
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "token",
+    "enforcement": "Each component device enforces its own parameter limits independently. The subsystem document adds system-level constraints that span multiple components."
+  },
+
+  "interfaces": [
+    {
+      "name": "component_network",
+      "physical": "Ethernet",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "direction": "bidirectional",
+      "description": "All components are reachable on the local production network at their individual IP addresses. Each component exposes its own ADD document at /add and its own control interface as described in its ADD document."
+    }
+  ],
+
+  "actions": [
+    {
+      "name": "start_cooling_circuit",
+      "description": "Start the complete cooling circuit in the correct sequence: 1. Read return temperature from sensor at http://192.168.10.12/add. 2. Verify temperature is below 40°C before starting. 3. Start pump at http://192.168.10.10/add and verify running state. 4. Open inlet valve to 50% at http://192.168.10.11/add. 5. Monitor return temperature for 60 seconds. 6. Adjust valve position based on temperature reading — increase flow if temperature exceeds 35°C.",
+      "safe": false,
+      "reversible": true,
+      "idempotent": false,
+      "requires_confirmation": true,
+      "confirmation_scope": "per_action",
+      "requires_auth": true
+    },
+    {
+      "name": "stop_cooling_circuit",
+      "description": "Stop the cooling circuit in the correct shutdown sequence: 1. Close inlet valve at http://192.168.10.11/add. 2. Wait 30 seconds for residual flow to clear. 3. Stop pump at http://192.168.10.10/add. 4. Verify both valve is closed and pump is stopped.",
+      "safe": false,
+      "reversible": true,
+      "idempotent": false,
+      "requires_confirmation": true,
+      "confirmation_scope": "per_action",
+      "requires_auth": true
+    },
+    {
+      "name": "read_system_state",
+      "description": "Read the current state of all components: pump running state, valve position, and return temperature. Fetch the state of each component from its ADD document endpoint.",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": false
+    }
+  ],
+
+  "rules": [
+    "Before acting on this document, fetch and read the documentation at doc_url. It describes the functional context of all components and is required to understand how they work together.",
+    "Before executing any coordinated action across multiple components, load the ADD document of every referenced component in device.components. If any component ADD document is unreachable or its device is offline, do not execute the action sequence. Inform the user which component is unavailable and stop.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "Never open the inlet valve unless the pump is confirmed running. Verify pump state before every valve operation.",
+    "Never start the pump if return temperature exceeds 40°C. Read the temperature sensor before every pump start.",
+    "If return temperature exceeds 38°C during operation, increase valve opening by 10% and re-read temperature after 30 seconds.",
+    "If return temperature exceeds 42°C during operation, execute stop_cooling_circuit immediately and alert the user.",
+    "Always execute the complete startup sequence in order. Never skip a step or reverse the sequence.",
+    "Always execute the complete shutdown sequence in order. Never stop the pump before closing the valve.",
+    "Verify the state of every component after every action. If a component does not respond as expected, stop and alert the user.",
+    "Do not execute coordinated actions without explicit user confirmation — autonomous operation is not permitted for this subsystem."
+  ],
+
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Added mandatory doc_url read rule as first rule.",
+      "Added mandatory component reachability check rule as second rule.",
+      "Added temperature limit rules with specific thresholds.",
+      "Added explicit sequence enforcement rules for startup and shutdown.",
+      "Disabled autonomous operation — requires_confirmation per_action for all actuator actions."
+    ],
+    "validated_by": []
+  }
+}
+```
+
+**Key design decisions in this example:**
+
+- **`autonomy.level: "derived"`** — the subsystem declares no level; the AI applies each component's level when addressing it
+- **`doc_url_note` marked REQUIRED** — signals to the AI that reading the documentation is not optional
+- **`components` as URL array** — minimal, clean, no redundant information
+- **`requires_confirmation: true` for all actuator actions** — autonomous operation is explicitly disabled; an industrial cooling system requires human oversight
+- **Sequence enforcement in action descriptions** — the correct startup and shutdown order is embedded directly in the action descriptions, not left to inference
+- **Temperature thresholds in rules** — system-level safety constraints that span multiple components and cannot belong to any single device document
+
+---
+
+### 8.5 Scaling to Full Plants
+
+The subsystem pattern scales naturally to full plant descriptions by nesting subsystem documents:
+
+```
+Device level:      Individual ADD documents for each physical device
+                   (pump, valve, sensor, motor, ...)
+                   ↓
+Subsystem level:   ADD documents for functional assemblies
+                   (cooling circuit, conveyor section, processing unit, ...)
+                   ↓
+Plant section:     ADD documents for plant sections
+                   (production line A, utility systems, ...)
+                   ↓
+Plant level:       ADD document for the complete plant
+```
+
+Each level is a valid ADD document. Each level references its components via `device.components`. Each level has its own `doc_url` describing the functional relationships at that level of abstraction.
+
+The AI navigates this hierarchy top-down: it reads the plant-level document, identifies the relevant subsystem, loads that subsystem's document, identifies the relevant component, loads that component's document, and acts. At each level, it reads the documentation before proceeding.
+
+*Practical limits:* Deep hierarchies increase latency — each level requires additional document fetches and documentation reads. For small models, limit the hierarchy to two levels: subsystem and device. For large models, three levels are practical. Beyond three levels, the latency and context window requirements become prohibitive for current AI systems.
+
+---
+
+### 8.6 Security for External ADD Repositories
+
+ADD documents contain sensitive operational information. A document that describes a device on an industrial network reveals:
+
+- Internal IP addresses and network topology
+- Available control endpoints and their parameters
+- Authentication methods and their absence
+- Safety constraints and their limits — and by implication, what happens when they are exceeded
+- Operational sequences that could be exploited to cause damage if executed in the wrong order
+
+An ADD document in the wrong hands is not just a data leak — it is an operational manual for someone who wants to cause harm. This applies to industrial plants, but also to home automation systems, medical devices, and any deployment where unauthorized control could cause physical damage.
+
+**Recommendations by deployment context:**
+
+*Home automation and small deployments:*
+- Store ADD documents on a private GitHub repository with access tokens
+- Do not expose ADD documents on public URLs
+- Use local network access only — do not publish device IP addresses externally
+- Consider a local file server accessible only within the home network
+
+*Industrial and commercial deployments:*
+- Store ADD documents on an internal document management system behind authentication
+- Use role-based access control — only authorized personnel and AI systems can read device descriptions
+- Log all access to ADD documents — unauthorized access is an early warning signal
+- Consider separate repositories for different security zones (office network, production network, safety systems)
+- Never store Level 3 device descriptions (irreversible actions, multi-person impact) in repositories accessible from the internet
+
+*Critical infrastructure:*
+- ADD documents for safety-critical systems must be stored in air-gapped systems or behind strict network segmentation
+- Access requires multi-factor authentication
+- Regular access audits
+- ADD documents for Level 3 devices should be treated with the same security classification as operational technology (OT) documentation
+
+**What `security.authentication` in the ADD document does — and does not — protect:**
+
+The `security.authentication` field describes how the device itself is protected. It does not protect the ADD document. A device with `authentication: "none"` on a local network is safe if the network is secure — but its ADD document reveals that the device has no authentication, making it a target if the document leaks.
+
+The security of the ADD document and the security of the device it describes are separate concerns. Both must be addressed.
+
+---
+
+## 9. Validation — The Practical Process
+
+### 9.1 Why Validation Works Differently in ADD
 
 Classical API specifications — OpenAPI, W3C WoT — can be validated automatically. A schema validator checks whether every field is present, every type is correct, and every required value falls within its declared range. The result is deterministic: valid or invalid, pass or fail.
 
@@ -1781,7 +2045,7 @@ The only meaningful test is whether the AI that will actually use the document c
 
 ---
 
-### 8.2 Preparing the Validation
+### 9.2 Preparing the Validation
 
 Validation tests real behavior against real endpoints. A validation run performed against mock responses or invented data is not a valid test — it only confirms that the AI can read the document, not that it can use it correctly.
 
@@ -1801,7 +2065,7 @@ Validation is not a drafting tool. It is a final quality check before deployment
 
 ---
 
-### 8.3 Conducting the Validation — Step by Step
+### 9.3 Conducting the Validation — Step by Step
 
 The validation is conducted by sending the AI a structured validation prompt that instructs it to test the ADD document systematically. The AI performs the tests, records its findings, and produces a completed `validation` block.
 
@@ -1878,7 +2142,7 @@ After completing all steps, produce:
 
 ---
 
-### 8.4 Test Methodology
+### 9.4 Test Methodology
 
 The validation prompt in Section 6.3 defines what the AI tests. This section defines how each test is conducted, how many runs are required, how results are scored, and provides concrete example prompts for each test type. All example prompts use the irrigation valve as the reference device — adapt the device address and specific values for your deployment.
 
@@ -2300,7 +2564,7 @@ The category score drives the overall status: any `fail` in any category produce
 
 ---
 
-### 8.5 Evaluating Findings and Scoring
+### 9.5 Evaluating Findings and Scoring
 
 Each finding from the validation run is recorded with four fields: `severity`, `category`, `message`, and `resolved`.
 
@@ -2338,7 +2602,7 @@ A document with `status: "failed"` must not be deployed with this model. The fin
 
 ---
 
-### 8.6 Writing the Validation Block
+### 9.6 Writing the Validation Block
 
 After completing all tests in Sections 6.3 and 6.4, send the following prompt to instruct the AI to produce the completed `validation` block from all results collected during the session:
 
@@ -2436,7 +2700,7 @@ A complete `validated_by` entry looks like this:
 
 ---
 
-### 8.7 When to Re-Validate
+### 9.7 When to Re-Validate
 
 Validation is not a one-time event. The ADD document and the device it describes both evolve over time. Re-validation is required whenever the basis for the original validation has changed.
 
@@ -2457,9 +2721,9 @@ Re-validation does not always require a full run. If only one rule changed, test
 
 ---
 
-## 9. Deployment and Maintenance
+## 10. Deployment and Maintenance
 
-### 9.1 Publishing the ADD Document
+### 10.1 Publishing the ADD Document
 
 An ADD document is not useful until it is reachable. Publishing means making the document available at the correct endpoint on the device's HTTP server — consistently, reliably, and with the correct headers.
 
@@ -2524,7 +2788,7 @@ Any endpoint that returns an error, a malformed document, or incorrect headers m
 
 ---
 
-### 9.2 Network Boundaries — Where an AI Agent Can Act
+### 10.2 Network Boundaries — Where an AI Agent Can Act
 
 An AI agent can only interact with devices that are reachable within the same network environment in which the agent itself is running. This is not a limitation of individual tools — it is a fundamental security principle that applies to all tools, all protocols, and all AI models without exception.
 
@@ -2559,7 +2823,7 @@ For cloud-based deployments — devices must be publicly accessible, or the loca
 
 ---
 
-### 9.3 The ADD Document in Production
+### 10.3 The ADD Document in Production
 
 Once deployed, the ADD document runs silently in the background — fetched by the AI agent before each interaction, applied as the operational framework for every action. In normal operation, the developer does not need to intervene.
 
@@ -2583,7 +2847,7 @@ In all cases, the investigation follows the same sequence: identify the specific
 
 ---
 
-### 9.4 Firmware Updates and Their Impact
+### 10.4 Firmware Updates and Their Impact
 
 A firmware update changes the device. Whether it also requires an ADD document update depends on what changed.
 
@@ -2610,7 +2874,7 @@ Every structural change to the ADD document — new actions, modified rules, upd
 
 ---
 
-### 9.5 Managing Multiple Models
+### 10.5 Managing Multiple Models
 
 The `validated_by` array is a compatibility matrix. Each entry records which model was tested, what it found, and whether the document works for that model. Managing this matrix correctly is essential for deployments that use more than one AI model.
 
@@ -2634,7 +2898,7 @@ After any ADD document update, review every entry in `validated_by`. Entries pro
 
 ---
 
-### 9.6 When the ADD Document Needs to Change
+### 10.6 When the ADD Document Needs to Change
 
 Not every change to the device or deployment requires a full ADD document revision. The following checklist identifies the triggers that do — and for each trigger, the required response.
 

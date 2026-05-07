@@ -117,6 +117,9 @@ Every ADD document MUST contain:
 | 0–1 | **1 — Basic** |
 | 2–3 | **2 — Standard** |
 | 4–6 | **3 — Full** |
+| — | **`"derived"` — Subsystem** |
+
+**`"derived"` level:** The document describes a subsystem. It has no own Autonomy Level. For each action, apply the Autonomy Level of the component ADD documents involved. For coordinated actions across multiple components, apply the Ethical Framework of the most restrictive component. If any component ADD document is unreachable, do not proceed.
 
 **What each level requires:**
 
@@ -132,17 +135,23 @@ Every ADD document MUST contain:
 
 Free-form. Include what is meaningful for the device.
 
-| Field | Description |
-|---|---|
-| `name` | Human-readable device name |
-| `id` | Unique device identifier |
-| `type` | `sensor`, `actuator`, `gateway`, or any meaningful value |
-| `manufacturer` | Manufacturer or project name |
-| `firmware` | Firmware version |
-| `hardware` | Hardware platform |
-| `location` | Physical or logical location |
-| `doc_url` | URL of device documentation — fetch when device behavior is unclear |
-| `doc_url_note` | Hint pointing to the most relevant section of the documentation |
+| Field | Required | Description |
+|---|---|---|
+| `name` | yes | Human-readable device name |
+| `ip` | yes | IP address or hostname of the device — use this to reach the device even when the ADD document is hosted externally |
+| `id` | no | Unique device identifier |
+| `type` | no | `sensor`, `actuator`, `gateway`, `subsystem`, or any meaningful value |
+| `manufacturer` | no | Manufacturer or project name |
+| `firmware` | no | Firmware version |
+| `hardware` | no | Hardware platform |
+| `location` | no | Physical or logical location |
+| `doc_url` | no* | URL of device documentation — fetch when device behavior is unclear. Required for subsystems. |
+| `doc_url_note` | no | Hint pointing to the most relevant section of the documentation |
+| `components` | no* | Array of ADD document URLs for all components — only for subsystems |
+
+*`doc_url` is required for subsystems. `components` is only present when `type` is `"subsystem"` or similar.
+
+**For subsystems:** When `device.components` is present, load the ADD document of every listed component before acting. If any component ADD document is unreachable, do not proceed with coordinated actions. The functional relationship between components is described in the documentation at `doc_url` — read it before acting on any coordinated action.
 
 ---
 
