@@ -133,7 +133,7 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
-    .panel-header .actions { margin-left: auto; display: flex; gap: 6px; }
+    .panel-header .actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
 
     /* ------------------------------------------------------------------ */
     /* Buttons                                                               */
@@ -148,8 +148,12 @@
       transition: opacity 0.15s, background 0.15s;
     }
     button:hover { opacity: 0.85; }
+    button:disabled { cursor: not-allowed; }
 
     .btn-save   { background: #238636; color: #fff; }
+    .btn-reset  { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+    .btn-clear  { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+
     .preset-select {
       background: #21262d;
       color: #c9d1d9;
@@ -162,8 +166,19 @@
       max-width: 260px;
     }
     .preset-select:hover { border-color: #8b949e; }
-    .btn-reset  { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
-    .btn-clear  { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+
+    /* Read-only badge */
+    .readonly-badge {
+      display: none;
+      font-size: 0.68rem;
+      background: #b45309;
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
 
     /* ------------------------------------------------------------------ */
     /* Editor panel                                                          */
@@ -172,14 +187,19 @@
       flex: 1;
       overflow: hidden;
       position: relative;
-      min-height: 0;        /* critical for flex children with height:100% */
+      min-height: 0;
     }
     #add-editor {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
     }
+
+    /* Read-only editor state */
+    .editor-readonly .CodeMirror { opacity: 0.75; }
+    .editor-readonly .CodeMirror-cursor { display: none !important; }
+
     /* ------------------------------------------------------------------ */
-    /* CodeMirror — VSCode Dark+ Theme                                       */
+    /* CodeMirror — VSCode Dark+ Theme (inline)                             */
     /* ------------------------------------------------------------------ */
     .CodeMirror {
       height: 100%;
@@ -198,27 +218,13 @@
     .CodeMirror-lint-marker-error { color: #f48771; }
     .CodeMirror-matchingbracket { color: #ffd700 !important; outline: 1px solid #ffd700; }
 
-    /* VSCode Dark+ JSON token colors */
-    /* Keys (property names) */
-    .cm-property { color: #9cdcfe; }
-    /* String values */
-    .cm-string    { color: #ce9178; }
-    /* Numbers */
-    .cm-number    { color: #b5cea8; }
-    /* Booleans & null */
-    .cm-atom      { color: #569cd6; }
-    /* Brackets, braces */
-    .cm-bracket   { color: #ffd700; }
-    /* Punctuation (colon, comma) */
-    .cm-punctuation { color: #d4d4d4; }
-
-    /* Scrollbar — always visible, Firefox + Chrome */
+    /* Scrollbar — always visible */
     .CodeMirror-scroll::-webkit-scrollbar       { width: 10px; height: 10px; }
     .CodeMirror-scroll::-webkit-scrollbar-track { background: #1e1e1e; }
     .CodeMirror-scroll::-webkit-scrollbar-thumb { background: #424242; border-radius: 5px; border: 2px solid #1e1e1e; }
     .CodeMirror-scroll::-webkit-scrollbar-thumb:hover { background: #686868; }
-    /* Firefox */
     .CodeMirror-scroll { scrollbar-width: thin; scrollbar-color: #424242 #1e1e1e; }
+
     #editor-status {
       font-size: 0.7rem;
       padding: 4px 14px;
@@ -259,7 +265,6 @@
       letter-spacing: 0.1em;
     }
 
-    /* SVG valve */
     #valve-svg { width: 180px; height: 180px; }
 
     .valve-toggle-btn {
@@ -280,7 +285,6 @@
     .state-on  { background: #1a7a1a; color: #ffffff; }
     .state-off { background: #8b1a1a; color: #ffffff; }
 
-    /* Endpoint pills */
     .endpoints {
       width: 100%;
       display: flex;
@@ -298,12 +302,8 @@
       color: #79c0ff;
       word-break: break-all;
     }
-    .endpoint .method {
-      color: #3fb950;
-      font-weight: 700;
-      margin-right: 6px;
-    }
-    .endpoint .path { color: #e6edf3; }
+    .endpoint .method { color: #3fb950; font-weight: 700; margin-right: 6px; }
+    .endpoint .path   { color: #e6edf3; }
 
     /* ------------------------------------------------------------------ */
     /* Log panel                                                             */
@@ -334,10 +334,7 @@
       background: #0d1117;
       flex-shrink: 0;
     }
-    .log-content {
-      padding: 6px 10px;
-      overflow: hidden;
-    }
+    .log-content { padding: 6px 10px; overflow: hidden; }
     .log-action {
       color: #79c0ff;
       font-family: monospace;
@@ -346,16 +343,11 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .log-detail {
-      color: #6e7681;
-      font-size: 0.68rem;
-      margin-top: 1px;
-    }
+    .log-detail { color: #6e7681; font-size: 0.68rem; margin-top: 1px; }
 
-    /* color coding */
-    .log-entry.on  .log-action { color: #3fb950; }
-    .log-entry.off .log-action { color: #f85149; }
-    .log-entry.add .log-action { color: #d2a8ff; }
+    .log-entry.on   .log-action { color: #3fb950; }
+    .log-entry.off  .log-action { color: #f85149; }
+    .log-entry.add  .log-action { color: #d2a8ff; }
     .log-entry.read .log-action { color: #ffa657; }
 
     .log-empty {
@@ -365,7 +357,6 @@
       text-align: center;
     }
 
-    /* scrollbar */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
@@ -396,19 +387,27 @@
   <div class="panel" id="editor-panel" style="width:45%">
     <div class="panel-header">
       <h2>ADD Document</h2>
+      <span class="readonly-badge" id="readonly-badge">READ ONLY</span>
       <div class="actions">
-<span style="font-size:0.75rem; color:#8b949e; font-weight:600; letter-spacing:0.06em; white-space:nowrap; display:flex; align-items:center;">EXAMPLES</span>
+        <span style="font-size:0.75rem; color:#8b949e; font-weight:600; letter-spacing:0.06em; white-space:nowrap; display:flex; align-items:center;">EXAMPLES</span>
         <select class="preset-select" id="preset-select" onchange="loadPreset(this.value)">
           <option value="">— Load Preset —</option>
-          <option value="minimal">Minimal Declaration</option>
-          <option value="universal_local">Universal Valve — Level 1 Local</option>
-          <option value="universal_internet">Universal Valve — Level 1 Internet</option>
-          <option value="irrigation_local">Garden Irrigation — Level 2 Local</option>
-          <option value="irrigation_internet">Garden Irrigation — Level 2 Internet</option>
-          <option value="irrigation_internet_validated">Garden Irrigation — Level 2 Internet Validated</option>
+          <optgroup label="Examples">
+            <option value="minimal">Minimal Declaration</option>
+            <option value="universal_local">Universal Valve — Level 1 Local</option>
+            <option value="universal_internet">Universal Valve — Level 1 Internet</option>
+            <option value="irrigation_local">Garden Irrigation — Level 2 Local</option>
+            <option value="irrigation_internet">Garden Irrigation — Level 2 Internet</option>
+            <option value="irrigation_internet_validated">Garden Irrigation — Level 2 Internet Validated</option>
+          </optgroup>
+          <optgroup label="Tests (read-only)">
+            <option value="test_a_single_call">Test A — Single Call Latency</option>
+            <option value="test_b_sequential_load">Test B — Sequential Load</option>
+            <option value="test_c_timing_accuracy">Test C — Timing Accuracy</option>
+          </optgroup>
         </select>
-        <button class="btn-reset" onclick="resetADD()">Reset</button>
-        <button class="btn-save"  onclick="saveADD()">Save</button>
+        <button class="btn-reset" id="btn-reset" onclick="resetADD()">Reset</button>
+        <button class="btn-save"  id="btn-save"  onclick="saveADD()">Save</button>
       </div>
     </div>
     <div class="panel-body">
@@ -431,25 +430,13 @@
       <div class="valve-container">
         <span class="valve-label">Universal Valve Switch</span>
 
-        <!-- SVG valve illustration -->
         <svg id="valve-svg" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
-          <!-- pipe body -->
           <rect x="20" y="75" width="140" height="30" rx="6" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
-          <!-- pipe left cap -->
           <rect x="10" y="80" width="18" height="20" rx="3" fill="#30363d"/>
-          <!-- pipe right cap -->
           <rect x="152" y="80" width="18" height="20" rx="3" fill="#30363d"/>
-
-          <!-- valve body -->
           <rect x="72" y="60" width="36" height="60" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
-
-          <!-- valve indicator (changes color) -->
           <circle id="valve-indicator" cx="90" cy="90" r="12" fill="#1c1c1c" stroke="#30363d" stroke-width="1.5"/>
-
-          <!-- handle -->
           <rect id="valve-handle" x="84" y="30" width="12" height="32" rx="4" fill="#30363d" transform-origin="90 62"/>
-
-          <!-- flow arrows (visible when ON) -->
           <g id="flow-arrows" opacity="0">
             <path d="M38 90 L55 90" stroke="#3fb950" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow)"/>
             <path d="M125 90 L142 90" stroke="#3fb950" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow)"/>
@@ -459,15 +446,12 @@
               <path d="M0,0 L6,3 L0,6 Z" fill="#3fb950"/>
             </marker>
           </defs>
-
-          <!-- status ring -->
           <circle id="status-ring" cx="90" cy="90" r="20" fill="none" stroke="#30363d" stroke-width="2" opacity="0.5"/>
         </svg>
 
         <button class="valve-toggle-btn state-off" id="state-badge" onclick="toggleValve()">OFF — CLOSED</button>
       </div>
 
-      <!-- Endpoints reference -->
       <div class="endpoints">
         <div style="font-size:0.68rem; color:#484f58; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px;">Available Endpoints</div>
         <div class="endpoint"><span class="method">GET</span><span class="path">/add</span></div>
@@ -507,7 +491,7 @@
   let lastValveState = null;
 
   // ---- Register inline VSCode Dark+ theme ----
-  CodeMirror.defineSimpleMode && void 0; // ensure CM loaded
+  CodeMirror.defineSimpleMode && void 0;
   (function() {
     const style = document.createElement('style');
     style.textContent = `
@@ -524,7 +508,6 @@
       .cm-s-vscode-dark .cm-bracket    { color: #ffd700; }
       .cm-s-vscode-dark .cm-punctuation { color: #d4d4d4; }
       .cm-s-vscode-dark .cm-keyword    { color: #569cd6; }
-      /* scrollbar always visible */
       .cm-s-vscode-dark .CodeMirror-vscrollbar { visibility: visible !important; }
       .cm-s-vscode-dark .CodeMirror-scroll::-webkit-scrollbar { width: 10px; }
       .cm-s-vscode-dark .CodeMirror-scroll::-webkit-scrollbar-track { background: #1e1e1e; }
@@ -563,7 +546,6 @@
         });
 
         // Mausrad-Scroll auch ohne aktiven Cursor
-        // Listener auf den äußeren Container — fängt Events bevor CodeMirror sie verarbeitet
         const editorWrap = document.getElementById('add-editor');
         editorWrap.addEventListener('wheel', e => {
           e.preventDefault();
@@ -572,7 +554,6 @@
           editor.scrollTo(null, info.top + e.deltaY * 0.8);
         }, { passive: false });
 
-        // Auch auf den internen Scroller für den Fall dass CodeMirror Fokus hat
         const cmScroll = editorWrap.querySelector('.CodeMirror-scroll');
         if (cmScroll) {
           cmScroll.addEventListener('wheel', e => {
@@ -585,6 +566,50 @@
       }
     } catch(e) {
       setStatus('Could not load ADD document: ' + e, 'error');
+    }
+  }
+
+  // ---- Load preset ----
+  async function loadPreset(name) {
+    if (!name) return;
+    try {
+      const r = await fetch('/api/add/preset/' + name, { method: 'POST' });
+      const data = await r.json();
+      if (data.status === 'ok') {
+        await loadADD();
+        const label = document.getElementById('preset-select').options[document.getElementById('preset-select').selectedIndex].text;
+        setStatus('Preset loaded: ' + label, 'ok');
+        setReadonly(data.readonly === true);
+      } else {
+        setStatus('Preset error: ' + data.message, 'error');
+      }
+    } catch(e) {
+      setStatus('Preset load error: ' + e, 'error');
+    }
+  }
+
+  // ---- Read-only mode ----
+  function setReadonly(ro) {
+    const panel    = document.getElementById('editor-panel');
+    const badge    = document.getElementById('readonly-badge');
+    const btnSave  = document.getElementById('btn-save');
+    const btnReset = document.getElementById('btn-reset');
+    if (ro) {
+      panel.classList.add('editor-readonly');
+      badge.style.display = 'inline-block';
+      btnSave.disabled  = true;
+      btnReset.disabled = true;
+      btnSave.style.opacity  = '0.4';
+      btnReset.style.opacity = '0.4';
+      if (editor) editor.setOption('readOnly', true);
+    } else {
+      panel.classList.remove('editor-readonly');
+      badge.style.display = 'none';
+      btnSave.disabled  = false;
+      btnReset.disabled = false;
+      btnSave.style.opacity  = '';
+      btnReset.style.opacity = '';
+      if (editor) editor.setOption('readOnly', false);
     }
   }
 
@@ -620,6 +645,8 @@
     try {
       await fetch('/api/add/reset', { method: 'POST' });
       await loadADD();
+      setReadonly(false);
+      document.getElementById('preset-select').value = '';
       setStatus('ADD document reset to default', 'ok');
     } catch(e) {
       setStatus('Reset error: ' + e, 'error');
@@ -644,23 +671,6 @@
     return '';
   }
 
-  // ---- Load preset ----
-  async function loadPreset(name) {
-    if (!name) return;
-    try {
-      const r = await fetch('/api/add/preset/' + name, { method: 'POST' });
-      const data = await r.json();
-      if (data.status === 'ok') {
-        await loadADD();
-        setStatus('Preset loaded: ' + document.getElementById('preset-select').options[document.getElementById('preset-select').selectedIndex].text, 'ok');
-      } else {
-        setStatus('Preset error: ' + data.message, 'error');
-      }
-    } catch(e) {
-      setStatus('Preset load error: ' + e, 'error');
-    }
-  }
-
   // ---- Toggle valve via button ----
   async function toggleValve() {
     const btn = document.getElementById('state-badge');
@@ -679,16 +689,12 @@
     try {
       const r = await fetch('/api/log');
       const entries = await r.json();
-
       if (entries.length !== lastLogCount) {
         lastLogCount = entries.length;
         const body = document.getElementById('log-body');
-        const empty = document.getElementById('log-empty');
-
         if (entries.length === 0) {
           body.innerHTML = '<div class="log-empty" id="log-empty">Waiting for activity…</div>';
         } else {
-          empty && (empty.style.display = 'none');
           body.innerHTML = entries.map(e => `
             <div class="log-entry ${logClass(e.action)}">
               <div class="log-ts">${e.ts}</div>
@@ -723,7 +729,6 @@
     const arrows    = document.getElementById('flow-arrows');
     const ring      = document.getElementById('status-ring');
     const badge     = document.getElementById('state-badge');
-
     if (isOn) {
       indicator.setAttribute('fill', '#238636');
       indicator.setAttribute('stroke', '#3fb950');
@@ -766,15 +771,11 @@
 
   // ---- Resizable panels ----
   function makeDivider(dividerId, leftPanelId, rightPanelId) {
-    const divider  = document.getElementById(dividerId);
+    const divider    = document.getElementById(dividerId);
     const leftPanel  = document.getElementById(leftPanelId);
     const rightPanel = document.getElementById(rightPanelId);
     const container  = document.querySelector('main');
-
-    let dragging = false;
-    let startX   = 0;
-    let startLeft  = 0;
-    let startRight = 0;
+    let dragging = false, startX = 0, startLeft = 0, startRight = 0;
 
     divider.addEventListener('mousedown', e => {
       dragging   = true;
@@ -793,7 +794,6 @@
       const delta  = e.clientX - startX;
       const newLeft  = Math.max(150, startLeft  + delta);
       const newRight = Math.max(150, startRight - delta);
-      // Only apply if both panels stay above minimum
       if (newLeft >= 150 && newRight >= 150) {
         leftPanel.style.width  = (newLeft  / totalW * 100) + '%';
         rightPanel.style.width = (newRight / totalW * 100) + '%';

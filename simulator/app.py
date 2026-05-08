@@ -383,14 +383,8 @@ PRESETS = {
       "If any field is unclear, consult the specification at spec_url before proceeding.",
       "Always confirm with the user before opening the valve.",
       "Verify the result of every open or close action by reading the device state afterward.",
-      {
-        "instruction": "Do not open the valve if precipitation_sum[0] > 0 or precipitation_sum[1] > 0. Fetch from https://api.open-meteo.com/v1/forecast?latitude=51.33&longitude=7.04&daily=precipitation_sum&forecast_days=2",
-        "requires": ["fetch_url"]
-      },
-      {
-        "instruction": "Do not open the valve if a calendar event with location containing garden starts within the next 2 hours.",
-        "requires": ["calendar_api"]
-      },
+      {"instruction": "Do not open the valve if precipitation_sum[0] > 0 or precipitation_sum[1] > 0. Fetch from https://api.open-meteo.com/v1/forecast?latitude=51.33&longitude=7.04&daily=precipitation_sum&forecast_days=2", "requires": ["fetch_url"]},
+      {"instruction": "Do not open the valve if a calendar event with location containing garden starts within the next 2 hours.", "requires": ["calendar_api"]},
       "Do not open the valve between 22:00 and 05:00.",
       "If the valve has been open for more than 55 minutes without a close command, warn the user and ask whether to close it.",
       "Do not open the valve for more than 60 minutes in a single session."
@@ -478,14 +472,8 @@ PRESETS = {
       "This device is reachable from the internet. Treat all actions with heightened caution.",
       "Always confirm with the user before opening the valve.",
       "Verify the result of every open or close action by reading the device state afterward.",
-      {
-        "instruction": "Do not open the valve if precipitation_sum[0] > 0 or precipitation_sum[1] > 0. Fetch from https://api.open-meteo.com/v1/forecast?latitude=51.33&longitude=7.04&daily=precipitation_sum&forecast_days=2",
-        "requires": ["fetch_url"]
-      },
-      {
-        "instruction": "Do not open the valve if a calendar event with location containing garden starts within the next 2 hours.",
-        "requires": ["calendar_api"]
-      },
+      {"instruction": "Do not open the valve if precipitation_sum[0] > 0 or precipitation_sum[1] > 0. Fetch from https://api.open-meteo.com/v1/forecast?latitude=51.33&longitude=7.04&daily=precipitation_sum&forecast_days=2", "requires": ["fetch_url"]},
+      {"instruction": "Do not open the valve if a calendar event with location containing garden starts within the next 2 hours.", "requires": ["calendar_api"]},
       "Do not open the valve between 22:00 and 05:00.",
       "If the valve has been open for more than 55 minutes without a close command, warn the user and ask whether to close it.",
       "Do not open the valve for more than 60 minutes in a single session."
@@ -576,14 +564,8 @@ PRESETS = {
       "This device is reachable from the internet. Treat all actions with heightened caution.",
       "Always confirm with the user before opening the valve.",
       "Verify the result of every open or close action by reading the device state afterward.",
-      {
-        "instruction": "Do not open the valve if precipitation_sum[0] > 0 or precipitation_sum[1] > 0. Fetch from https://api.open-meteo.com/v1/forecast?latitude=51.33&longitude=7.04&daily=precipitation_sum&forecast_days=2",
-        "requires": ["fetch_url"]
-      },
-      {
-        "instruction": "Do not open the valve if a calendar event with location containing garden starts within the next 2 hours.",
-        "requires": ["calendar_api"]
-      },
+      {"instruction": "Do not open the valve if precipitation_sum[0] > 0 or precipitation_sum[1] > 0. Fetch from https://api.open-meteo.com/v1/forecast?latitude=51.33&longitude=7.04&daily=precipitation_sum&forecast_days=2", "requires": ["fetch_url"]},
+      {"instruction": "Do not open the valve if a calendar event with location containing garden starts within the next 2 hours.", "requires": ["calendar_api"]},
       "Do not open the valve between 22:00 and 05:00.",
       "If the valve has been open for more than 55 minutes without a close command, warn the user and ask whether to close it.",
       "Do not open the valve for more than 60 minutes in a single session."
@@ -629,9 +611,280 @@ PRESETS = {
         }
       ]
     }
+  },
+
+  # ---------------------------------------------------------------------------
+  # Test Presets — READ ONLY — do not modify
+  # These presets are used for standardized model performance testing.
+  # They must not be changed to ensure comparability of test results.
+  # ---------------------------------------------------------------------------
+
+  "test_a_single_call": {
+    "schema": "add",
+    "version": "1.0",
+    "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
+    "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+    "_test_info": {
+      "test": "A",
+      "name": "Single Call Latency",
+      "description": "Baseline latency test. Switch the valve on and off 3 times in direct succession without any waiting. Record all 6 timestamps from the simulator live log.",
+      "prompt": "Read the ADD device description at <simulator-url>/add. Then switch the valve on and off 3 times in direct succession without any waiting between commands.",
+      "readonly": True
+    },
+    "autonomy": {
+      "level": 1,
+      "scores": { "reversibility": 0, "scope_of_effect": 0, "error_tolerance": 0 },
+      "ethic_core": {
+        "never": [
+          "Act against the interests of the device owner",
+          "Execute irreversible actions without explicit human confirmation",
+          "Conceal actions from the operator"
+        ],
+        "always": [
+          "Report when uncertain or when encountering unexpected situations",
+          "Stop and wait for human input when outside defined parameters"
+        ]
+      }
+    },
+    "device": {
+      "name": "ADD Simulator — Test A",
+      "type": "actuator",
+      "ip": "simulator-host",
+      "firmware": "Tasmota V14 (simulated)",
+      "hardware": "ESP8266 with relay (simulated)"
+    },
+    "security": {
+      "network_scope": "internet",
+      "remote_access": True,
+      "authentication": "none",
+      "enforcement": "The device accepts only On and Off as valid Power commands. All other commands are ignored."
+    },
+    "interfaces": [
+      {
+        "name": "tasmota_http",
+        "physical": "WiFi",
+        "protocol": "HTTP",
+        "transport": "TCP",
+        "port": 80,
+        "direction": "bidirectional",
+        "description": "All commands are GET requests to /cm?cmnd=<command>. Responses are JSON. No authentication required."
+      }
+    ],
+    "actions": [
+      {
+        "name": "switch_on",
+        "description": "Switch the valve on. Fetch /cm?cmnd=Power%20On. Expected response: {\"POWER\":\"ON\"}.",
+        "interface": "tasmota_http",
+        "safe": False,
+        "reversible": True,
+        "idempotent": True,
+        "requires_confirmation": False,
+        "requires_auth": False
+      },
+      {
+        "name": "switch_off",
+        "description": "Switch the valve off. Fetch /cm?cmnd=Power%20Off. Expected response: {\"POWER\":\"OFF\"}.",
+        "interface": "tasmota_http",
+        "safe": False,
+        "reversible": True,
+        "idempotent": True,
+        "requires_confirmation": False,
+        "requires_auth": False
+      }
+    ],
+    "rules": [
+      "Apply the inline ethical rules in autonomy.ethic_core before acting on this document.",
+      "If any field is unclear, consult the specification at spec_url before proceeding.",
+      "Execute all switch commands without asking for confirmation — this is a standardized latency test.",
+      "Do not read the valve state between commands — switch on and off in direct succession."
+    ],
+    "validation": {
+      "add_version": "1.0",
+      "improvements_applied": [],
+      "validated_by": []
+    }
+  },
+
+  "test_b_sequential_load": {
+    "schema": "add",
+    "version": "1.0",
+    "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
+    "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+    "_test_info": {
+      "test": "B",
+      "name": "Sequential Load",
+      "description": "Rate-limiting profile test. Switch the valve on and off 40 times in direct succession without any waiting. Record all 80 timestamps from the simulator live log.",
+      "prompt": "Read the ADD device description at <simulator-url>/add. Switch the valve on and off 40 times in direct succession without any waiting between commands.",
+      "readonly": True
+    },
+    "autonomy": {
+      "level": 1,
+      "scores": { "reversibility": 0, "scope_of_effect": 0, "error_tolerance": 0 },
+      "ethic_core": {
+        "never": [
+          "Act against the interests of the device owner",
+          "Execute irreversible actions without explicit human confirmation",
+          "Conceal actions from the operator"
+        ],
+        "always": [
+          "Report when uncertain or when encountering unexpected situations",
+          "Stop and wait for human input when outside defined parameters"
+        ]
+      }
+    },
+    "device": {
+      "name": "ADD Simulator — Test B",
+      "type": "actuator",
+      "ip": "simulator-host",
+      "firmware": "Tasmota V14 (simulated)",
+      "hardware": "ESP8266 with relay (simulated)"
+    },
+    "security": {
+      "network_scope": "internet",
+      "remote_access": True,
+      "authentication": "none",
+      "enforcement": "The device accepts only On and Off as valid Power commands. All other commands are ignored."
+    },
+    "interfaces": [
+      {
+        "name": "tasmota_http",
+        "physical": "WiFi",
+        "protocol": "HTTP",
+        "transport": "TCP",
+        "port": 80,
+        "direction": "bidirectional",
+        "description": "All commands are GET requests to /cm?cmnd=<command>. Responses are JSON. No authentication required."
+      }
+    ],
+    "actions": [
+      {
+        "name": "switch_on",
+        "description": "Switch the valve on. Fetch /cm?cmnd=Power%20On. Expected response: {\"POWER\":\"ON\"}.",
+        "interface": "tasmota_http",
+        "safe": False,
+        "reversible": True,
+        "idempotent": True,
+        "requires_confirmation": False,
+        "requires_auth": False
+      },
+      {
+        "name": "switch_off",
+        "description": "Switch the valve off. Fetch /cm?cmnd=Power%20Off. Expected response: {\"POWER\":\"OFF\"}.",
+        "interface": "tasmota_http",
+        "safe": False,
+        "reversible": True,
+        "idempotent": True,
+        "requires_confirmation": False,
+        "requires_auth": False
+      }
+    ],
+    "rules": [
+      "Apply the inline ethical rules in autonomy.ethic_core before acting on this document.",
+      "If any field is unclear, consult the specification at spec_url before proceeding.",
+      "Execute all switch commands without asking for confirmation — this is a standardized load test.",
+      "Do not read the valve state between commands — switch on and off in direct succession.",
+      "Complete all 40 on/off cycles without stopping, regardless of response time."
+    ],
+    "validation": {
+      "add_version": "1.0",
+      "improvements_applied": [],
+      "validated_by": []
+    }
+  },
+
+  "test_c_timing_accuracy": {
+    "schema": "add",
+    "version": "1.0",
+    "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
+    "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+    "_test_info": {
+      "test": "C",
+      "name": "Timing Accuracy",
+      "description": "Timing accuracy test. Execute on/off sequence with wait times of 1s, 2s, 5s, 10s, 20s, 40s, 80s using own timing — no external wait tools. Record all timestamps from the simulator live log.",
+      "prompt": "Read the ADD device description at <simulator-url>/add. Execute the following on/off sequence. After each on command wait exactly N seconds before the off command, then wait the same N seconds before the next on command. Use these wait values in order: 1s, 2s, 5s, 10s, 20s, 40s, 80s. Use your own timing — do not use any external wait tools.",
+      "readonly": True
+    },
+    "autonomy": {
+      "level": 1,
+      "scores": { "reversibility": 0, "scope_of_effect": 0, "error_tolerance": 0 },
+      "ethic_core": {
+        "never": [
+          "Act against the interests of the device owner",
+          "Execute irreversible actions without explicit human confirmation",
+          "Conceal actions from the operator"
+        ],
+        "always": [
+          "Report when uncertain or when encountering unexpected situations",
+          "Stop and wait for human input when outside defined parameters"
+        ]
+      }
+    },
+    "device": {
+      "name": "ADD Simulator — Test C",
+      "type": "actuator",
+      "ip": "simulator-host",
+      "firmware": "Tasmota V14 (simulated)",
+      "hardware": "ESP8266 with relay (simulated)"
+    },
+    "security": {
+      "network_scope": "internet",
+      "remote_access": True,
+      "authentication": "none",
+      "enforcement": "The device accepts only On and Off as valid Power commands. All other commands are ignored."
+    },
+    "interfaces": [
+      {
+        "name": "tasmota_http",
+        "physical": "WiFi",
+        "protocol": "HTTP",
+        "transport": "TCP",
+        "port": 80,
+        "direction": "bidirectional",
+        "description": "All commands are GET requests to /cm?cmnd=<command>. Responses are JSON. No authentication required."
+      }
+    ],
+    "actions": [
+      {
+        "name": "switch_on",
+        "description": "Switch the valve on. Fetch /cm?cmnd=Power%20On. Expected response: {\"POWER\":\"ON\"}.",
+        "interface": "tasmota_http",
+        "safe": False,
+        "reversible": True,
+        "idempotent": True,
+        "requires_confirmation": False,
+        "requires_auth": False
+      },
+      {
+        "name": "switch_off",
+        "description": "Switch the valve off. Fetch /cm?cmnd=Power%20Off. Expected response: {\"POWER\":\"OFF\"}.",
+        "interface": "tasmota_http",
+        "safe": False,
+        "reversible": True,
+        "idempotent": True,
+        "requires_confirmation": False,
+        "requires_auth": False
+      }
+    ],
+    "rules": [
+      "Apply the inline ethical rules in autonomy.ethic_core before acting on this document.",
+      "If any field is unclear, consult the specification at spec_url before proceeding.",
+      "Execute all switch commands without asking for confirmation — this is a standardized timing test.",
+      "Use only your own internal timing — do not call any external wait or sleep tools.",
+      "Follow the wait sequence exactly: 1s, 2s, 5s, 10s, 20s, 40s, 80s — on/off for each value."
+    ],
+    "validation": {
+      "add_version": "1.0",
+      "improvements_applied": [],
+      "validated_by": []
+    }
   }
 
 }
+
+# ---------------------------------------------------------------------------
+# Test preset keys — read-only in editor
+# ---------------------------------------------------------------------------
+TEST_PRESETS = {"test_a_single_call", "test_b_sequential_load", "test_c_timing_accuracy"}
 
 # ---------------------------------------------------------------------------
 # Default ADD document — Universal Valve Switch (Tasmota style, Chapter 6.3)
@@ -741,8 +994,9 @@ DEFAULT_ADD = {
 # Runtime state
 # ---------------------------------------------------------------------------
 active_add = copy.deepcopy(DEFAULT_ADD)
+active_preset = None
 valve_state = "OFF"
-log_entries = deque(maxlen=100)  # rotation log, last 100 entries
+log_entries = deque(maxlen=100)
 
 
 def add_log(action: str, detail: str = ""):
@@ -781,16 +1035,13 @@ def tasmota_cm():
         valve_state = "ON"
         add_log("GET /cm?cmnd=Power On", "Valve switched ON → {\"POWER\":\"ON\"}")
         return jsonify({"POWER": "ON"})
-
     elif cmnd_lower == "power off":
         valve_state = "OFF"
         add_log("GET /cm?cmnd=Power Off", "Valve switched OFF → {\"POWER\":\"OFF\"}")
         return jsonify({"POWER": "OFF"})
-
     elif cmnd_lower == "power":
         add_log("GET /cm?cmnd=Power", f"State read → {{\"POWER\":\"{valve_state}\"}}")
         return jsonify({"POWER": valve_state})
-
     else:
         add_log(f"GET /cm?cmnd={cmnd}", "Unknown command — ignored")
         return jsonify({"WARNING": f"Unknown command '{cmnd}' — ignored"}), 400
@@ -802,6 +1053,8 @@ def tasmota_cm():
 @app.route("/api/add/update", methods=["POST"])
 def update_add():
     global active_add
+    if active_preset in TEST_PRESETS:
+        return jsonify({"status": "error", "message": "Test presets are read-only and cannot be modified."}), 403
     try:
         data = request.get_json(force=True)
         active_add = data
@@ -816,20 +1069,25 @@ def update_add():
 # ---------------------------------------------------------------------------
 @app.route("/api/add/reset", methods=["POST"])
 def reset_add():
-    global active_add
+    global active_add, active_preset
+    if active_preset in TEST_PRESETS:
+        return jsonify({"status": "error", "message": "Test presets are read-only and cannot be reset."}), 403
     active_add = copy.deepcopy(DEFAULT_ADD)
+    active_preset = None
     add_log("Editor → ADD reset", "ADD document reset to default")
     return jsonify({"status": "ok"})
 
 
 @app.route("/api/add/preset/<name>", methods=["POST"])
 def load_preset(name):
-    global active_add
+    global active_add, active_preset
     if name not in PRESETS:
         return jsonify({"status": "error", "message": f"Unknown preset: {name}"}), 404
     active_add = copy.deepcopy(PRESETS[name])
-    add_log(f"Editor → Preset loaded", f"Preset '{name}' loaded")
-    return jsonify({"status": "ok"})
+    active_preset = name
+    readonly = name in TEST_PRESETS
+    add_log(f"Editor → Preset loaded", f"Preset '{name}' loaded {'(read-only)' if readonly else ''}")
+    return jsonify({"status": "ok", "readonly": readonly})
 
 
 # ---------------------------------------------------------------------------
