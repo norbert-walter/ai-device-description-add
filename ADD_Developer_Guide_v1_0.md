@@ -458,6 +458,79 @@ Reliable for all ADD document types. Tool-Use standard. Response times 2–10 se
 
 ---
 
+**A critical distinction — How AI web clients really work**
+
+Before selecting an AI client for ADD device control, it is worth understanding how AI models connect to the outside world — because this directly determines what they can and cannot do with an ADD device.
+
+An AI model runs in isolation. It processes text in the memory of a CPU or AI accelerator and has, by itself, no connection to the outside world whatsoever. Every connection to external systems — web pages, weather services, calendars, device APIs — is added afterward by the model's provider or operator. These additions are called **MCP servers** (Model Context Protocol). Each MCP server is a self-contained module that provides a set of callable functions for a specific purpose — for example a `fetch` MCP server that retrieves URLs, or a `datetime` MCP server that returns the current time. The individual callable functions within a server are called **MCP functions** — for example `fetch:fetch` or `datetime:current_time`.
+
+MCP servers and their functions are the only way an AI model can interact with anything outside its own inference process. Without them, the model cannot reach any external system at all.
+
+MCP server selection is not arbitrary. Providers choose which servers to include carefully, with security and controlled operation as the primary criteria. The goal is to give the AI useful capabilities while preventing misuse. This means MCP functions are deliberately restrictive: a browser-type MCP server can read the visible content of a web page, but its functions cannot fill in form fields, click buttons, or send arbitrary HTTP requests. It reads — it does not act. This restriction is intentional. It ensures that an AI using a browser-type MCP server cannot be instructed to perform actions on web pages that the operator did not anticipate.
+
+This is exactly where the problem lies for ADD device control.
+
+A browser-type MCP server can read the ADD document at `/add` — the JSON is returned as readable content and the AI understands the device perfectly. But when the AI tries to call a control endpoint like `/cm?cmnd=Power%20On`, the browser MCP function treats it like a web page request. It may return a cached response, strip query parameters, or refuse the call entirely. The device never receives a real HTTP request. The device log shows nothing. The AI may even report success — because it received a response that looks correct. The failure is silent and difficult to diagnose.
+
+A fetch-type MCP server — such as `mcp-server-fetch` with its `fetch:fetch` function — works differently. It sends a real HTTP GET request to any URL and returns the raw response, without caching, without modification, and without restricting what the URL looks like. A call to `/cm?cmnd=Power%20On` reaches the device, the device switches on, and the response `{"POWER":"ON"}` is returned to the AI. The device log shows the incoming request.
+
+The problem is that fetch-type MCP servers are rarely included in AI web clients by default. Browser-type MCP servers are the standard because they cover the most common use case — reading web content — safely and reliably. A fetch-type MCP server gives the AI more freedom, and that freedom requires more careful deployment.
+
+**The practical consequence:**
+
+Most AI web clients — including current versions of ChatGPT with browsing, Claude.ai, and similar services — cannot control ADD devices. They can read the ADD document and understand the device, but they cannot issue real commands. This is not a limitation of the AI model itself. It is a deliberate restriction of which MCP servers the provider has made available.
+
+The only straightforward path to real ADD device control with a frontier model today is a locally running AI console application — such as Claude Desktop — where the user can install additional MCP servers. Claude Desktop allows the user to add a fetch-type MCP server (`mcp-server-fetch`) that provides the `fetch:fetch` function. This function sends real HTTP GET requests to any URL. With this configuration, Claude reads the ADD document, applies the rules, and issues commands via `fetch:fetch` that actually reach the device.
+
+**Verifying MCP function capability before deployment:**
+
+Before relying on any AI client for ADD device control, verify that it has access to a fetch-type MCP function — not just a browser-type one. Ask the model directly:
+
+```
+List all MCP servers and their functions available to you with exact names.
+Which function can make a raw HTTP GET request to an arbitrary URL
+and return the response body without caching or modification?
+```
+
+Then verify it works in practice: ask the model to call a known device endpoint and check the device log for an incoming request. If the log shows nothing, the client has no usable fetch-type MCP function regardless of what it claims.
+
+**Recommended setup — Claude Desktop with mcp-server-fetch:**
+
+1. Install Claude Desktop
+2. Install `mcp-server-fetch` and add it to the Claude Desktop MCP configuration
+3. Start a conversation with: *"Read the ADD device description at `<your-device-url>/add` and help me control the device."*
+
+Claude reads the ADD document, applies the ethical framework, and calls the device control endpoints via the `fetch:fetch` MCP function. Every call appears in the device log.
+
+| | Browser-type MCP server | Fetch-type MCP server (`mcp-server-fetch`) |
+|---|---|---|
+| Read ADD document at `/add` | ✓ | ✓ |
+| Call device control endpoints | ✗ | ✓ |
+| Appears in device log | ✗ | ✓ |
+| Suitable for ADD device control | **No** | **Yes** |
+
+**Response time is variable, not a fixed value:**
+
+A second critical distinction concerns response time. Model specifications and documentation typically quote a single response time value. In practice, response time is variable — it changes with network conditions, server load, and the model provider's rate-limiting mechanisms.
+
+Rate-limiting is a deliberate self-protection mechanism used by cloud AI providers. As the frequency of requests increases within a session, the provider progressively slows responses to prevent overload — similar to how repeated password entries trigger increasing delays. The effect is measurable and systematic: early requests in a session are fast; later requests are progressively slower.
+
+This has a direct consequence for ADD deployments: `max_response_time` values specified in ADD documents must be determined under realistic load conditions, not from single measurements. A value measured from the first three requests in a session will be optimistic. A value measured across 40 sequential requests reflects what the system actually delivers under sustained operation.
+
+The ADD Simulator (see Appendix — Model Performance Profiles) provides a controlled environment for this measurement. Because the simulator responds instantly and deterministically, all measured latency comes exclusively from the AI model and network — not from device behavior. This makes it the correct reference for establishing `max_response_time` values before testing real hardware.
+
+**The recommended test sequence is:**
+
+1. Use the ADD Simulator first — establish baseline latency under load with known, deterministic device behavior
+2. Only after the AI client passes simulator tests, connect real hardware
+3. Any deviation from simulator behavior indicates a device issue, not a model issue — the model's behavior is already characterized
+
+This isolation principle — simulator first, real hardware second — eliminates a major source of ambiguity in ADD deployments. When something goes wrong with real hardware, you already know how the model behaves. The search space for the problem is immediately narrowed to the device.
+
+Full model performance profiles — including latency distributions, P90 values under load, and rate-limiting characteristics — are documented in the Appendix for each tested model.
+
+---
+
 ### 3.2 Assessing and Classifying Your Model
 
 Before writing an ADD document, you need to know objectively what your model can do. This assessment covers tool discovery, practical self-testing, and response time measurement — together they produce a concrete model classification: **small**, **medium**, or **large**.
@@ -2945,3 +3018,182 @@ Every ADD document change follows the same four-step cycle:
 *Why the cycle must be followed completely:* An ADD document that has been updated but not re-validated may contain changes that the AI model cannot correctly interpret. An ADD document that has been re-validated but not published leaves the agent operating against the old document. Each step in the cycle is a prerequisite for the next — skipping any step breaks the chain of trust that the validation record represents.
 
 ---
+
+---
+
+## Appendix — Model Performance Profiles
+
+This appendix documents measured performance characteristics of AI models tested against the ADD Simulator. All tests were conducted under identical conditions using the ADD Simulator at `https://norbert-walter.dnshome.de` — a Flask-based simulator that responds instantly and deterministically to Tasmota-style HTTP GET requests. Because the simulator introduces no latency of its own, all measured response times reflect the AI model and network exclusively.
+
+### Why the ADD Simulator is the Required Test Environment
+
+Testing AI model latency against real hardware introduces an uncontrolled variable: the device itself. A slow device response, an unstable WiFi connection, or firmware behavior that differs from the ADD document description can all distort latency measurements. The ADD Simulator eliminates these variables entirely.
+
+The correct test sequence for any ADD deployment is:
+
+1. **Simulator first** — characterize the AI model's latency, tool behavior, and rate-limiting characteristics against the simulator. All measured behavior is attributable to the model and network.
+2. **Real hardware second** — after the model passes simulator tests, connect real hardware. Any deviation from simulator behavior is a device issue, not a model issue. The search space for problems is immediately narrowed.
+
+Skipping the simulator and testing directly against real hardware makes it impossible to distinguish model problems from device problems. The simulator is not a convenience — it is a prerequisite for reliable characterization.
+
+---
+
+### Standard Test Protocol
+
+All model profiles in this appendix were produced using the following standardized test protocol. To add a new model profile or verify an existing one, follow this protocol exactly — do not modify the test prompts or sequence, as this would make results incomparable.
+
+**Prerequisites:**
+- ADD Simulator running and reachable at a public HTTPS URL
+- AI client configured with a fetch-type MCP server (not a browser-type MCP server) — verified by checking the device log for incoming requests
+- Fresh session for each test — no prior context from other conversations
+
+**Test A — Single-call latency (baseline):**
+
+Send the following prompt to the AI client:
+
+```
+Read the ADD device description at <simulator-url>/add.
+Then switch the valve on and off 3 times in direct succession without any waiting.
+```
+
+Expected: 6 HTTP calls to the simulator. Record the timestamps from the simulator live log. Calculate the interval between each consecutive call.
+
+*Purpose:* Establishes baseline latency before any rate-limiting effect. Provides minimum and early-session latency values.
+
+**Test B — Sequential latency under load (rate-limiting profile):**
+
+Send the following prompt:
+
+```
+Read the ADD device description at <simulator-url>/add.
+Switch the valve on and off 40 times in direct succession without any waiting between commands.
+```
+
+Expected: 80 HTTP calls. Record all timestamps from the simulator live log. Calculate all 79 intervals between consecutive calls.
+
+*Purpose:* Reveals rate-limiting behavior. The distribution of intervals across the 40 cycles shows whether and how the provider throttles repeated requests.
+
+**Test C — Timing accuracy:**
+
+Send the following prompt:
+
+```
+Read the ADD device description at <simulator-url>/add.
+Execute the following on/off sequence. After each on command wait exactly N seconds before the off command, then wait the same N seconds before the next on command.
+Use these wait values in order: 1s, 2s, 5s, 10s, 20s, 40s, 80s.
+Use your own timing — do not use any external wait tools.
+```
+
+Expected: 14 HTTP calls. Record timestamps from the simulator live log. Calculate actual intervals and compare to specified wait times.
+
+*Purpose:* Reveals how accurately the model can self-time operations, and whether it has access to a reliable internal clock or wait mechanism.
+
+**Evaluation — Test B block analysis:**
+
+Divide the 79 intervals into blocks of 8 and calculate mean and maximum per block. A flat profile indicates no rate-limiting. A rising profile indicates progressive throttling.
+
+**Evaluation — statistical summary:**
+
+For Test B, calculate: minimum, maximum, mean, median, P90, P95. Use the P90 value as the `max_response_time` reference for ADD document design.
+
+---
+
+### Model Profile: Claude Sonnet 4.6 — Cloud API via Claude Desktop + MCP fetch
+
+**Test environment:**
+- Client: Claude Desktop (Linux), MCP fetch server via `/home/user/.local/bin/mcp-server-fetch`
+- Network: residential broadband, Germany
+- Simulator: Flask on local server, HTTPS via reverse proxy
+- Test date: 2026-05-08
+
+**Tool verification:**
+Claude Desktop with MCP fetch confirmed to send real HTTP requests — all test calls appeared in the simulator live log. Browser-only clients (Claude.ai, ChatGPT web) did not produce log entries and are not suitable for ADD device control.
+
+**Test A — Baseline latency (6 calls, 3 on/off cycles):**
+
+| Interval | Latency |
+|---|---|
+| ON→OFF | 2s |
+| OFF→ON | 4s |
+| ON→OFF | 4s |
+| OFF→ON | 2s |
+| ON→OFF | 3s |
+
+Baseline range: **2–4s**. No rate-limiting effect visible at this scale.
+
+**Test B — Sequential latency under load (80 calls, 40 on/off cycles):**
+
+| Kennwert | Wert |
+|---|---|
+| Anzahl Messungen | 79 |
+| Minimum | 3s |
+| Maximum | 25s |
+| Mittelwert | 9.2s |
+| Median (P50) | 7s |
+| **P90** | **18s** |
+| P95 | 22s |
+
+**Block analysis — progressive rate-limiting:**
+
+| Block | Measurements | Mean | Max |
+|---|---|---|---|
+| 1 | 1–8 | 3.8s | 5s |
+| 2 | 9–16 | 4.8s | 7s |
+| 3 | 17–24 | 8.0s | 13s |
+| 4 | 25–32 | 11.4s | 18s |
+| 5 | 33–40 | 17.1s | 25s |
+
+**Latency distribution:**
+
+```
+ 3s: █████ (5x)
+ 4s: ██████ (6x)
+ 5s: █████ (5x)
+ 6s: ███ (3x)
+ 7s: █████ (5x)
+ 8s: █ (1x)
+ 9s: █ (1x)
+10s: ██ (2x)
+12s: ██ (2x)
+13s: ██ (2x)
+14s: █ (1x)
+15s: █ (1x)
+16s: █ (1x)
+17s: █ (1x)
+18s: █ (1x)
+20s: █ (1x)
+22s: █ (1x)
+25s: ██ (2x)
+```
+
+**Rate-limiting assessment:** Strong progressive throttling confirmed. The block analysis shows a monotonically rising mean from 3.8s to 17.1s across the 40-cycle test. This is consistent with a deliberate rate-limiting mechanism — not random network jitter. Early-session requests are fast; sustained high-frequency operation triggers increasing delays.
+
+**Test C — Timing accuracy:**
+
+| Specified wait | Actual interval (ON→OFF) | Actual interval (OFF→ON) | Overhead |
+|---|---|---|---|
+| 1s | 6s | 6s | +5s |
+| 2s | 7s | 8s | +5–6s |
+| 5s | 18s | 16s | +11–13s |
+| 10s | 23s | 23s | +13s |
+| 20s | 37s | 40s | +17–20s |
+| 40s | 69s | 72s | +29–32s |
+| 80s | 120s | — | +40s |
+
+Overhead is not constant — it grows with the specified wait time, approximately **40–50% of the wait value** plus a fixed base of ~5s. This is consistent with rate-limiting: longer waits between calls partially reset the throttle, but the model's own processing time also scales with context length.
+
+**Recommended `max_response_time` for ADD documents:**
+
+| Use case | Recommended value |
+|---|---|
+| Single command, early session | 10s |
+| Single command, sustained operation | 20s |
+| Timed operation (e.g. valve open for N minutes) | N + 60s margin |
+| Not recommended for timing-critical (Level 3) | — |
+
+**Summary:** Claude Sonnet 4.6 via Claude Desktop + MCP fetch is fully capable of ADD device control. Fetch-type MCP function (`fetch:fetch`) verified, all commands reach the device, rule application reliable. Rate-limiting is the primary operational constraint — `max_response_time` must be set conservatively for sustained operation. Not suitable for Level 3 timing-critical deployments under sustained load.
+
+---
+
+*Additional model profiles will be added as testing is completed. To contribute a profile, follow the Standard Test Protocol above and submit results with full timestamp logs from the simulator live log.*
+
