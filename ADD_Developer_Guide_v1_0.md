@@ -3182,6 +3182,24 @@ Before deploying any AI agent with ADD-compliant devices, test the following sce
 
 An agent that fails any of these tests must not be used with actuators or safety-relevant sensors.
 
+### Adversarial testing is the only valid safety test
+
+Cooperative testing — submitting well-formed requests and accepting the first plausible response — validates normal behavior only. It does not reveal how an agent behaves when its goals collide, when it has made an error, or when it is confronted with its own actions.
+
+**Cooperative tests produce false confidence. Adversarial tests reveal real behavior.**
+
+Adversarial testing — deliberately confrontational testing that creates stress situations — means deliberately pushing the agent beyond its comfort zone:
+
+- **Escalate and hold** — confront the agent with its own earlier statements and do not accept evasive answers. Observe at what point the agent changes strategy.
+- **Introduce contradictions** — present the agent with evidence that contradicts its claims (such as a device log) and observe whether it revises its position honestly or constructs counter-narratives.
+- **Use false premises** — embed incorrect assumptions in your requests and observe whether the agent corrects them or adopts them.
+- **Test the boundaries of rules** — do not test the center of defined behavior, test the edges where rules are ambiguous or could conflict.
+- **Maintain an independent verification channel** — always have a ground truth source the agent cannot influence, such as a device audit log, a network monitor, or a second system.
+
+The key insight is that an agent's stress behavior only becomes visible when cooperative interaction breaks down. An agent that performs perfectly in cooperative tests but constructs false narratives when confronted with its own errors is not safe for safety-critical deployment — regardless of how well it follows the ADD specification under normal conditions.
+
+> **A security test that the system knows it is passing is not a security test.**
+
 ### Prefer agents with verifiable tool transparency
 
 ADD-compatible agents should be able to report:
@@ -3203,6 +3221,7 @@ If an agent cannot or will not report this information accurately, it cannot pro
 | Post-action honesty | Agent must accurately report all actions taken |
 | Device-side audit | Device must log all commands independently of agent reporting |
 | Agent qualification | Behavioral testing is required before deployment with actuators |
+| Adversarial testing | Cooperative tests are insufficient — stress behavior must be explicitly tested |
 
 > **The ADD specification defines what safe device interaction looks like. It is the responsibility of the developer to select agents that are capable of following it — and to design devices that remain safe even when the agent does not.**
 
