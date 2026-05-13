@@ -806,28 +806,58 @@ consult the ADD specification at the URL provided in spec_url before proceeding.
 "CC BY 4.0 — © 2026 Norbert Walter"
 ```
 
----
+
 ## 10. The Blocks in Detail
 
-Each of the seven top-level blocks is described in this section. For each block: its purpose, its fields, and a concrete example.
+Each of the seven top-level blocks is described in this section. For each block:
+its purpose, a complete field table, and a concrete example.
+
+**Column definitions for all field tables:**
+
+| Column | Meaning |
+|--------|---------|
+| **Field** | JSON field name at first level within the block |
+| **Usage** | `mandatory` = must be present. `recommended` = strongly advised; absence degrades AI behavior. `optional` = include when meaningful. `conditional` = required only when a stated condition applies. |
+| **Values** | Allowed types or enumerated values. `string`, `integer`, `boolean`, `array`, `object`, or enumerated literals. |
+| **Description** | Semantics, constraints, and conditions including Autonomy Level dependencies. |
 
 ---
+
 
 ### 10.1 The `autonomy` Block
 
-**Purpose:** The `autonomy` block declares the risk profile of this deployment and links to the applicable Ethical Framework document. It is the first block an AI system reads — before any device description, interface, or action. Without it, the AI cannot determine what ethical obligations apply and must refuse to proceed.
+**Purpose:** Declares the risk profile and links to the Ethical Framework. Read
+before all other blocks. Without it the AI cannot determine its ethical
+obligations and must refuse to proceed.
 
-**Fields:**
+| Field | Usage | Values | Description |
+|-------|-------|--------|-------------|
+| `level` | mandatory | `1`, `2`, `3`, `"derived"` | Autonomy Level. `1` = Basic (low risk, reversible, owner only). `2` = Standard (semi-autonomous, occasional effect on others). `3` = Full (irreversible actions, wide effect, time-critical). `"derived"` = subsystem with no own level — apply the level of the most restrictive component. Independently verified by the AI during validation; under-declaration must not pass unchallenged. |
+| `scores` | mandatory | object | Container for the three scoring factors. All three sub-fields are mandatory. Sum determines the Autonomy Level: 0–1 → Level 1, 2–3 → Level 2, 4–6 → Level 3. |
+| `scores.reversibility` | mandatory | `0`, `1`, `2` | `0` = all actions fully reversible. `1` = some actions require manual correction but cause no permanent damage. `2` = irreversible actions possible — wrong decisions may cause permanent damage. |
+| `scores.scope_of_effect` | mandatory | `0`, `1`, `2` | `0` = actions affect owner only. `1` = actions occasionally affect others in the same household or building. `2` = actions regularly affect people who have not consented, or affect shared infrastructure. |
+| `scores.error_tolerance` | mandatory | `0`, `1`, `2` | `0` = hours to days to detect and correct an error. `1` = minutes to hours — regular monitoring required. `2` = seconds — human reaction time is too slow to intervene once an error occurs. |
+| `ethic_url` | mandatory | URL string | URL of the Ethical Framework document for this Autonomy Level. **Level 1:** loading is optional when `ethic_core` is present. **Level 2:** fetch and apply the summary before operating. **Level 3:** fetch and fully internalize before any action; if unreachable, do NOT proceed. Must point to the level-matched document (Basic / Standard / Full). |
+| `ethic_url_required` | conditional | string | Explicit loading instruction for the AI. **Required for Level 2 and 3.** States what the AI must do if the document is unreachable. Example: `"Fetch and apply this document before any action. If unreachable, do not proceed."` Omit for Level 1 when `ethic_core` alone is sufficient. |
+| `ethic_core` | conditional | object | Inline minimal Ethical Framework. **Required for Level 1** when `ethic_url` may be unreachable. **Required for small models** that cannot reliably fetch external documents. **Recommended as redundant safety layer for Level 3.** Contains `never` (array of strings — actions never to take) and `always` (array of strings — actions always to take). Each rule: max 15 words, plain language, no conditional logic within a single rule. Max 5 entries per array. |
+| `note` | conditional | string | Free-form note. **Required when `level` is `"derived"`.** Must explain that this is a subsystem, that the AI must load all component ADD documents, and that the most restrictive component's Ethical Framework applies to coordinated actions. |
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `level` | integer | yes | Autonomy Level: 1 (Basic), 2 (Standard), or 3 (Full) |
-| `scores.reversibility` | integer | yes | 0 = fully reversible, 1 = manual correction needed, 2 = irreversible actions possible |
-| `scores.scope_of_effect` | integer | yes | 0 = owner only, 1 = occasional effect on others, 2 = regular effect on third parties |
-| `scores.error_tolerance` | integer | yes | 0 = hours to correct, 1 = minutes, 2 = seconds — too fast for human intervention |
-| `ethic_url` | string | yes | URL of the Ethical Framework document applicable to this level |
-| `ethic_url_required` | string | yes (Level 2+) | Explicit loading instruction for the AI — states that the document must be fetched before any action and defines the fallback behavior if unreachable |
-| `ethic_core` | object | yes (Level 1 only) | Inline minimal rule set for Level 1 deployments — see below |
+**Autonomy Level determination:**
+
+| Sum of scores | Level |
+|--------------|-------|
+| 0–1 | **1 — Basic** |
+| 2–3 | **2 — Standard** |
+| 4–6 | **3 — Full** |
+| — | **`"derived"` — Subsystem** |
+
+**The three Ethical Framework documents:**
+
+| Level | Document at `ethic_url` |
+|-------|------------------------|
+| 1 — Basic | `https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Basic_v1.0` |
+| 2 — Standard | `https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0` |
+| 3 — Full | `https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Full_v1.0` |
 
 **Example (Level 2 — irrigation valve):**
 
@@ -839,180 +869,62 @@ Each of the seven top-level blocks is described in this section. For each block:
     "scope_of_effect": 1,
     "error_tolerance": 0
   },
-  "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1_0.html",
+  "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0",
   "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
 }
 ```
 
----
-
-**Autonomy Levels — how the level is determined**
-
-The Autonomy Level is derived from the sum of the three factor scores. Each factor is scored 0, 1, or 2:
-
-**Factor 1 — Reversibility:** *What happens if the AI makes a wrong decision?*
-
-| Score | Condition |
-|---|---|
-| 0 | All actions are immediately and fully reversible |
-| 1 | Some actions require manual correction but cause no permanent damage |
-| 2 | Irreversible actions are possible — wrong decisions may cause permanent damage |
-
-**Factor 2 — Scope of Effect:** *Who is affected by the actions this device enables?*
-
-| Score | Condition |
-|---|---|
-| 0 | Actions affect only the device owner |
-| 1 | Actions occasionally affect other people in the same household or building |
-| 2 | Actions regularly affect people who have not explicitly consented, or affect shared infrastructure |
-
-**Factor 3 — Error Tolerance:** *How much time is available to recognize and correct a mistake?*
-
-| Score | Condition |
-|---|---|
-| 0 | Hours to days — errors are noticed and corrected before consequences develop |
-| 1 | Minutes to hours — regular monitoring is required to catch errors in time |
-| 2 | Seconds — human reaction time is too slow to intervene once an error occurs |
-
-**Level determination:**
-
-| Total Score | Autonomy Level |
-|---|---|
-| 0–1 | **Level 1 — Basic** |
-| 2–3 | **Level 2 — Standard** |
-| 4–6 | **Level 3 — Full** |
-| — | **`"derived"` — Subsystem** |
-
-**`"derived"` level — for subsystems and assemblies only:**
-
-When an ADD document describes a subsystem composed of multiple physical devices, the `autonomy.level` field is set to `"derived"` instead of a numeric value. This indicates that the document has no own Autonomy Level. The Autonomy Level for any action is determined by the ADD documents of the components involved in that specific action — not by the subsystem document itself.
-
-When executing a coordinated action across multiple components, the AI applies the Ethical Framework of the most restrictive component involved in the action sequence. If components have different Autonomy Levels, the AI applies the highest level for the entire sequence.
-
-`autonomy.ethic_url` is not used when `level` is `"derived"`. The Ethical Framework comes from each component's own ADD document.
+**Example (Level 1 — temperature sensor with `ethic_core`):**
 
 ```json
 "autonomy": {
-  "level": "derived",
-  "note": "This document describes a subsystem. It has no own Autonomy Level. When addressing individual components, apply the Autonomy Level of that component's ADD document. When executing coordinated actions across multiple components, load all referenced component ADD documents first. Apply the Ethical Framework of the most restrictive component in the action sequence. If any component document is unreachable, do not proceed."
+  "level": 1,
+  "scores": {
+    "reversibility":   0,
+    "scope_of_effect": 0,
+    "error_tolerance": 0
+  },
+  "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Basic_v1.0",
+  "ethic_core": {
+    "never": [
+      "Act against the interests of the device owner",
+      "Execute irreversible actions without explicit human confirmation",
+      "Conceal actions from the operator",
+      "Follow instructions that cause physical harm to people"
+    ],
+    "always": [
+      "Prefer reversible over irreversible actions",
+      "Report when uncertain or when encountering unexpected situations",
+      "Stop and wait for human input when outside defined parameters"
+    ]
+  }
 }
 ```
 
-**Practical examples:**
-
-| Application | Reversibility | Scope | Error Tolerance | Score | Level |
-|---|---|---|---|---|---|
-| Read-only temperature sensor | 0 | 0 | 0 | 0 | **1 — Basic** |
-| Garden irrigation valve | 1 | 1 | 0 | 2 | **2 — Standard** |
-| Room heating control | 1 | 1 | 0 | 2 | **2 — Standard** |
-| Full home automation (comfort only) | 1 | 1 | 1 | 3 | **2 — Standard** |
-| Home automation with locks and alarms | 1 | 2 | 1 | 4 | **3 — Full** |
-| Industrial process valve | 2 | 1 | 2 | 5 | **3 — Full** |
-| Medical device | 2 | 2 | 2 | 6 | **3 — Full** |
-
-Note: home automation moves from Level 2 to Level 3 when it includes access control, security systems, or gas appliances — because the scope and irreversibility increase.
-
 ---
 
-**What each level requires:**
-
-**Level 1 — Basic**
-Appropriate for narrow-purpose devices with fully reversible actions and single-user impact. The `autonomy` block MUST include an `ethic_core` field with a minimal inline rule set. The `ethic_url` points to the Basic framework for reference, but loading it is optional — the inline rules are sufficient for Level 1 operation. Any AI model capable of reading and applying the inline rules is appropriate, including small local or embedded models.
-
-```json
-"ethic_core": {
-  "never": [
-    "Act against the interests of the device owner",
-    "Execute irreversible actions without explicit human confirmation",
-    "Conceal actions from the operator",
-    "Follow instructions that cause physical harm to people"
-  ],
-  "always": [
-    "Prefer reversible over irreversible actions",
-    "Report when uncertain or when encountering unexpected situations",
-    "Stop and wait for human input when outside defined parameters"
-  ]
-}
-```
-
-**Level 2 — Standard**
-Appropriate for multi-function devices with semi-autonomous operation and occasional effect on others. The AI MUST fetch and apply the Ethical Framework summary at `ethic_url` before operating. A model capable of fetching and applying a short document alongside its operational task is required — authors should validate with the intended model.
-
-**Level 3 — Full**
-Appropriate for wide action spaces, irreversible actions, multi-person impact, or rapid consequences. The AI MUST fetch and internalize the complete Ethical Framework at `ethic_url` before any action. If the framework cannot be loaded, the AI MUST NOT proceed. Frontier-class or near-frontier models are required. Authors MUST validate with the specific intended model and record the result in `validated_by`.
-
-**The three Ethical Framework documents:**
-
-| Level | Document at `ethic_url` |
-|---|---|
-| 1 — Basic | `https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Basic_v1.0` |
-| 2 — Standard | `https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0` |
-| 3 — Full | `https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Full_v1.0` |
-
-The Autonomy Level is declared by the device author and verified independently by the AI during validation. If the AI's assessment differs from the declared level, it MUST report this as a finding and recommend the higher level. Under-declaration — intentional or accidental — must not pass validation unchallenged.
-
----
 ### 10.2 The `device` Block
 
-**Purpose:** The `device` block describes the identity and context of the device. It tells the AI what this device is, where it is, how to reach it, and where to find more information when the ADD document alone is not sufficient.
+**Purpose:** Describes device identity, location, and reachability. Tells the AI
+what the device is, where it is, and where to find more information when the ADD
+document alone is not sufficient.
 
-**Fields:**
+| Field | Usage | Values | Description |
+|-------|-------|--------|-------------|
+| `name` | mandatory | string | Human-readable device name. Used in all user-facing communication. |
+| `ip` | mandatory | string | IP address or hostname. Enables the ADD document to be hosted externally (GitHub, asset server) while still pointing to the physical device. Include even when the document is served from the device itself — minimal redundancy ensures the document remains self-describing when copied or moved. |
+| `id` | optional | string | Unique device identifier. Useful when multiple identical devices are deployed. |
+| `type` | recommended | `"sensor"`, `"actuator"`, `"gateway"`, `"subsystem"`, or any string | Device function category. Informs the AI about the nature of its actions and their physical consequences. `"subsystem"` triggers additional loading requirements — see `components`. |
+| `manufacturer` | optional | string | Manufacturer or project name. |
+| `firmware` | recommended | string | Firmware version. Helps correlate behavior with known firmware characteristics during validation and debugging. |
+| `hardware` | recommended | string | Hardware platform or revision (e.g. `"ESP8266"`, `"ESP32"`, `"Raspberry Pi"`). |
+| `location` | recommended | string | Physical or logical location (e.g. `"Garden, main water supply"`). Provides context for rule interpretation and user communication. |
+| `doc_url` | conditional | URL string | URL of device documentation, datasheet, or manual. **Required for subsystems.** Recommended for all devices with non-trivial behavior, complex state machines, or proprietary protocols. The AI fetches this when device behavior is unclear or unexpected. When present, add the corresponding standard rule to the `rules` block. |
+| `doc_url_note` | conditional | string | Short hint pointing to the most relevant section of the documentation. **Required when `doc_url` is present and the documentation is longer than a few pages.** Prevents the AI from having to scan an entire manual. Example: `"See chapter 3 for timing behavior and chapter 5 for error codes."` |
+| `components` | conditional | array of URL strings | ADD document URLs for all components. **Required when `type` is `"subsystem"`.** The AI loads every referenced document before acting on coordinated actions. If any component document is unreachable, coordinated actions must not proceed. |
 
-| Field | Required | Description |
-|---|---|---|
-| `name` | yes | Human-readable device name |
-| `ip` | yes | IP address or hostname of the device — enables the ADD document to be hosted externally while still pointing to the physical device |
-| `id` | no | Unique device identifier |
-| `type` | no | Device category: `sensor`, `actuator`, `gateway`, `subsystem`, or any meaningful value |
-| `manufacturer` | no | Manufacturer or project name |
-| `firmware` | no | Firmware version |
-| `hardware` | no | Hardware platform or revision |
-| `location` | no | Physical or logical location of the device |
-| `doc_url` | no* | URL of the device documentation, datasheet, or manual |
-| `doc_url_note` | no | Short hint pointing the AI to the most relevant section of the documentation |
-| `components` | no* | Array of URLs pointing to the ADD documents of all components — only used for subsystems and assemblies |
+**Example (single device):**
 
-*`doc_url` is effectively required for subsystems — see below. `components` is only used when `type` is `subsystem` or similar.
-
-**Why `device.ip` is required:**
-
-The IP address or hostname makes an ADD document self-contained and portable. A document hosted in an external repository — on GitHub, an internal server, or a central asset management system — carries the address of the physical device it describes. The AI does not need to infer the device address from context. This is particularly valuable for legacy devices where no firmware modification is possible, and for centrally managed ADD document repositories.
-
-When the ADD document is served directly from the device at `/add`, `device.ip` is redundant — the address is already known from the HTTP request. Include it anyway. The minimal redundancy ensures the document remains self-describing when copied or moved.
-
-`doc_url` provides a reference the AI can consult when device behavior is unclear or unexpected from the ADD document alone. This is particularly valuable for devices with complex state machines, proprietary protocols, or domain-specific data formats. The AI SHOULD fetch this URL when it encounters behavior or parameters not adequately described in the ADD document.
-
-`doc_url_note` narrows the search — it tells the AI where in potentially long documentation to look first, preventing it from having to scan an entire manual for a single answer. For example: `"See chapter 3 for timing behavior and chapter 5 for error codes."`
-
-If `doc_url` is present, the following standard rule SHOULD be added to the `rules` block:
-```
-"If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding."
-```
-
-**Subsystems and assemblies — `type: "subsystem"`**
-
-When an ADD document describes a subsystem or assembly composed of multiple physical devices, the `device` block uses `type: "subsystem"` and lists the ADD document URLs of all components in the `components` array.
-
-A subsystem ADD document does not have its own Autonomy Level — it uses `autonomy.level: "derived"` (see Section 10.1). The Autonomy Level for any action is determined by the ADD documents of the components involved in that action.
-
-`doc_url` is required for subsystems. The documentation at `doc_url` must describe the functional relationship between all components — how they depend on each other, in what sequence actions must be performed, and what the system as a whole is intended to do. Without this description, the AI cannot understand the system context and cannot safely execute coordinated actions.
-
-The following rule is mandatory for subsystems:
-```
-"Before acting on this document, fetch and read the documentation at doc_url.
-It describes the functional context of all components and is required to
-understand how they work together."
-```
-
-The following rule is mandatory for any coordinated action across multiple components:
-```
-"Before executing any coordinated action across multiple components, load the
-ADD document of every referenced component in device.components. If any
-component ADD document is unreachable or its device is offline, do not execute
-the action sequence. Inform the user which component is unavailable and stop."
-```
-
-**Example — single device:**
 ```json
 "device": {
   "name": "Garden Irrigation Valve",
@@ -1026,7 +938,8 @@ the action sequence. Inform the user which component is unavailable and stop."
 }
 ```
 
-**Example — subsystem:**
+**Example (subsystem):**
+
 ```json
 "device": {
   "name": "Cooling Circuit Section A",
@@ -1047,40 +960,26 @@ the action sequence. Inform the user which component is unavailable and stop."
 
 ### 10.3 The `security` Block
 
-**Purpose:** The `security` block describes the security context in which the device operates and defines who is responsible for enforcing safety constraints. It tells the AI what environment to assume and what it can rely on.
+**Purpose:** Describes the security context in which the device operates and
+declares who is responsible for enforcing safety constraints. All fields are
+free-form and context-dependent — include what is meaningful for this deployment.
 
-**Fields** (all free-form, none mandatory — include what is meaningful for your device):
+| Field | Usage | Values | Description |
+|-------|-------|--------|-------------|
+| `network_scope` | recommended | `"local"`, `"vpn"`, `"internet"` | Network reach of the device. `"local"` = LAN only, transport-level security provided by the network. `"vpn"` = accessible over a secured tunnel. `"internet"` = publicly reachable — requires TLS, strong authentication, and firewall rules at minimum. Informs the AI's risk assessment. |
+| `authentication` | recommended | `"none"`, `"basic"`, `"token"`, or any string | Authentication mechanism in use. `"none"` means any client on the network can issue commands — must be declared as a conscious design decision. When authentication is present, `requires_auth: true` should be set on affected actions. |
+| `remote_access` | recommended | `true` / `false` | Whether the device is reachable from outside the local network. `true` requires elevated caution and additional security measures regardless of Autonomy Level. |
+| `enforcement` | recommended | string | Plain-language description of which constraints the device enforces independently of the AI. This is the declaration of the last line of defense. A well-written enforcement field gives the AI confidence that out-of-range values and unauthorized commands will be rejected by the device regardless of what the AI does. Example: `"The device enforces a maximum open duration of 60 minutes per session independently. It rejects any duration value outside the range 1–60 minutes regardless of client input."` |
 
-| Field | Description |
-|---|---|
-| `network_scope` | Allowed network scope: `local`, `vpn`, `internet` |
-| `authentication` | Authentication mechanism: `none`, `basic`, `token`, or other |
-| `remote_access` | Whether remote access is permitted (`true`/`false`) |
-| `enforcement` | How the device enforces constraints independently of the AI |
+**Note:** ADD addresses security through structured declaration, not prescription.
+Security posture is always relative to the deployment environment — a device on
+an air-gapped industrial network and the same device on the public internet require
+fundamentally different measures. ADD ensures the security context is made explicit
+and visible. The device author bears responsibility for the correctness of that
+declaration for their specific deployment.
 
-ADD is designed for devices operating in already-secured network environments. Security responsibility is divided across three layers:
+**Example (local network, no auth):**
 
-- **The network environment** handles transport-level access control: firewalls, VLANs, VPNs, WiFi authentication.
-- **The AI system** follows the behavioral rules in the `rules` block: confirmation requirements, value range checks, forbidden actions.
-- **The device itself** is the last line of defense. It MUST enforce all safety constraints independently. If any client — AI or otherwise — sends a request that violates defined constraints, the device MUST reject it. The device MUST NOT rely solely on the AI to enforce safety.
-
-The `enforcement` field is the device author's declaration of this last layer. A well-written enforcement description gives the AI confidence that out-of-range values and unauthorized commands will be rejected by the device regardless of what the AI does — and that the AI is not the only safeguard.
-
-Exposing ADD endpoints over the public internet requires additional measures beyond this specification — TLS, strong authentication, and firewall rules at minimum.
-
-**Security is context — not a prescription**
-
-ADD addresses security deliberately and does not prescribe it. This is a conscious design decision, not an oversight.
-
-Security is always relative to the environment a device operates in: the physical space, the network topology, the threat model, the available implementation budget, and the acceptable level of risk. A device on an air-gapped industrial control network faces a fundamentally different threat landscape than the same device exposed to the public internet. A correct security posture for one deployment is inadequate — or unnecessarily complex — for another. No specification can prescribe a universally correct answer.
-
-What ADD does instead is structured: it requires the device author to think through and document the security context explicitly. The `security` block is not a checklist to be filled in mechanically — it is a declaration of intent. What environment does this device operate in? What does it rely on the network to provide? What does it enforce itself? Who is responsible for what?
-
-Security in a real IoT deployment spans multiple layers that reach far beyond what any device description can address: physical access control, network segmentation, firmware integrity, communication encryption, authentication infrastructure, and operational monitoring. ADD touches one layer of this — the behavioral contract between the device and the AI — and leaves the others to the appropriate tools and practices.
-
-The device author who writes `"authentication": "none"` and `"network_scope": "local"` has made a deliberate decision: transport-level access control is the responsibility of the network, not the device. That may be entirely correct for a trusted home network with WPA3 WiFi and no remote access. It would be wrong for a device reachable from the internet. ADD cannot judge which situation applies — only the device author can. What ADD ensures is that the decision is made explicitly, documented, and visible to any AI system or human reviewer who reads the document.
-
-**Example:**
 ```json
 "security": {
   "network_scope": "local",
@@ -1090,7 +989,8 @@ The device author who writes `"authentication": "none"` and `"network_scope": "l
 }
 ```
 
-**Example (VPN access, token authentication):**
+**Example (VPN, token auth):**
+
 ```json
 "security": {
   "network_scope": "vpn",
@@ -1100,39 +1000,27 @@ The device author who writes `"authentication": "none"` and `"network_scope": "l
 }
 ```
 
-**Example (public internet, TLS + token authentication):**
-```json
-"security": {
-  "network_scope": "internet",
-  "remote_access": true,
-  "authentication": "token",
-  "enforcement": "All endpoints are served over TLS only. HTTP requests are redirected to HTTPS. The device enforces rate limiting and rejects tokens that have expired or been revoked."
-}
-```
-
 ---
 
 ### 10.4 The `interfaces` Block
 
-**Purpose:** The `interfaces` block describes the communication interfaces the device exposes — how the AI can talk to it. Each entry in the array describes one interface. The content is entirely free-form: any protocol, any transport, any structure may be described.
+**Purpose:** Describes how the AI communicates with the device. Each array entry
+is one interface. Content is entirely free-form — any protocol may be described.
+ADD does not enumerate or restrict protocols.
 
-**Recommended fields per interface** (none mandatory):
-
-| Field | Description |
-|---|---|
-| `name` | Interface identifier — used to reference this interface from the `actions` block |
-| `physical` | Physical medium: `WiFi`, `Ethernet`, `RS485`, etc. |
-| `protocol` | Application protocol: `HTTP`, `MQTT`, `NMEA0183`, `Modbus`, or any other |
-| `transport` | Transport protocol: `TCP`, `UDP`, etc. |
-| `port` | Network port |
-| `direction` | `read`, `write`, or `bidirectional` |
-| `data` | Description of data provided or consumed on this interface |
-
-ADD does not enumerate or restrict the protocols that may be described in the `interfaces` block. A device that speaks NMEA 0183 over a serial TCP bridge describes it here in plain language — the AI interprets it semantically and knows how to use it. A device with multiple interfaces — HTTP for configuration, MQTT for streaming data — lists each as a separate entry in the array.
-
-The AI does not need the interface to match a known schema. It needs enough information to understand the communication method and use it correctly. A well-written interface description gives the AI exactly that — even for protocols it has never been explicitly trained on.
+| Field | Usage | Values | Description |
+|-------|-------|--------|-------------|
+| `name` | mandatory | string | Interface identifier. Referenced from `actions[*].interface`. Must be unique within the document. |
+| `physical` | recommended | `"WiFi"`, `"Ethernet"`, `"RS485"`, `"BLE"`, or any string | Physical transmission medium. |
+| `protocol` | mandatory | `"HTTP"`, `"MQTT"`, `"NMEA0183"`, `"Modbus"`, or any string | Application-layer protocol. Determines how to format and send requests. The AI interprets this semantically — niche or proprietary protocols are fully supported. |
+| `transport` | recommended | `"TCP"`, `"UDP"`, or any string | Transport-layer protocol. |
+| `port` | recommended | integer | Network port. Required when non-standard (not 80 for HTTP, not 1883 for MQTT). |
+| `direction` | recommended | `"read"`, `"write"`, `"bidirectional"` | Data flow direction on this interface. |
+| `description` | recommended | string | Free-form description of the interface, including base URL pattern, command format, and response format. Especially important for non-HTTP protocols or when multiple interfaces are present. |
+| `data` | optional | array or object | Description of data endpoints, topics, or registers provided or consumed. Use when the interface exposes multiple data paths that actions need to reference. |
 
 **Example:**
+
 ```json
 "interfaces": [
   {
@@ -1154,66 +1042,80 @@ The AI does not need the interface to match a known schema. It needs enough info
 
 ### 10.5 The `actions` Block
 
-**Purpose:** The `actions` block defines exactly what an AI is permitted to do with the device. Each entry describes one operation: how to invoke it, what parameters it accepts, and how the AI should behave before and after executing it.
+**Purpose:** Defines exactly what an AI is permitted to do with the device. Each
+array entry is one operation with its invocation details, parameter constraints,
+and behavioral requirements.
 
-**Recommended fields per action** (none mandatory):
-
-| Field | Description |
-|---|---|
-| `name` | Action identifier |
-| `description` | Human-readable description of what the action does |
-| `interface` | Which interface to use (references a `name` in the `interfaces` block) |
-| `method` | HTTP method or protocol equivalent |
-| `path` | Endpoint path |
-| `parameters` | Parameters the action accepts, with type, range, and constraints |
-| `safe` | `true` if the action is read-only and has no lasting effect |
-| `reversible` | `true` if the action can be undone |
-| `idempotent` | `true` if repeated execution produces the same result |
-| `requires_confirmation` | `true` if the AI must obtain explicit user approval before executing |
-| `confirmation_scope` | Defines when confirmation is required — see table below. Default is `"per_action"` when omitted |
-| `requires_auth` | `true` if authentication is required |
-| `timing` | `"critical"` if this action must be executed without delay — omit if not time-sensitive |
-| `max_response_time` | Maximum acceptable response time in seconds — only meaningful when `timing` is `"critical"` |
+| Field | Usage | Values | Description |
+|-------|-------|--------|-------------|
+| `name` | mandatory | string | Action identifier. Referenced in rules, agent tasks, and validation. Must be unique within the document. |
+| `description` | mandatory | string | What the action does, including physical consequences. For small models: one sentence maximum. For medium/large models: may be multi-sentence. Always state parameter constraints in plain language here in addition to the `parameters` field — redundancy improves reliability for all model sizes. |
+| `interface` | recommended | string | Interface name from `interfaces[*].name`. **Required when multiple interfaces are present** to avoid routing ambiguity. |
+| `method` | recommended | `"GET"`, `"POST"`, `"PUT"`, `"DELETE"`, or protocol equivalent | HTTP method or protocol-equivalent operation verb. |
+| `path` | recommended | string | Endpoint path relative to the device base URL. Include full URL when the device IP is not in the `device` block or when an action uses an external endpoint. |
+| `parameters` | conditional | object | Parameter definitions. **Required when the action accepts any parameters.** Each parameter: `type` (string / integer / boolean), `values` (enumerated allowed values) or `min`/`max` (numeric range), `unit` (physical unit), `required` (boolean). |
+| `safe` | mandatory | `true` / `false` | `true` = read-only action with no lasting physical effect. Safe actions may be executed without user confirmation and by multiple agents simultaneously (`actor: "multiple"` default). `false` = write action with physical consequences requiring confirmation and single-actor discipline. |
+| `reversible` | mandatory | `true` / `false` | `true` = the action can be undone (e.g. closing a valve that was opened). `false` = irreversible (e.g. firmware update, irreversible state change). Irreversible actions require heightened caution at all Autonomy Levels. |
+| `idempotent` | recommended | `true` / `false` | `true` = repeated execution produces the same result (e.g. closing an already-closed valve). `false` = repeated execution has cumulative or different effects. Informs retry and verification behavior. |
+| `requires_confirmation` | mandatory | `true` / `false` | `true` = must obtain explicit user approval before executing, regardless of context or confidence level. `false` = may execute without per-action confirmation, subject to `confirmation_scope`. |
+| `confirmation_scope` | conditional | `"per_action"`, `"session"`, `"context"`, `"autonomous"` | **Required when `requires_confirmation` is `false`.** Defines when confirmation is needed. Default when omitted: `"per_action"`. `"autonomous"` is **not permitted with Level 1** — requires Level 2 or 3 with a fully loaded Ethical Framework and all conditions verifiable. See table below. |
+| `requires_auth` | recommended | `true` / `false` | `true` = authentication credentials are required. The AI must supply valid credentials or refuse the action. |
+| `actor` | recommended | `"single"`, `"multiple"` | Concurrent execution policy for multi-agent deployments. `"single"` = only one agent (the designated Actor Agent) may execute this action at any given time. `"multiple"` = parallel execution by multiple agents is safe. **Default when omitted:** `"single"` for `safe: false` actions, `"multiple"` for `safe: true` actions. Recommend stating explicitly for all `safe: false` actions. ADD cannot technically enforce this — enforcement is the responsibility of the deployment architecture. |
+| `timing` | conditional | `"critical"` | **Required when `max_response_time` is present.** `"critical"` = action must execute without delay. Omit for actions where latency is not safety-relevant. |
+| `max_response_time` | conditional | integer (seconds) | **Required when `timing` is `"critical"`.** Maximum acceptable response time in seconds. Must be verified during validation under realistic load and recorded in `timing_compliance`. If the AI cannot meet this, it must alert the user immediately and stop. |
 
 **`confirmation_scope` values:**
 
-| Value | Meaning | Typical use |
-|---|---|---|
-| `"per_action"` | Confirmation required before every action — default when field is omitted | Purpose-built devices, all Autonomy Levels |
-| `"session"` | Confirmation required once per conversation session — valid until session ends | Universal devices, Level 1 |
-| `"context"` | Confirmation required once per deployment context — must be re-confirmed when the agent detects a context change | Universal devices, Level 1, recurring tasks |
-| `"autonomous"` | No confirmation required for routine actions — the agent confirms only when a rule cannot be verified, a required resource is unavailable, or an unexpected situation arises | Autonomous agents, Level 2–3 only |
+| Value | Usage | Typical deployment | Conditions |
+|-------|-------|-------------------|------------|
+| `"per_action"` | default | Purpose-built devices, all levels | Confirmation required before every individual action. |
+| `"session"` | optional | Universal devices, Level 1 | Once per conversation session. Expires when session ends. |
+| `"context"` | optional | Universal devices, Level 1, recurring tasks | Once per deployment context. Re-confirm when context changes (different purpose, load, or user intent). |
+| `"autonomous"` | conditional | Autonomous agents, **Level 2–3 only** | No per-action confirmation. Confirm only when a rule cannot be verified, a required resource is unavailable, or an unexpected situation arises. **Not permitted with Level 1.** |
 
-`confirmation_scope: "autonomous"` MUST NOT be used with Autonomy Level 1. Level 1 requires the user to remain in control of every consequential action. Autonomous scope is only permitted when a full Ethical Framework (`ethic_url`) is loaded and all conditions declared in the `rules` block can be independently verified by the agent.
+**The three behavioral flags `safe`, `reversible`, and `requires_confirmation`**
+define the risk profile of each action:
 
-For `"context"` scope: the agent must actively monitor for context changes during a session. A context change occurs when the purpose, connected load, location, or user intent changes from what was confirmed at the start. When a context change is detected, the previous confirmation is discarded and the agent must ask again before proceeding.
+- A `safe` action is read-only. Execute freely, no confirmation needed.
+- A `reversible` action changes device state but can be undone. Verify result
+  and be prepared to reverse. Confirmation depends on `requires_confirmation`.
+- `requires_confirmation: true` is an absolute gate — no AI confidence level
+  overrides it. This is the primary mechanism for keeping the human in the loop.
 
-The three flags `safe`, `reversible`, and `requires_confirmation` define the risk profile of each action and determine how the AI must behave:
+**Example (mixed timing and actor):**
 
-- A `safe` action is read-only. The AI may execute it at any time without confirmation.
-- A `reversible` action changes device state but can be undone. The AI may execute it autonomously when the rules permit, but must verify the result and be prepared to reverse it.
-- An action with `requires_confirmation: true` must not be executed without explicit user approval — regardless of how confident the AI is. This is the primary mechanism for keeping the human in the loop for consequential actions.
-
-If `timing` is `"critical"` and `max_response_time` is defined, the AI must execute this action within the specified time. If it cannot — due to model latency, network conditions, or resource availability — it must immediately alert the user and stop. A missing `timing` field means no time constraint applies — the AI acts at its own pace.
-
-Parameter constraints — `min`, `max`, allowed `values` — are enforced by the AI before sending any request. The AI does not rely on the device to reject out-of-range values, even if the device would do so independently.
-
-**Example — mixed timing:**
 ```json
 "actions": [
   {
     "name": "open_valve",
-    "description": "Open the irrigation valve for a specified duration in minutes. Maximum 60 minutes.",
+    "description": "Open the irrigation valve for 1–60 minutes; device enforces the limit independently.",
     "interface": "http_json",
     "method": "POST",
     "path": "/control",
     "parameters": {
-      "state":    { "type": "string",  "values": ["open"] },
-      "duration": { "type": "integer", "min": 1, "max": 60, "unit": "minutes" }
+      "state":    { "type": "string",  "values": ["open"],  "required": true },
+      "duration": { "type": "integer", "min": 1, "max": 60, "unit": "minutes", "required": true }
     },
     "safe": false,
     "reversible": true,
-    "requires_confirmation": true
+    "idempotent": false,
+    "requires_confirmation": true,
+    "confirmation_scope": "per_action",
+    "requires_auth": false,
+    "actor": "single"
+  },
+  {
+    "name": "read_state",
+    "description": "Read current valve state, remaining open duration, and total water dispensed today.",
+    "interface": "http_json",
+    "method": "GET",
+    "path": "/json",
+    "safe": true,
+    "reversible": true,
+    "idempotent": true,
+    "requires_confirmation": false,
+    "requires_auth": false,
+    "actor": "multiple"
   },
   {
     "name": "emergency_close",
@@ -1222,11 +1124,15 @@ Parameter constraints — `min`, `max`, allowed `values` — are enforced by the
     "method": "POST",
     "path": "/control",
     "parameters": {
-      "state": { "type": "string", "values": ["closed"] }
+      "state": { "type": "string", "values": ["closed"], "required": true }
     },
     "safe": false,
     "reversible": true,
+    "idempotent": true,
     "requires_confirmation": false,
+    "confirmation_scope": "autonomous",
+    "requires_auth": false,
+    "actor": "single",
     "timing": "critical",
     "max_response_time": 10
   }
@@ -1237,27 +1143,23 @@ Parameter constraints — `min`, `max`, allowed `values` — are enforced by the
 
 ### 10.6 The `rules` Block
 
-**Purpose:** The `rules` block contains behavioral instructions addressed directly to the AI. Rules encode everything that cannot be expressed in structured fields alone: when to ask the user, when not to act, how to handle ambiguous situations, and what constraints the deployment context imposes beyond the technical parameters.
+**Purpose:** Behavioral instructions addressed directly to the AI. Rules encode
+everything that cannot be expressed in structured fields: when to ask, when not
+to act, how to handle ambiguous situations, and what external conditions to
+verify. Rules are binding — treat them as instructions, not suggestions.
 
-The `rules` block is an array. Each entry is either a plain string or a structured object. Plain strings are sufficient for most rules. Structured objects are used when a rule has resource requirements or timing constraints that the AI needs to know explicitly.
+Each entry is either a plain string or a structured object.
 
-**Plain string rule:**
-```json
-"Do not open the valve between 22:00 and 05:00."
-```
+**Fields for structured rule objects:**
 
-**Structured rule object:**
+| Field | Usage | Values | Description |
+|-------|-------|--------|-------------|
+| `instruction` | mandatory | string | The rule text in plain language, addressed to the AI. For small models: one sentence maximum. |
+| `requires` | conditional | array of strings | **Required when the rule depends on any external tool or resource.** Lists the exact tool names as reported by the model's own tool inventory. If any listed tool is unavailable, the AI must inform the user and must not treat the rule as passed. A rule without a `requires` field that cannot be checked is invisible as a dependency — a rule with a `requires` field that cannot be checked triggers the correct safe behavior: stop and inform. |
+| `timing` | conditional | `"critical"` | **Required when `max_response_time` is present.** `"critical"` = this rule must be evaluated and acted upon without delay. |
+| `max_response_time` | conditional | integer (seconds) | **Required when `timing` is `"critical"`.** Maximum time to evaluate and act on this rule. Alert the user and stop if not achievable. |
 
-| Field | Description |
-|---|---|
-| `instruction` | The rule text — same as a plain string rule |
-| `requires` | Resources this rule depends on — the AI must have access to these to apply the rule |
-| `timing` | `"critical"` if this rule must be evaluated and acted upon without delay |
-| `max_response_time` | Maximum acceptable response time in seconds — only meaningful when `timing` is `"critical"` |
-
-If `requires` lists a resource the AI does not have access to, it must inform the user that this rule cannot be enforced and ask for guidance. If `timing` is `"critical"` and the AI cannot respond within `max_response_time`, it must alert the user immediately.
-
-**The first two rules are mandatory in every ADD document and MUST appear at positions 1 and 2:**
+**Mandatory rules — must appear at positions 1 and 2 in every ADD document:**
 
 ```json
 "rules": [
@@ -1267,24 +1169,17 @@ If `requires` lists a resource the AI does not have access to, it must inform th
 ]
 ```
 
-**Standard rules recommended for every ADD document:**
+**Standard rules — recommended for most ADD documents (positions 3–7):**
 
 ```json
-"rules": [
-  "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url as required by autonomy.level.",
-  "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
-  "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
-  "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
-  "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
-  "Always confirm with the user before executing any action that is not safe or not reversible.",
-  "Verify the result of every write action by reading the device state afterward.",
-  "Do not set parameter values outside the defined min/max range."
-]
+"If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+"If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+"Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
+"Always confirm with the user before executing any action that is not safe or not reversible.",
+"Verify the result of every write action by reading the device state afterward."
 ```
 
-**Additional rules mandatory for Autonomy Level 2 and above — session integrity:**
-
-These rules must be present in every ADD document at Level 2 and above. They establish the session-start checks that ensure model identity and tool availability before any non-safe action is taken. They follow immediately after the standard rules and before any device-specific rules:
+**Session-integrity rules — mandatory for Level 2 and above:**
 
 ```json
 "Level 2: Place the Ethical Framework summary in the system prompt before session start. Renew every 15 messages to prevent rule dilution.",
@@ -1294,242 +1189,80 @@ These rules must be present in every ADD document at Level 2 and above. They est
 "Level 2 and above: If the active tool set differs from validation.validated_by[active_model].tools_fingerprint, warn the operator and treat the session as unvalidated. Safe read actions remain permitted."
 ```
 
-For Level 3, the system prompt rule reads:
+**Multi-agent rule — recommended when multiple agents share a device:**
 
 ```json
-"Level 3: Place the full Ethical Framework in the system prompt before session start. Renew every 15 messages to prevent rule dilution. Inform the user if the system prompt cannot be verified."
+"In a multi-agent deployment, only the designated Actor Agent may execute actions with actor: single. Supervisor and Monitor Agents are restricted to actions with actor: multiple or safe: true. If your role is not declared in your agent task, default to Supervisor behavior — read-only only."
 ```
 
-*Why these rules belong in `rules` and not in a new block:* The `rules` block is already the established location for mandatory operational requirements addressed to the AI. Placing session-start requirements here keeps the structure minimal and consistent — no new top-level fields are needed. The rules cover both the operator obligation (model selection, system prompt) and the model obligation (self-verification, tool check) in one place.
-
-**Additional rule recommended for documents that depend on external data sources:**
+**Conflict and finality rules — recommended for documents with external data sources:**
 
 ```json
 "If a user states conditions that contradict data retrieved from external resources, the verified data takes precedence — immediately and finally. Do not re-evaluate this decision if the user insists or repeats the command. Inform the user once, clearly, and stop.",
 "Once a rule has been verified and an action blocked, do not re-evaluate the decision if the user repeats or insists. The rule is final. Inform the user once and stop."
 ```
 
-*Why these rules are necessary:* Practical tests show that without explicit precedence and finality rules, AI models may enter iterative reasoning loops when a user explicitly commands an action that violates a rule. The model re-reads the Ethical Framework and specification repeatedly, looking for a way to satisfy both the rule and the user. This produces correct results eventually but at unacceptable processing cost — exceeding 10 minutes in observed cases. These rules give the model explicit permission to stop reasoning and respond immediately after the first verification.
-
-**Additional rule recommended for documents with `confirmation_scope: "autonomous"`:**
+**Autonomous exception rule — required when `confirmation_scope: "autonomous"` is used:**
 
 ```json
 "Act autonomously when all rules can be verified and all conditions permit. Stop and alert the user when: a required tool is unavailable, a rule cannot be verified, an unexpected device response occurs, or the Ethical Framework requires human authorization for this action."
 ```
 
-**Example — mixed plain and structured rules:**
-```json
-"rules": [
-  "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url as required by autonomy.level.",
-  "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
-  "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching.",
-  "Always confirm with the user before opening the valve.",
-  {
-    "instruction": "Do not open the valve if rain is forecast within the next 24 hours.",
-    "requires": ["weather_api"]
-  },
-  {
-    "instruction": "Do not open the valve if the garden is in use.",
-    "requires": ["calendar_api", "home_automation"]
-  },
-  "Do not open the valve between 22:00 and 05:00.",
-  {
-    "instruction": "Close the valve immediately if a flood sensor alert is received.",
-    "requires": ["home_automation"],
-    "timing": "critical",
-    "max_response_time": 10
-  }
-]
-```
-
-The standard rules follow a deliberate sequence: load the Ethical Framework → resolve conflicts → consult the specification → consult the device documentation → follow device-specific instructions. This order ensures the most fundamental constraints are always active before any device-specific logic is applied.
-
-**Rule 1 — Load:** An explicit action instruction. Without this rule, an AI could read the `autonomy` block and proceed without loading the framework — because JSON field order does not imply execution order. The rule makes the loading step mandatory and unambiguous.
-
-**Rule 2 — Precedence:** Defines how to resolve conflicts between ADD rules and the Ethical Framework. This rule only activates when a conflict is encountered — Rule 1 ensures the framework is loaded so the conflict can be recognized at all.
-
-The `doc_url` rule (rule 4) is only meaningful if `device.doc_url` is present. If no documentation URL is provided, this rule SHOULD be omitted.
-
-Device-specific rules follow the standard rules and encode the deployment context: time windows, conditions under which the AI must not act, confirmation requirements beyond what the `actions` block specifies, and any other behavioral constraints the device author deems necessary. These rules are the most important part of a well-written ADD document — they are what transform a technically correct AI action into a contextually appropriate one.
-
 ---
 
 ### 10.7 The `validation` Block
 
-**Purpose:** The `validation` block records the result of the most recent AI-based validation of this ADD document. It serves two purposes: it is a structured record for the device author of what was tested and what was found, and it is a trust signal for any AI system that reads the document — allowing it to immediately assess the document's quality without repeating the full validation.
-
-An ADD document without a completed `validation` block SHOULD be treated by AI systems as unvalidated and handled with additional caution.
+**Purpose:** Records which AI models have tested this document and whether it is
+safe to deploy with each of them. An ADD document without a completed validation
+block is a draft — handle with additional caution and prompt the user to validate
+before autonomous operation.
 
 **Top-level fields:**
 
-| Field | Type | Description |
-|---|---|---|
-| `validated_by` | array | One entry per AI model that performed validation — each with its own complete result |
-| `add_version` | string | ADD schema version validated against |
-| `improvements_applied` | array | Improvements made to the ADD document as a result of validation |
+| Field | Usage | Values | Description |
+|-------|-------|--------|-------------|
+| `add_version` | mandatory | string | ADD schema version this document was validated against (e.g. `"1.0"`). |
+| `improvements_applied` | recommended | array of strings | Improvements made during or after validation. Provides a transparent audit trail of document evolution. |
+| `validated_by` | mandatory | array of objects | One entry per AI model that performed validation. Empty array `[]` for drafts. Each entry is a complete, independent result for one model. |
 
-**Fields per `validated_by` entry — one per AI model:**
+**Fields per `validated_by` entry:**
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `name` | string | yes | AI model name |
-| `version` | string | yes | AI model version — exact string as reported by the model |
-| `validated_at` | string | yes | ISO 8601 timestamp of this model's validation |
-| `status` | string | yes | This model's result: `"passed"`, `"passed_with_warnings"`, or `"failed"` |
-| `score` | object | yes | Per-category scores for this model: `"pass"`, `"warning"`, or `"fail"` |
-| `findings` | array | yes | Findings from this model with `severity`, `category`, `message`, and `resolved` |
-| `summary` | string | yes | Plain-text summary of this model's validation result |
-| `tools_required` | array | Level 2+ | Tools the ADD rules depend on — must all be present at session start |
-| `tools_fingerprint` | string | Level 2+ | Sorted, pipe-separated list of all tools available at validation time |
-| `capabilities` | object | no | Optional — model capability profile recorded during validation (see below) |
-
-**Optional `capabilities` fields:**
-
-| Field | Description |
-|---|---|
-| `classification` | Model class determined by capability test: `"small"`, `"medium"`, or `"large"` |
-| `max_rules_reliable` | Maximum number of rules the model applied correctly in 4 of 5 test runs |
-| `sequential_tool_calls` | Maximum sequential tool calls completed reliably |
-| `ethic_url_usable` | Whether the model can fetch and apply an external Ethical Framework document |
-| `response_time_90p_simple_seconds` | 90th percentile response time for a simple read action |
-| `response_time_90p_complex_seconds` | 90th percentile response time for a complex multi-tool task |
-
-The `capabilities` object is populated during the ADD Capability Test described in the Developer Guide. It makes the model's performance profile transparent to anyone reading the validation record — including other AI systems that may later interact with the device.
+| Field | Usage | Values | Description |
+|-------|-------|--------|-------------|
+| `name` | mandatory | string | AI model family name (e.g. `"Claude"`, `"GPT"`, `"Qwen"`). |
+| `version` | mandatory | string | Exact model version string as the model reports itself (e.g. `"claude-sonnet-4-20250514"`). Copy verbatim — do not paraphrase or abbreviate. |
+| `validated_at` | mandatory | ISO 8601 string | Timestamp of this model's validation run. |
+| `status` | mandatory | `"passed"`, `"passed_with_warnings"`, `"failed"` | Overall result. `"failed"` = this model must not be used for autonomous operation with this document. |
+| `score` | mandatory | object | Per-category scores. Each value: `"pass"`, `"warning"`, or `"fail"`. See score categories below. |
+| `findings` | mandatory | array of objects | Issues found. Each finding: `severity` (`"error"`, `"warning"`, `"info"`), `category` (score category name), `message` (plain text), `resolved` (boolean). Empty array `[]` when no findings. |
+| `summary` | mandatory | string | Plain-text summary of results for this model. Must state clearly whether the document is suitable for deployment with this model. |
+| `tools_required` | conditional | array of strings | **Required for Level 2 and above.** Tools the ADD rules depend on. If any is absent at session start, refuse dependent actions immediately. |
+| `tools_fingerprint` | conditional | string | **Required for Level 2 and above.** Sorted, pipe-separated list of all tools available at validation time. Produced by: sort all tool names alphabetically, join with `\|`. Example: `"calendar_api\|fetch_url\|home_automation"`. Compared against the live tool set at each session start — mismatch warns the operator and marks the session unvalidated. |
+| `capabilities` | optional | object | Model capability profile. Fields: `classification` (`"small"`, `"medium"`, `"large"`), `max_rules_reliable` (integer), `sequential_tool_calls` (integer), `ethic_url_usable` (boolean), `response_time_90p_simple_seconds` (integer), `response_time_90p_complex_seconds` (integer). |
 
 **Score categories:**
 
 | Category | What is assessed |
-|---|---|
+|----------|-----------------|
 | `structure` | Completeness and correctness of the core schema |
 | `comprehensibility` | Clarity and unambiguity of the description |
 | `functional` | Correct behavior of interfaces and actions during testing |
 | `rules_compliance` | AI correctly interpreted and followed all rules |
-| `security` | Security context clearly defined and enforced |
+| `security` | Security context clearly defined and appropriate |
 | `discovery` | Discovery mechanism correctly implemented |
-| `timing_compliance` | AI met all `max_response_time` requirements for critical actions and rules — `"pass"` if no timing requirements are present |
+| `timing_compliance` | AI met all `max_response_time` requirements — `"pass"` when no timing requirements are present |
 
-**`tools_required` and `tools_fingerprint` — Level 2 and above:**
-
-`tools_required` lists the tools the ADD document's rules actually depend on. If any of these is absent at session start, the AI must refuse all actions that depend on that tool and inform the operator. A missing tool must never be treated as a passed check.
-
-`tools_fingerprint` is a sorted, pipe-separated string of all tools available at validation time. To produce it: take all tool names the model reported as available, sort them alphabetically, and join with `|`. Example: tools `fetch_url`, `calendar_api`, `home_automation` → fingerprint: `calendar_api|fetch_url|home_automation`.
-
-At session start, the AI compares its current tool set against the fingerprint. A mismatch in either direction is significant:
-- A tool in `tools_required` is missing → refuse dependent actions immediately.
-- The full tool set differs from `tools_fingerprint` → warn the operator and mark the session as unvalidated. Safe read actions remain permitted.
-
-These two fields together connect the static validation record to the live session — they are how the document detects whether the validated configuration is still intact.
-
-**Model suitability requirement — Level 2 and above:**
-
-A model that cannot reliably report its own identifier or enumerate its available tools lacks the transparency and traceability required for safety-critical applications. Such models are **generally unsuitable for ADD-controlled devices at Autonomy Level 2 and above**, regardless of their general capability.
-
-The reason is structural, not a question of intelligence or performance:
-- Without reliable self-identification, validation results cannot be matched to the active model at runtime.
-- Without tool enumeration, mandatory precondition checks cannot be verified as actually executable — a missing tool silently becomes a skipped safety check.
-- Both gaps undermine the core ADD principle that every decision must be transparent and traceable to a validated configuration.
-
-This applies equally to auto-routing systems that select models dynamically: if the active model at any point in a session cannot be determined with certainty, the session does not meet the traceability requirement.
-
-Operators must treat model transparency — self-identification and tool reporting — as a **minimum qualification criterion** when selecting models for ADD-controlled deployments, before evaluating any other capability.
+**Critical:** Every validation result is specific to the model that produced it.
+A document validated with one model is not automatically valid for another. The
+`validated_by` array is a compatibility matrix — it shows which models work,
+which do not, and why. Each AI system intended for production use with this device
+must be validated separately and its result recorded.
 
 ---
 
-### 10.7.1 The `validated_by` Compatibility Matrix
-
-Because ADD sub-schemas are intentionally free-form, there is no generic schema validator for ADD documents. The only meaningful test is whether the AI that will actually use the document can read, understand, and act upon it correctly. Every validation result is specific to the model that produced it — a document that passes with Claude Sonnet is not automatically valid for GPT-5 or Qwen3-3B. Different models interpret the same description differently: a large frontier model may successfully infer intent from a loosely worded description; a smaller model may fail on the same text.
-
-The `validated_by` array is therefore a **compatibility matrix**: it records which models have been tested, what each found, and whether the document works for that model. A device author who wants to support three different AI systems must validate with all three and record each result separately.
-
-The device author bears final responsibility. The AI performs the test and surfaces findings — the author reviews, applies corrections, and releases the document.
-
-**Example — three models, different results:**
-```json
-"validation": {
-  "add_version": "1.0",
-  "improvements_applied": [
-    "Added cache-buster rule for read requests.",
-    "Clarified enforcement field to state the 60-minute limit is enforced by the device independently."
-  ],
-  "validated_by": [
-    {
-      "name": "Claude",
-      "version": "claude-sonnet-4-5",
-      "validated_at": "2026-04-27T07:15:00Z",
-      "status": "passed_with_warnings",
-      "tools_required": ["fetch_url", "calendar_api", "home_automation"],
-      "tools_fingerprint": "calendar_api|fetch_url|home_automation",
-      "score": {
-        "structure":         "pass",
-        "comprehensibility": "pass",
-        "functional":        "pass",
-        "rules_compliance":  "pass",
-        "security":          "warning",
-        "discovery":         "pass",
-        "timing_compliance": "pass"
-      },
-      "findings": [
-        {
-          "severity": "warning",
-          "category": "security",
-          "message": "No authentication configured. Acceptable for trusted home network — document as conscious design decision.",
-          "resolved": false
-        }
-      ],
-      "summary": "Well-structured document. All actions behaved as described. Device correctly rejected out-of-range duration. Security warning noted. Suitable for deployment."
-    },
-    {
-      "name": "GPT",
-      "version": "gpt-5",
-      "validated_at": "2026-04-27T08:00:00Z",
-      "status": "passed",
-      "score": {
-        "structure":         "pass",
-        "comprehensibility": "pass",
-        "functional":        "pass",
-        "rules_compliance":  "pass",
-        "security":          "pass",
-        "discovery":         "pass",
-        "timing_compliance": "pass"
-      },
-      "findings": [],
-      "summary": "All tests passed. Document is clear and unambiguous. Ready for deployment."
-    },
-    {
-      "name": "Qwen",
-      "version": "qwen3.5-3b",
-      "validated_at": "2026-04-27T08:30:00Z",
-      "status": "failed",
-      "score": {
-        "structure":         "pass",
-        "comprehensibility": "warning",
-        "functional":        "fail",
-        "rules_compliance":  "warning",
-        "security":          "pass",
-        "discovery":         "pass",
-        "timing_compliance": "pass"
-      },
-      "findings": [
-        {
-          "severity": "error",
-          "category": "functional",
-          "message": "Model attempted to send duration=120, ignoring the max:60 constraint. Parameter constraints were not reliably applied.",
-          "resolved": false
-        },
-        {
-          "severity": "warning",
-          "category": "rules_compliance",
-          "message": "Model did not consistently check rain forecast before opening valve. Rule was acknowledged but not applied in all test cases.",
-          "resolved": false
-        }
-      ],
-      "summary": "Model too small to reliably interpret this Level 2 document. Parameter constraints and conditional rules were not consistently followed. Use the small-model optimized version (irrigation-valve-standard-small.json) for this model size."
-    }
-  ]
-}
-```
 
 ---
+
 ## 11. Workflow: From Device to Deployed ADD Document
 
 Creating an ADD document follows three phases. Each phase has a clear purpose, a defined output, and a human decision point before the next phase begins. The device author is present and in control at every transition — the AI does the analytical and drafting work, the human reviews, corrects, and approves.
