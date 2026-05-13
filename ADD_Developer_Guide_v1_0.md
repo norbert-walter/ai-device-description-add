@@ -401,7 +401,7 @@ The only meaningful test is whether the AI that will actually use the document c
 
 ```json
 "validation": {
-  "add_version": "2.2",
+  "add_version": "1.0",
   "validated_by": [
     {
       "name": "Claude",
@@ -431,7 +431,7 @@ When authoring a new ADD document, the `validation` block is initialized as:
 
 ```json
 "validation": {
-  "add_version": "2.2",
+  "add_version": "1.0",
   "validated_by": []
 }
 ```
@@ -1184,7 +1184,7 @@ A medium model reliably handles more rules, more complex conditions, and limited
 
 **Extended rule sets**
 
-Medium models handle up to 12 rules reliably. This means the two mandatory standard rules plus up to 10 device-specific rules. The priority ordering from Chapter 4.3 still applies — safety-critical rules first, context rules second, operational rules third — but the budget is larger.
+Medium models handle up to 17 rules reliably — nine standard rules (four mandatory base rules plus five Level 2 session-integrity rules) plus up to 8 device-specific rules. The priority ordering from Chapter 4.3 still applies — safety-critical first, context rules second, operational rules third — but the budget is larger.
 
 *Why the priority order still matters:* Even at 12 rules, a medium model may occasionally drop the last rule in a long sequence under load. Safety-critical rules at the top of the list are applied even when the model is under pressure. Operational rules at the bottom are the acceptable loss.
 
@@ -1247,6 +1247,11 @@ The following example shows the `autonomy`, `device`, and `rules` blocks in full
     "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
     "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
     "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Level 2: Place the Ethical Framework summary in the system prompt before session start. Renew every 15 messages to prevent rule dilution.",
+    "Level 2 and above: Before session start, the operator must explicitly select a validated model from validation.validated_by. Auto model selection is prohibited. If auto model selection cannot be ruled out, treat the session as unvalidated and refuse all non-safe actions.",
+    "Level 2 and above: At session start, identify the active model and verify that its identifier matches an entry in validation.validated_by. If no match is found, refuse all non-safe actions and inform the operator.",
+    "Level 2 and above: At session start, enumerate all available tools and verify that every tool listed in validation.validated_by[active_model].tools_required is present. If any required tool is missing, refuse all actions that depend on that tool and inform the operator.",
+    "Level 2 and above: If the active tool set differs from validation.validated_by[active_model].tools_fingerprint, warn the operator and treat the session as unvalidated. Safe read actions remain permitted.",
     "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching.",
     "Always confirm with the user before opening the valve.",
     "Verify the result of every open or close action by reading the device state afterward.",
@@ -1270,7 +1275,7 @@ The following example shows the `autonomy`, `device`, and `rules` blocks in full
 }
 ```
 
-This document uses 12 rules — the reliable maximum for a medium model. The four standard rules occupy positions 1–4. Eight device-specific rules follow, ordered by priority: safety and confirmation first, external resource checks second, time window and operational monitoring last.
+This document uses 17 rules. The nine standard rules occupy positions 1–9: four mandatory base rules followed by five Level 2 session-integrity rules. Eight device-specific rules follow, ordered by priority: safety and confirmation first, external resource checks second, time window and operational monitoring last.
 
 ---
 
@@ -1413,6 +1418,8 @@ A large model reliably navigates multiple interfaces on the same device — for 
   ],
 
   "rules": [
+    "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url as required by autonomy.level.",
+    "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
     "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
     "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
     "Level 2: Place the Ethical Framework summary in the system prompt before session start. Renew every 15 messages to prevent rule dilution.",
@@ -1454,12 +1461,12 @@ A large model reliably navigates multiple interfaces on the same device — for 
   ],
 
   "validation": {
-    "add_version": "2.2",
+    "add_version": "1.0",
     "validated_by": [
       {
         "name": "Claude",
         "version": "claude-sonnet-4-20250514",
-        "result": "pass",
+        "status": "passed",
         "validated_at": "2026-05-13",
         "tools_required": ["fetch_url", "calendar_api", "home_automation"],
         "tools_fingerprint": "calendar_api|fetch_url|home_automation",
@@ -1470,7 +1477,7 @@ A large model reliably navigates multiple interfaces on the same device — for 
 }
 ```
 
-This document uses 15 rules. The four standard rules occupy positions 1–4. Eleven device-specific rules follow: confirmation and verification, four external resource checks, two device state checks, a time window rule, an operational monitoring rule, and a timing-critical emergency rule that protects against abnormal water consumption.
+This document uses 20 rules. The nine standard rules occupy positions 1–9: four mandatory base rules (Ethical Framework, conflict resolution, specification reference, documentation reference), followed by five Level 2 session-integrity rules (system prompt renewal, model selection, identity check, tool availability check, fingerprint check). Eleven device-specific rules follow: confirmation and verification, four external resource checks, two device state checks, a time window rule, an operational monitoring rule, and a timing-critical emergency rule that protects against abnormal water consumption.
 
 ---
 

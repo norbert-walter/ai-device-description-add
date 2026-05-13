@@ -319,6 +319,11 @@ The field names used within the blocks in this document have been carefully chos
     "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
     "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
     "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Level 2: Place the Ethical Framework summary in the system prompt before session start. Renew every 15 messages to prevent rule dilution.",
+    "Level 2 and above: Before session start, the operator must explicitly select a validated model from validation.validated_by. Auto model selection is prohibited. If auto model selection cannot be ruled out, treat the session as unvalidated and refuse all non-safe actions.",
+    "Level 2 and above: At session start, identify the active model and verify that its identifier matches an entry in validation.validated_by. If no match is found, refuse all non-safe actions and inform the operator.",
+    "Level 2 and above: At session start, enumerate all available tools and verify that every tool listed in validation.validated_by[active_model].tools_required is present. If any required tool is missing, refuse all actions that depend on that tool and inform the operator.",
+    "Level 2 and above: If the active tool set differs from validation.validated_by[active_model].tools_fingerprint, warn the operator and treat the session as unvalidated. Safe read actions remain permitted.",
     "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
     "Always confirm with the user before opening the valve.",
     "Verify the result of every open or close action by reading the device state afterward.",
@@ -335,7 +340,8 @@ The field names used within the blocks in this document have been carefully chos
       "Added cache-buster rule for read requests.",
       "Added explicit warning rule for valve sessions exceeding 55 minutes.",
       "Clarified enforcement field in security block to state the 60-minute limit is enforced by the device independently.",
-      "Added doc_url_note pointing to relevant chapters in the device manual."
+      "Added doc_url_note pointing to relevant chapters in the device manual.",
+      "Added Level 2 session-start rules: system prompt renewal, model identity check, tool availability check, tool fingerprint check."
     ],
     "validated_by": [
       {
@@ -343,6 +349,8 @@ The field names used within the blocks in this document have been carefully chos
         "version": "claude-sonnet-4-5",
         "validated_at": "2026-04-27T07:15:00Z",
         "status": "passed_with_warnings",
+        "tools_required": ["fetch_url", "calendar_api", "home_automation"],
+        "tools_fingerprint": "calendar_api|fetch_url|home_automation",
         "score": {
           "structure":         "pass",
           "comprehensibility": "pass",
@@ -366,7 +374,7 @@ The field names used within the blocks in this document have been carefully chos
             "resolved": false
           }
         ],
-        "summary": "Well-structured document. All actions behaved as described. Device correctly rejected duration=90. Confirmation flow worked as required. Security warning noted. Suitable for deployment with this model."
+        "summary": "Well-structured document. All actions behaved as described. Device correctly rejected duration=90. Confirmation flow worked as required. Session-start checks verified. Security warning noted. Suitable for deployment with this model."
       }
     ]
   }
@@ -399,7 +407,7 @@ Three actions: open the valve with a duration, close it immediately, read its st
 
 **`rules` — how to behave**
 
-The rules block is where the device author's knowledge of the deployment context becomes operational guidance for the AI. The first four rules are standard across all ADD documents. The device-specific rules that follow encode the constraints that no technical parameter can express: do not water when the garden is in use, do not water at night, do not water before expected rain, warn if the valve stays open too long. These rules are what transform a technically correct AI action into a contextually appropriate one.
+The rules block is where the device author's knowledge of the deployment context becomes operational guidance for the AI. The first four rules are standard across all ADD documents. For Autonomy Level 2 and above, five additional session-integrity rules follow immediately after — covering system prompt renewal, model selection, identity verification, tool availability, and fingerprint check. The device-specific rules that follow encode the constraints that no technical parameter can express: do not water when the garden is in use, do not water at night, do not water before expected rain, warn if the valve stays open too long. These rules are what transform a technically correct AI action into a contextually appropriate one.
 
 **`validation` — trust signal**
 
@@ -575,6 +583,14 @@ Read `device`, `security`, `interfaces`, `actions`, and `rules` in order. At thi
 
 **Step 5 — Check the validation record**
 Read the `validation` block. An AI encountering a document with `status: "not_validated"` SHOULD treat it with additional caution and SHOULD prompt the user to validate before relying on it for autonomous operation.
+
+For Autonomy Level 2 and above, perform the following session-start checks before any non-safe action:
+
+1. Identify the active model and verify its identifier matches an entry in `validation.validated_by`. If no match is found, refuse all non-safe actions and inform the operator.
+2. Enumerate all available tools and verify that every tool listed in `validated_by[active_model].tools_required` is present. If any required tool is missing, refuse all actions that depend on that tool.
+3. Compare the active tool set against `validated_by[active_model].tools_fingerprint`. If the tool set differs, warn the operator and treat the session as unvalidated. Safe read actions remain permitted.
+
+These checks verify that the validated configuration is still intact. A model that cannot reliably report its own identifier or enumerate its available tools is unsuitable for Level 2 and above — see Section 10.7.
 
 ---
 
@@ -1266,7 +1282,27 @@ If `requires` lists a resource the AI does not have access to, it must inform th
 ]
 ```
 
-**Additional rules recommended for documents that depend on external data sources:**
+**Additional rules mandatory for Autonomy Level 2 and above — session integrity:**
+
+These rules must be present in every ADD document at Level 2 and above. They establish the session-start checks that ensure model identity and tool availability before any non-safe action is taken. They follow immediately after the standard rules and before any device-specific rules:
+
+```json
+"Level 2: Place the Ethical Framework summary in the system prompt before session start. Renew every 15 messages to prevent rule dilution.",
+"Level 2 and above: Before session start, the operator must explicitly select a validated model from validation.validated_by. Auto model selection is prohibited. If auto model selection cannot be ruled out, treat the session as unvalidated and refuse all non-safe actions.",
+"Level 2 and above: At session start, identify the active model and verify that its identifier matches an entry in validation.validated_by. If no match is found, refuse all non-safe actions and inform the operator.",
+"Level 2 and above: At session start, enumerate all available tools and verify that every tool listed in validation.validated_by[active_model].tools_required is present. If any required tool is missing, refuse all actions that depend on that tool and inform the operator.",
+"Level 2 and above: If the active tool set differs from validation.validated_by[active_model].tools_fingerprint, warn the operator and treat the session as unvalidated. Safe read actions remain permitted."
+```
+
+For Level 3, the system prompt rule reads:
+
+```json
+"Level 3: Place the full Ethical Framework in the system prompt before session start. Renew every 15 messages to prevent rule dilution. Inform the user if the system prompt cannot be verified."
+```
+
+*Why these rules belong in `rules` and not in a new block:* The `rules` block is already the established location for mandatory operational requirements addressed to the AI. Placing session-start requirements here keeps the structure minimal and consistent — no new top-level fields are needed. The rules cover both the operator obligation (model selection, system prompt) and the model obligation (self-verification, tool check) in one place.
+
+**Additional rule recommended for documents that depend on external data sources:**
 
 ```json
 "If a user states conditions that contradict data retrieved from external resources, the verified data takes precedence — immediately and finally. Do not re-evaluate this decision if the user insists or repeats the command. Inform the user once, clearly, and stop.",
@@ -1334,16 +1370,18 @@ An ADD document without a completed `validation` block SHOULD be treated by AI s
 
 **Fields per `validated_by` entry — one per AI model:**
 
-| Field | Type | Description |
-|---|---|---|
-| `name` | string | AI model name |
-| `version` | string | AI model version |
-| `validated_at` | string | ISO 8601 timestamp of this model's validation |
-| `status` | string | This model's result: `"passed"`, `"passed_with_warnings"`, or `"failed"` |
-| `score` | object | Per-category scores for this model: `"pass"`, `"warning"`, or `"fail"` |
-| `findings` | array | Findings from this model with `severity`, `category`, `message`, and `resolved` |
-| `summary` | string | Plain-text summary of this model's validation result |
-| `capabilities` | object | Optional — model capability profile recorded during validation (see below) |
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | yes | AI model name |
+| `version` | string | yes | AI model version — exact string as reported by the model |
+| `validated_at` | string | yes | ISO 8601 timestamp of this model's validation |
+| `status` | string | yes | This model's result: `"passed"`, `"passed_with_warnings"`, or `"failed"` |
+| `score` | object | yes | Per-category scores for this model: `"pass"`, `"warning"`, or `"fail"` |
+| `findings` | array | yes | Findings from this model with `severity`, `category`, `message`, and `resolved` |
+| `summary` | string | yes | Plain-text summary of this model's validation result |
+| `tools_required` | array | Level 2+ | Tools the ADD rules depend on — must all be present at session start |
+| `tools_fingerprint` | string | Level 2+ | Sorted, pipe-separated list of all tools available at validation time |
+| `capabilities` | object | no | Optional — model capability profile recorded during validation (see below) |
 
 **Optional `capabilities` fields:**
 
@@ -1370,7 +1408,34 @@ The `capabilities` object is populated during the ADD Capability Test described 
 | `discovery` | Discovery mechanism correctly implemented |
 | `timing_compliance` | AI met all `max_response_time` requirements for critical actions and rules — `"pass"` if no timing requirements are present |
 
-**Why validation is per model:**
+**`tools_required` and `tools_fingerprint` — Level 2 and above:**
+
+`tools_required` lists the tools the ADD document's rules actually depend on. If any of these is absent at session start, the AI must refuse all actions that depend on that tool and inform the operator. A missing tool must never be treated as a passed check.
+
+`tools_fingerprint` is a sorted, pipe-separated string of all tools available at validation time. To produce it: take all tool names the model reported as available, sort them alphabetically, and join with `|`. Example: tools `fetch_url`, `calendar_api`, `home_automation` → fingerprint: `calendar_api|fetch_url|home_automation`.
+
+At session start, the AI compares its current tool set against the fingerprint. A mismatch in either direction is significant:
+- A tool in `tools_required` is missing → refuse dependent actions immediately.
+- The full tool set differs from `tools_fingerprint` → warn the operator and mark the session as unvalidated. Safe read actions remain permitted.
+
+These two fields together connect the static validation record to the live session — they are how the document detects whether the validated configuration is still intact.
+
+**Model suitability requirement — Level 2 and above:**
+
+A model that cannot reliably report its own identifier or enumerate its available tools lacks the transparency and traceability required for safety-critical applications. Such models are **generally unsuitable for ADD-controlled devices at Autonomy Level 2 and above**, regardless of their general capability.
+
+The reason is structural, not a question of intelligence or performance:
+- Without reliable self-identification, validation results cannot be matched to the active model at runtime.
+- Without tool enumeration, mandatory precondition checks cannot be verified as actually executable — a missing tool silently becomes a skipped safety check.
+- Both gaps undermine the core ADD principle that every decision must be transparent and traceable to a validated configuration.
+
+This applies equally to auto-routing systems that select models dynamically: if the active model at any point in a session cannot be determined with certainty, the session does not meet the traceability requirement.
+
+Operators must treat model transparency — self-identification and tool reporting — as a **minimum qualification criterion** when selecting models for ADD-controlled deployments, before evaluating any other capability.
+
+---
+
+### 10.7.1 The `validated_by` Compatibility Matrix
 
 Because ADD sub-schemas are intentionally free-form, there is no generic schema validator for ADD documents. The only meaningful test is whether the AI that will actually use the document can read, understand, and act upon it correctly. Every validation result is specific to the model that produced it — a document that passes with Claude Sonnet is not automatically valid for GPT-5 or Qwen3-3B. Different models interpret the same description differently: a large frontier model may successfully infer intent from a loosely worded description; a smaller model may fail on the same text.
 
@@ -1392,6 +1457,8 @@ The device author bears final responsibility. The AI performs the test and surfa
       "version": "claude-sonnet-4-5",
       "validated_at": "2026-04-27T07:15:00Z",
       "status": "passed_with_warnings",
+      "tools_required": ["fetch_url", "calendar_api", "home_automation"],
+      "tools_fingerprint": "calendar_api|fetch_url|home_automation",
       "score": {
         "structure":         "pass",
         "comprehensibility": "pass",
@@ -1714,11 +1781,22 @@ Please perform the following steps:
    rules_compliance, security, discovery, and timing_compliance.
    Set timing_compliance to "pass" if no timing requirements are present in
    the document, otherwise report the actual test result.
+
+   For Autonomy Level 2 and above, also include in the validated_by entry:
+   - Your exact model identifier as it would appear in API metadata (field: version)
+   - The complete list of tools available to you (field: tools_required — only those
+     the ADD rules depend on; field: tools_fingerprint — all available tools,
+     sorted alphabetically and joined with "|")
+   - Perform the session-start self-check: state your model identifier, list your
+     available tools, and confirm whether all tools_required are present. Report
+     this check as a finding if any required tool was absent.
+
    Provide a final assessment:
    - What works well?
    - What needs improvement?
    - Is the Autonomy Level correctly declared?
    - Were all timing requirements met?
+   - For Level 2 and above: did the session-start checks pass?
    - Is the ADD document ready for deployment?
 ```
 
