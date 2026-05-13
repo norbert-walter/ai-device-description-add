@@ -20,6 +20,24 @@ That is the only addition a device needs to become AI-ready.
 
 ---
 
+## Why ADD?
+
+Most approaches to AI-controlled hardware treat safety as an afterthought — a filter, a wrapper, or a prompt added later. ADD takes a fundamentally different position.
+
+**LLMs are probabilistic actors. Hardware demands deterministic behavior.**  
+ADD bridges this gap by building safety directly into the device description, into the runtime, and into the decision logic — not on top of it.
+
+**ADD treats the AI model itself as a risk factor.**  
+Models hallucinate. They forget rules. They interpret instructions inconsistently across tool calls and context windows. ADD accounts for this explicitly: tool fingerprinting, validation status, model compatibility checks, prompt renewal, confirmation flows, and read-only fallback modes are all first-class concepts — not optional safeguards.
+
+**ADD is AI-native, not API-native.**  
+Existing IoT standards are designed for software clients. ADD is designed for reasoning systems: it carries the context, the constraints, the risk profile, and the ethical framework the agent needs — directly on the device, readable without prior knowledge.
+
+**Safety is layered, not bolted on.**  
+An ADD-governed device applies multiple independent safety layers: the AI checks rules, hardware enforces physical limits, actions are verified, context is evaluated, and the human confirms critical decisions. This is the same defense-in-depth approach used in industrial automation and aviation — applied to AI-hardware interaction for the first time.
+
+---
+
 ## Key Features
 
 - **Self-describing devices** — the device carries its own context; the AI reads and acts
@@ -143,7 +161,7 @@ An AI reading this document immediately knows what the device is, how to control
 
 ## License
 
-© 2026 Norbert Walter
+© 2026 Norbert Walter  
 Licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
 
 You are free to use, implement, share, and adapt this specification for any purpose, including commercial use, provided that appropriate credit is given to the original author.
