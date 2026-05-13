@@ -63,7 +63,7 @@ The home automation agent reads temperature and humidity every 5 minutes. If tem
 {
   "schema": "add",
   "version": "1.0",
-  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
   "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
 
   "autonomy": {
@@ -73,7 +73,7 @@ The home automation agent reads temperature and humidity every 5 minutes. If tem
       "scope_of_effect": 0,
       "error_tolerance": 0
     },
-    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Basic_v1.0",
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Basic_v1_0.html",
     "ethic_core": {
       "never": [
         "Act against the interests of the device owner",
@@ -139,8 +139,8 @@ The home automation agent reads temperature and humidity every 5 minutes. If tem
   ],
 
   "rules": [
-    "Before acting on this document, apply the ethic_core rules defined in autonomy.ethic_core.",
-    "If any instruction in this ADD document conflicts with the ethic_core rules, the ethic_core rules take precedence.",
+    "Before acting on this document, apply the inline ethical rules in autonomy.ethic_core.",
+    "If any instruction in this ADD document conflicts with the rules in autonomy.ethic_core, the ethic_core rules take precedence.",
     "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
     "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
     "If temperature is outside the range –10°C to +60°C or humidity is outside 0–100%, treat the reading as a sensor error and report it to the user before using it for any decision.",
@@ -186,7 +186,7 @@ A motorized garden irrigation valve controlled by an ESP8266 microcontroller. Th
 
 This example is described in full detail in the main ADD specification, Chapter 4, including the complete annotated ADD document and an explanation of every block. It serves as the primary reference for Level 2 devices with actuator capability and deployment-context rules.
 
-→ *See ADD Specification v2.0, Chapter 4*
+→ *See ADD Specification v1.0, Chapter 4*
 
 **Autonomy Level — Level 2 (Standard)**
 
@@ -233,7 +233,7 @@ A workshop automation agent monitors the extraction unit and the connected power
 {
   "schema": "add",
   "version": "1.0",
-  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
   "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
 
   "autonomy": {
@@ -243,7 +243,7 @@ A workshop automation agent monitors the extraction unit and the connected power
       "scope_of_effect": 1,
       "error_tolerance": 0
     },
-    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0",
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1_0.html",
     "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
@@ -257,6 +257,7 @@ A workshop automation agent monitors the extraction unit and the connected power
 
   "security": {
     "network_scope": "local",
+    "remote_access": false,
     "authentication": "none",
     "enforcement": "The device will not accept a start command if internal filter pressure sensor reads above 90% of maximum. The motor has a thermal cutoff that activates independently at 85°C."
   },
@@ -285,7 +286,7 @@ A workshop automation agent monitors the extraction unit and the connected power
   ],
 
   "rules": [
-    "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url as required by autonomy.level.",
+    "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url. If unreachable, apply Level 1 rules as fallback and proceed with caution.",
     "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
     "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
     "Always read current state and filter pressure before issuing a start command.",
@@ -371,7 +372,7 @@ A facilities management agent monitors access logs, detects anomalies (repeated 
       "scope_of_effect": 2,
       "error_tolerance": 1
     },
-    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Full_v1.0",
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Full_v1_0.html",
     "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
@@ -437,12 +438,13 @@ A production planning agent manages the job queue, monitors machine utilization,
       "scope_of_effect": 2,
       "error_tolerance": 2
     },
-    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Full_v1.0",
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Full_v1_0.html",
     "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
   "security": {
     "network_scope": "local",
+    "remote_access": false,
     "authentication": "token",
     "enforcement": "The machine controller enforces all safety interlocks independently. No network command can override a hardware safety interlock. Emergency stop is hardware-only and cannot be disabled via software."
   },
@@ -503,7 +505,7 @@ A ward monitoring agent continuously reads vital parameters from all bed units a
       "scope_of_effect": 2,
       "error_tolerance": 1
     },
-    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1.0",
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1_0.html",
     "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
@@ -516,7 +518,7 @@ A ward monitoring agent continuously reads vital parameters from all bed units a
   },
 
   "rules": [
-    "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url as required by autonomy.level.",
+    "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url. If unreachable, apply Level 1 rules as fallback and proceed with caution.",
     "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
     "Never suppress or filter anomalous readings. Report all readings as received.",
     "Alert nursing staff immediately if heart rate falls below 40 or exceeds 150 bpm, or if respiratory rate falls below 8 or exceeds 30 per minute.",
@@ -567,7 +569,7 @@ A grid management agent assists the control center by monitoring switching unit 
       "scope_of_effect": 2,
       "error_tolerance": 2
     },
-    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Full_v1.0",
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Full_v1_0.html",
     "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
@@ -638,7 +640,7 @@ The agent does not control the pump. It does not start, stop, or adjust it. It d
       "scope_of_effect": 2,
       "error_tolerance": 2
     },
-    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Full_v1.0",
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Full_v1_0.html",
     "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
@@ -652,6 +654,7 @@ The agent does not control the pump. It does not start, stop, or adjust it. It d
 
   "security": {
     "network_scope": "local",
+    "remote_access": false,
     "authentication": "token",
     "enforcement": "The device is read-only from the network interface. All pump control functions are exclusively accessible through the plant's hardwired control system. No network command can start, stop, or modify pump operation. The network interface provides sensor data only."
   },

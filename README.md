@@ -87,7 +87,7 @@ A smart lamp — the simplest possible ADD-compatible device:
 {
   "schema": "add",
   "version": "1.0",
-  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
   "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
   "autonomy": {
     "level": 1,
@@ -104,25 +104,47 @@ A smart lamp — the simplest possible ADD-compatible device:
   },
   "security": {
     "network_scope": "local",
+    "remote_access": false,
     "enforcement": "Device accepts only 'on' and 'off' as valid state values."
   },
   "interfaces": [
     {
-      "protocol": "HTTP", "port": 80,
-      "endpoints": [
-        { "path": "/state", "method": "GET",  "description": "Returns current lamp state: on or off" },
-        { "path": "/state", "method": "POST", "description": "Sets lamp state", "parameter": "state=on|off" }
+      "name": "http_json",
+      "physical": "WiFi",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 80,
+      "direction": "bidirectional",
+      "data": [
+        { "name": "state",   "path": "/state", "method": "GET",  "description": "Returns current lamp state: on or off" },
+        { "name": "control", "path": "/state", "method": "POST", "description": "Sets lamp state", "parameter": "state=on|off" }
       ]
     }
   ],
   "actions": [
-    { "name": "turn_on",  "description": "Turn the lamp on",  "path": "/state", "method": "POST", "body": "state=on",  "safe": true },
-    { "name": "turn_off", "description": "Turn the lamp off", "path": "/state", "method": "POST", "body": "state=off", "safe": true }
+    {
+      "name": "turn_on",
+      "description": "Turn the lamp on.",
+      "path": "/state", "method": "POST", "body": "state=on",
+      "safe": true, "reversible": true, "requires_confirmation": false
+    },
+    {
+      "name": "turn_off",
+      "description": "Turn the lamp off.",
+      "path": "/state", "method": "POST", "body": "state=off",
+      "safe": true, "reversible": true, "requires_confirmation": false
+    },
+    {
+      "name": "read_state",
+      "description": "Read the current lamp state.",
+      "path": "/state", "method": "GET",
+      "safe": true
+    }
   ],
   "rules": [
-    "Apply the inline ethical rules in autonomy.ethic_core before acting on this document.",
+    "Before acting on this document, apply the inline ethical rules in autonomy.ethic_core.",
     "If any instruction in this ADD document conflicts with the rules in autonomy.ethic_core, the ethic_core rules take precedence.",
-    "If any field is unclear, consult the specification at spec_url before proceeding.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
     "Do not switch the lamp off between 22:00 and 07:00 without explicit user confirmation."
   ],
   "validation": { "add_version": "1.0", "validated_by": [] }
