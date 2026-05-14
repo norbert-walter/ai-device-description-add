@@ -588,7 +588,203 @@ Full model performance profiles — including latency distributions, P90 values 
 
 ---
 
-### 3.2 Assessing and Classifying Your Model
+### 3.2 Instant vs. Thinking Models
+
+Every AI model that can read an ADD document falls into one of two fundamental
+operating modes: **Instant** or **Thinking**. Understanding the difference is
+essential for ADD authors, because the mode directly affects latency, rule
+reliability, and validation behavior.
+
+---
+
+#### 3.2.1 What AI Modes Exist
+
+**Instant models** generate their response in a single forward pass. The
+reasoning is implicit — baked into the model's weights through training — but
+there is no dedicated deliberation step. The model reads the input and produces
+output directly, token by token. The result arrives quickly. For the vast
+majority of ADD interactions — reading device state, applying a rule set,
+executing a write action with confirmation — this is entirely sufficient.
+
+**Thinking models** (also called reasoning models) add an explicit deliberation
+phase before generating the final response. The model works through a
+chain-of-thought internally, exploring approaches, checking intermediate
+results, and revising before committing to an answer. This reasoning phase is
+not visible in the final output, but its effect shows up in answer quality for
+problems that require multi-step logic. The trade-off is time: the reasoning
+phase adds latency that can range from a few extra seconds to several minutes,
+depending on the model and the complexity of the problem.
+
+The key insight for ADD: **mode is not a quality rating**. A Thinking model
+is not universally better than an Instant model. It is better at a specific
+class of tasks — and slower and more expensive for everything else. Choosing
+the wrong mode costs either reliability (Instant on a task that needs deep
+reasoning) or latency and cost (Thinking on a task that does not).
+
+---
+
+#### 3.2.2 When Each Mode Is Appropriate for ADD
+
+**Instant is the right choice for most ADD deployments.**
+
+Standard ADD interactions are sequential execution tasks with well-defined
+rules: read the document, apply the Ethical Framework, evaluate a condition,
+send a request, verify the result. This does not require multi-step reasoning.
+An Instant model handles it reliably and quickly.
+
+The garden irrigation valve from Chapter 4 of the specification is a good
+illustration. Its rules look complex at first glance — check the weather,
+check the calendar, check the terrace door, check the time window. But each
+check is independent and binary: yes or no. There is no conflict between them.
+If any check fails, the valve stays closed. No weighing, no trade-off, no
+ambiguity. A checklist, not a reasoning problem. An Instant model works through
+it correctly and quickly. A Thinking model would produce the same result at
+higher latency and cost — adding nothing.
+
+Instant is specifically the right choice when:
+
+- The ADD rules are a checklist of independent conditions (the normal case)
+- The deployment has `timing: "critical"` actions with short `max_response_time`
+  requirements — Thinking latency may disqualify the model entirely
+- The device is a simple sensor or actuator with a small action space
+- The agent runs on constrained hardware (local deployment, embedded server)
+- Cost per request matters (high-frequency polling, continuous monitoring)
+
+**Thinking earns its place only when decisions require genuine trade-offs.**
+
+The distinction is not the number of conditions — it is whether conditions can
+conflict and require prioritization. Thinking is appropriate when:
+
+- **Conflicting rules with no clear priority** — for example, a heating system
+  with a buffer tank, solar collector, and three heating circuits. When the
+  buffer is half-full, the sun is weak, and two heating circuits are
+  requesting heat — in what order should the system charge and distribute?
+  That requires genuine trade-offs, not a checklist.
+
+- **The ADD authoring and validation phase** — when creating or validating a
+  complex ADD document with many rules, a Thinking model is more likely to
+  surface rule conflicts, ambiguities, and missing conditions that an Instant
+  model would silently resolve in one direction. Use Thinking for authoring
+  and validation even if the deployed agent will use Instant for operation.
+
+**The latency constraint is decisive for timing-critical deployments.**
+
+If any action or rule in your ADD document defines `timing: "critical"` and
+`max_response_time`, measure the Thinking model's actual response time under
+realistic load before choosing it. A Thinking model cloud deployment can take
+20–60 seconds on a complex problem. A local small Thinking model may be faster,
+but still slower than its Instant equivalent. If the device requires a response
+within 10 seconds, a Thinking model may be disqualified regardless of its
+reasoning quality.
+
+This is not theoretical. The `timing_compliance` score category in the
+`validation` block exists precisely to record this: a model that passes all
+other validation categories but fails timing is **not safe to deploy** for
+that device. Record the actual measured latency in the `findings` array.
+
+---
+
+#### 3.2.3 Model Overview by Vendor (Q2 2026)
+
+The following table lists representative models by vendor, separated into
+Instant and Thinking columns. How to activate the mode is shown in the last
+column — this varies significantly between vendors.
+
+> Verify current model names and availability with vendor documentation.
+> This table is a snapshot, not a maintained registry.
+
+| Vendor | Instant models | Thinking models | How to activate mode |
+|--------|---------------|-----------------|----------------------|
+| **OpenAI** | GPT-5.3 Instant, GPT-5.5 Instant | GPT-5.4 Thinking, GPT-5.5 Thinking, GPT-5.5 Pro | **Model selection** — Instant and Thinking are separate models. No API switch. The ChatGPT web client has an auto-router that can switch between modes automatically — a risk for ADD Level 2/3 validation. API: select the model string explicitly. |
+| **Anthropic** | claude-sonnet-4-6, claude-haiku-4-5 | claude-opus-4-6 (Extended Thinking) | **API parameter** — same model, optional Extended Thinking via `"thinking": {"type": "enabled", "budget_tokens": N}`. Default is Instant. Explicit activation required for Thinking. |
+| **Google** | Gemini 3 Flash, Gemini 3.1 Flash | Gemini 3 Pro (Deep Think), Gemini 3.1 Pro (Deep Think) | **Mode flag or model tier** — Flash variants are Instant by default. Pro variants support Deep Think mode, activatable via API or UI. Auto-adjustment of reasoning effort based on query complexity is available in some configurations. |
+| **DeepSeek** | DeepSeek-V3.2, DeepSeek-V4 Flash, DeepSeek-V4 Pro | DeepSeek-R1, DeepSeek-R1 (0528) | **Model selection** — V-series (V3, V4) are Instant. R-series (R1) are Thinking. DeepSeek-V3.1 supports hybrid mode (both Instant and Thinking) switchable via API parameter. Reasoning chain exposed in `<think>` tags. |
+| **Alibaba (Qwen)** | Qwen3-Instruct-2507, Qwen3-Coder-480B (Instruct) | Qwen3-Thinking-2507, QwQ-32B | **API parameter or prompt token** — All Qwen3 models support both modes within the same model. `enable_thinking=True/False` via API, or `/think` / `/no_think` tokens in the prompt. Default is Thinking mode — explicitly disable for Instant behavior. Works down to the smallest models (0.6B). |
+
+**Reading the table for ADD deployments:**
+
+- OpenAI's auto-router in the ChatGPT web client is a direct conflict with
+  the Level 2 rule "auto model selection is prohibited." API deployment with
+  an explicit model string is required for Level 2 and above.
+- Qwen3's default is Thinking mode. If your ADD deployment uses Qwen3 and
+  you need Instant behavior (e.g. for timing compliance), explicitly set
+  `enable_thinking=False` in the API call or add `/no_think` to the system
+  prompt. Record the mode used in the `validated_by` entry.
+- DeepSeek R1 makes its reasoning chain visible in `<think>` tags. This is
+  useful during validation — it lets you verify that the model actually
+  applied the ADD rules correctly, not just that it produced the right output.
+- For local deployments (Ollama, LM Studio), Thinking models require
+  significantly more VRAM and generate longer outputs. Factor this into
+  hardware planning.
+
+---
+
+#### 3.2.4 The Validation Implication
+
+Mode must be recorded in the `validated_by` entry alongside the model
+version. A document validated with a model in Instant mode is not
+automatically valid for the same model in Thinking mode — the latency
+profile, rule application behavior, and tool call sequencing can differ.
+
+**Defined values for the `mode` field:**
+
+| Value | Meaning |
+|-------|---------|
+| `"instant"` | Model operates without an explicit reasoning phase. Response is generated directly. |
+| `"thinking"` | Model performs an explicit chain-of-thought reasoning phase before responding. |
+| `"auto"` | Platform switches between Instant and Thinking automatically based on query complexity. The active mode per request is not deterministic. |
+
+For the `validated_by` entry, add a `mode` field to the model record:
+
+```json
+{
+  "name": "Claude",
+  "version": "claude-sonnet-4-6",
+  "mode": "instant",
+  "validated_at": "2026-05-01T08:00:00Z",
+  ...
+}
+```
+
+If the deployment platform uses auto-switching between modes (as OpenAI's
+ChatGPT web client does), record this explicitly as a finding:
+
+```json
+{
+  "severity": "warning",
+  "category": "security",
+  "message": "Deployment uses auto-switching between Instant and Thinking modes.
+              The validated mode may not be active for all requests. Level 2
+              session-integrity rules cannot be fully enforced in this
+              configuration. API deployment with fixed model and mode is
+              recommended for Level 2 and above.",
+  "resolved": false
+}
+```
+
+---
+
+#### 3.2.5 Decision Checklist
+
+Before choosing a model mode for your ADD deployment:
+
+- ☐ Does the ADD document have `timing: "critical"` actions? If yes,
+     measure Thinking latency first — it may disqualify Thinking mode entirely.
+- ☐ Does the rule set have more than ~10 rules with potential conflicts?
+     If yes, consider Thinking for the validation phase at minimum.
+- ☐ Is the deployment Level 2 or above? If yes, avoid platforms with
+     auto-switching between modes. Use API with explicit model string and mode.
+- ☐ Does the vendor default to Thinking mode (e.g. Qwen3)?
+     If yes, explicitly disable it unless the use case requires it.
+- ☐ Is the deployment local (Ollama, LM Studio)?
+     If yes, factor in VRAM and output length for Thinking models.
+- ☐ Whatever mode is used: record it in `validated_by` with a `mode` field.
+
+---
+
+---
+
+### 3.3 Assessing and Classifying Your Model
 
 Before writing an ADD document, you need to know objectively what your model can do. This assessment covers tool discovery, practical self-testing, and response time measurement — together they produce a concrete model classification: **small**, **medium**, or **large**.
 
@@ -820,7 +1016,7 @@ Run each scenario 20 times under realistic conditions. Calculate the 90th percen
 
 ---
 
-### 3.3 When Capabilities Are Insufficient — Three Options
+### 3.4 When Capabilities Are Insufficient — Three Options
 
 After classifying the model, you may find it cannot fulfill all requirements the task demands. There are exactly three responses — and all three are applications of the triangle of balance from Section 1.2.
 
@@ -948,7 +1144,7 @@ Good: `"Open valve. Send: state=open, duration=1 to 60 (minutes). Never send dur
 *Why:* Small models cannot reliably infer that a rule requires an external resource. Without a `requires` field, the model may attempt to apply a rule it cannot fulfill — failing silently.
 
 **Rule 9: Use the exact tool names of your deployment in `requires` fields and rule instructions**
-*Why:* Tool names are not standardized across deployments. A rule that references `fetch_url` will not work in a deployment where the tool is called `web_url_read`. A small model that cannot find a tool by name will either skip the rule or attempt a costly workaround — searching the web, reasoning from memory, or constructing an alternative approach that may take many times longer. Using the exact tool names eliminates this ambiguity entirely. Before writing any rule that references a tool, query the model for its complete tool inventory (Section 3.2, Step 2) and use the exact names returned. If the deployment changes and tool names change, update the ADD document accordingly.
+*Why:* Tool names are not standardized across deployments. A rule that references `fetch_url` will not work in a deployment where the tool is called `web_url_read`. A small model that cannot find a tool by name will either skip the rule or attempt a costly workaround — searching the web, reasoning from memory, or constructing an alternative approach that may take many times longer. Using the exact tool names eliminates this ambiguity entirely. Before writing any rule that references a tool, query the model for its complete tool inventory (Section 3.3, Step 2) and use the exact names returned. If the deployment changes and tool names change, update the ADD document accordingly.
 
 **Rule 10: Declare explicitly that rules take precedence over user statements — and that the decision is final**
 *Why:* A user may verbally state conditions that contradict what external resources actually report — intentionally or not. Without an explicit rule, a small model may weight the user's statement equally with verified data and choose the optimistic interpretation. More critically: if a user issues an explicit command that conflicts with a rule, a small model may enter an iterative reasoning loop — re-reading the Ethical Framework, re-reading the specification, re-checking the rule — trying to find a way to satisfy both the rule and the user. Each iteration triggers additional tool calls. Response time can exceed 10 minutes for a single conflict. The rule must make clear that the decision is final after the first verification — no re-evaluation, no renegotiation.
@@ -1096,7 +1292,7 @@ The difference is not model capability. It is instruction precision. A well-writ
 
 Every IoT device has exactly one `/add` endpoint serving exactly one ADD document. The document must work with the model actually deployed — not with a more capable model the developer prefers.
 
-**The target model must be known before writing begins.** Run the capability assessment (Section 3.2), record the classification, and write the document accordingly.
+**The target model must be known before writing begins.** Run the capability assessment (Section 3.3), record the classification, and write the document accordingly.
 
 **If the model changes:** Update the ADD document and repeat validation with the new model.
 
@@ -1115,14 +1311,14 @@ This checklist covers the complete process from task definition through ADD docu
 - ☐ Task fully defined — what the AI must achieve, not assumed
 - ☐ All rules derived from the task
 - ☐ All required resources identified from the rules
-- ☐ Model documentation read (Section 3.2, Step 1)
-- ☐ Model queried for tool inventory (Section 3.2, Step 2)
+- ☐ Model documentation read (Section 3.3, Step 1)
+- ☐ Model queried for tool inventory (Section 3.3, Step 2)
 - ☐ Tool fingerprint recorded — sorted, pipe-separated (Level 2 and above)
 - ☐ Model self-identification verified — exact version string recorded (Level 2 and above)
-- ☐ Practical self-test completed (Section 3.2, Step 3)
-- ☐ Capability tests run — model classified as small / medium / large (Section 3.2, Step 4)
+- ☐ Practical self-test completed (Section 3.3, Step 3)
+- ☐ Capability tests run — model classified as small / medium / large (Section 3.3, Step 4)
 - ☐ Classification result recorded in `validated_by` under `capabilities`
-- ☐ If capabilities insufficient: option chosen (accept / MCP / larger model) (Section 3.3)
+- ☐ If capabilities insufficient: option chosen (accept / MCP / larger model) (Section 3.4)
 - ☐ MCP services available for all required resources (if Option 2 chosen)
 - ☐ Response time measured for timing-critical actions (90th percentile)
 - ☐ Triangle of balance evaluated — rule complexity, model capacity, device self-protection in proportion
@@ -2909,7 +3105,7 @@ Copy the response verbatim into the `version` field of the `validated_by` entry.
 
 **Recording the tool fingerprint**
 
-After completing Step 2 of the model assessment (Section 3.2), you have the complete list of available tools. Produce the fingerprint as follows:
+After completing Step 2 of the model assessment (Section 3.3), you have the complete list of available tools. Produce the fingerprint as follows:
 
 1. Take all tool names the model reported as available
 2. Sort them alphabetically
