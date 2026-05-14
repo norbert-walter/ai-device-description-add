@@ -590,36 +590,17 @@ Full model performance profiles — including latency distributions, P90 values 
 
 ### 3.2 Instant vs. Thinking Models
 
-Every AI model that can read an ADD document falls into one of two fundamental
-operating modes: **Instant** or **Thinking**. Understanding the difference is
-essential for ADD authors, because the mode directly affects latency, rule
-reliability, and validation behavior.
+Every AI model that can read an ADD document falls into one of two fundamental operating modes: **Instant** or **Thinking**. Understanding the difference is essential for ADD authors, because the mode directly affects latency, rule reliability, and validation behavior.
 
 ---
 
 #### 3.2.1 What AI Modes Exist
 
-**Instant models** generate their response in a single forward pass. The
-reasoning is implicit — baked into the model's weights through training — but
-there is no dedicated deliberation step. The model reads the input and produces
-output directly, token by token. The result arrives quickly. For the vast
-majority of ADD interactions — reading device state, applying a rule set,
-executing a write action with confirmation — this is entirely sufficient.
+**Instant models** generate their response in a single forward pass. The reasoning is implicit — baked into the model's weights through training — but there is no dedicated deliberation step. The model reads the input and produces output directly, token by token. The result arrives quickly. For the vast majority of ADD interactions — reading device state, applying a rule set, executing a write action with confirmation — this is entirely sufficient.
 
-**Thinking models** (also called reasoning models) add an explicit deliberation
-phase before generating the final response. The model works through a
-chain-of-thought internally, exploring approaches, checking intermediate
-results, and revising before committing to an answer. This reasoning phase is
-not visible in the final output, but its effect shows up in answer quality for
-problems that require multi-step logic. The trade-off is time: the reasoning
-phase adds latency that can range from a few extra seconds to several minutes,
-depending on the model and the complexity of the problem.
+**Thinking models** (also called reasoning models) add an explicit deliberation phase before generating the final response. The model works through a chain-of-thought internally, exploring approaches, checking intermediate results, and revising before committing to an answer. This reasoning phase is not visible in the final output, but its effect shows up in answer quality for problems that require multi-step logic. The trade-off is time: the reasoning phase adds latency that can range from a few extra seconds to several minutes, depending on the model and the complexity of the problem.
 
-The key insight for ADD: **mode is not a quality rating**. A Thinking model
-is not universally better than an Instant model. It is better at a specific
-class of tasks — and slower and more expensive for everything else. Choosing
-the wrong mode costs either reliability (Instant on a task that needs deep
-reasoning) or latency and cost (Thinking on a task that does not).
+The key insight for ADD: **mode is not a quality rating**. A Thinking model is not universally better than an Instant model. It is better at a specific class of tasks — and slower and more expensive for everything else. Choosing the wrong mode costs either reliability (Instant on a task that needs deep reasoning) or latency and cost (Thinking on a task that does not).
 
 ---
 
@@ -627,68 +608,37 @@ reasoning) or latency and cost (Thinking on a task that does not).
 
 **Instant is the right choice for most ADD deployments.**
 
-Standard ADD interactions are sequential execution tasks with well-defined
-rules: read the document, apply the Ethical Framework, evaluate a condition,
-send a request, verify the result. This does not require multi-step reasoning.
-An Instant model handles it reliably and quickly.
+Standard ADD interactions are sequential execution tasks with well-defined rules: read the document, apply the Ethical Framework, evaluate a condition, send a request, verify the result. This does not require multi-step reasoning. An Instant model handles it reliably and quickly.
 
-The garden irrigation valve from Chapter 4 of the specification is a good
-illustration. Its rules look complex at first glance — check the weather,
-check the calendar, check the terrace door, check the time window. But each
-check is independent and binary: yes or no. There is no conflict between them.
-If any check fails, the valve stays closed. No weighing, no trade-off, no
-ambiguity. A checklist, not a reasoning problem. An Instant model works through
-it correctly and quickly. A Thinking model would produce the same result at
-higher latency and cost — adding nothing.
+The garden irrigation valve from Chapter 4 of the specification is a good illustration. Its rules look complex at first glance — check the weather, check the calendar, check the terrace door, check the time window. But each check is independent and binary: yes or no. There is no conflict between them. If any check fails, the valve stays closed. No weighing, no trade-off, no ambiguity. A checklist, not a reasoning problem. An Instant model works through it correctly and quickly. A Thinking model would produce the same result at higher latency and cost — adding nothing.
 
 Instant is specifically the right choice when:
 
 - The ADD rules are a checklist of independent conditions (the normal case)
-- The deployment has `timing: "critical"` actions with short `max_response_time`
-  requirements — Thinking latency may disqualify the model entirely
+- The deployment has `timing: "critical"` actions with short `max_response_time` requirements — Thinking latency may disqualify the model entirely
 - The device is a simple sensor or actuator with a small action space
 - The agent runs on constrained hardware (local deployment, embedded server)
 - Cost per request matters (high-frequency polling, continuous monitoring)
 
 **Thinking earns its place only when decisions require genuine trade-offs.**
 
-The distinction is not the number of conditions — it is whether conditions can
-conflict and require prioritization. Thinking is appropriate when:
+The distinction is not the number of conditions — it is whether conditions can conflict and require prioritization. Thinking is appropriate when:
 
-- **Conflicting rules with no clear priority** — for example, a heating system
-  with a buffer tank, solar collector, and three heating circuits. When the
-  buffer is half-full, the sun is weak, and two heating circuits are
-  requesting heat — in what order should the system charge and distribute?
-  That requires genuine trade-offs, not a checklist.
+- **Conflicting rules with no clear priority** — for example, a heating system with a buffer tank, solar collector, and three heating circuits. When the buffer is half-full, the sun is weak, and two heating circuits are requesting heat — in what order should the system charge and distribute? That requires genuine trade-offs, not a checklist.
 
-- **The ADD authoring and validation phase** — when creating or validating a
-  complex ADD document with many rules, a Thinking model is more likely to
-  surface rule conflicts, ambiguities, and missing conditions that an Instant
-  model would silently resolve in one direction. Use Thinking for authoring
-  and validation even if the deployed agent will use Instant for operation.
+- **The ADD authoring and validation phase** — when creating or validating a complex ADD document with many rules, a Thinking model is more likely to surface rule conflicts, ambiguities, and missing conditions that an Instant model would silently resolve in one direction. Use Thinking for authoring and validation even if the deployed agent will use Instant for operation.
 
 **The latency constraint is decisive for timing-critical deployments.**
 
-If any action or rule in your ADD document defines `timing: "critical"` and
-`max_response_time`, measure the Thinking model's actual response time under
-realistic load before choosing it. A Thinking model cloud deployment can take
-20–60 seconds on a complex problem. A local small Thinking model may be faster,
-but still slower than its Instant equivalent. If the device requires a response
-within 10 seconds, a Thinking model may be disqualified regardless of its
-reasoning quality.
+If any action or rule in your ADD document defines `timing: "critical"` and `max_response_time`, measure the Thinking model's actual response time under realistic load before choosing it. A Thinking model cloud deployment can take 20–60 seconds on a complex problem. A local small Thinking model may be faster, but still slower than its Instant equivalent. If the device requires a response within 10 seconds, a Thinking model may be disqualified regardless of its reasoning quality.
 
-This is not theoretical. The `timing_compliance` score category in the
-`validation` block exists precisely to record this: a model that passes all
-other validation categories but fails timing is **not safe to deploy** for
-that device. Record the actual measured latency in the `findings` array.
+This is not theoretical. The `timing_compliance` score category in the `validation` block exists precisely to record this: a model that passes all other validation categories but fails timing is **not safe to deploy** for that device. Record the actual measured latency in the `findings` array.
 
 ---
 
 #### 3.2.3 Model Overview by Vendor (Q2 2026)
 
-The following table lists representative models by vendor, separated into
-Instant and Thinking columns. How to activate the mode is shown in the last
-column — this varies significantly between vendors.
+The following table lists representative models by vendor, separated into Instant and Thinking columns. How to activate the mode is shown in the last column — this varies significantly between vendors.
 
 > Verify current model names and availability with vendor documentation.
 > This table is a snapshot, not a maintained registry.
@@ -703,28 +653,16 @@ column — this varies significantly between vendors.
 
 **Reading the table for ADD deployments:**
 
-- OpenAI's auto-router in the ChatGPT web client is a direct conflict with
-  the Level 2 rule "auto model selection is prohibited." API deployment with
-  an explicit model string is required for Level 2 and above.
-- Qwen3's default is Thinking mode. If your ADD deployment uses Qwen3 and
-  you need Instant behavior (e.g. for timing compliance), explicitly set
-  `enable_thinking=False` in the API call or add `/no_think` to the system
-  prompt. Record the mode used in the `validated_by` entry.
-- DeepSeek R1 makes its reasoning chain visible in `<think>` tags. This is
-  useful during validation — it lets you verify that the model actually
-  applied the ADD rules correctly, not just that it produced the right output.
-- For local deployments (Ollama, LM Studio), Thinking models require
-  significantly more VRAM and generate longer outputs. Factor this into
-  hardware planning.
+- OpenAI's auto-router in the ChatGPT web client is a direct conflict with the Level 2 rule "auto model selection is prohibited." API deployment with an explicit model string is required for Level 2 and above.
+- Qwen3's default is Thinking mode. If your ADD deployment uses Qwen3 and you need Instant behavior (e.g. for timing compliance), explicitly set `enable_thinking=False` in the API call or add `/no_think` to the system prompt. Record the mode used in the `validated_by` entry.
+- DeepSeek R1 makes its reasoning chain visible in `<think>` tags. This is useful during validation — it lets you verify that the model actually applied the ADD rules correctly, not just that it produced the right output.
+- For local deployments (Ollama, LM Studio), Thinking models require significantly more VRAM and generate longer outputs. Factor this into hardware planning.
 
 ---
 
 #### 3.2.4 The Validation Implication
 
-Mode must be recorded in the `validated_by` entry alongside the model
-version. A document validated with a model in Instant mode is not
-automatically valid for the same model in Thinking mode — the latency
-profile, rule application behavior, and tool call sequencing can differ.
+Mode must be recorded in the `validated_by` entry alongside the model version. A document validated with a model in Instant mode is not automatically valid for the same model in Thinking mode — the latency profile, rule application behavior, and tool call sequencing can differ.
 
 **Defined values for the `mode` field:**
 
@@ -746,8 +684,7 @@ For the `validated_by` entry, add a `mode` field to the model record:
 }
 ```
 
-If the deployment platform uses auto-switching between modes (as OpenAI's
-ChatGPT web client does), record this explicitly as a finding:
+If the deployment platform uses auto-switching between modes (as OpenAI's ChatGPT web client does), record this explicitly as a finding:
 
 ```json
 {
@@ -768,19 +705,12 @@ ChatGPT web client does), record this explicitly as a finding:
 
 Before choosing a model mode for your ADD deployment:
 
-- ☐ Does the ADD document have `timing: "critical"` actions? If yes,
-     measure Thinking latency first — it may disqualify Thinking mode entirely.
-- ☐ Does the rule set have more than ~10 rules with potential conflicts?
-     If yes, consider Thinking for the validation phase at minimum.
-- ☐ Is the deployment Level 2 or above? If yes, avoid platforms with
-     auto-switching between modes. Use API with explicit model string and mode.
-- ☐ Does the vendor default to Thinking mode (e.g. Qwen3)?
-     If yes, explicitly disable it unless the use case requires it.
-- ☐ Is the deployment local (Ollama, LM Studio)?
-     If yes, factor in VRAM and output length for Thinking models.
+- ☐ Does the ADD document have `timing: "critical"` actions? If yes, measure Thinking latency first — it may disqualify Thinking mode entirely.
+- ☐ Does the rule set have more than ~10 rules with potential conflicts? If yes, consider Thinking for the validation phase at minimum.
+- ☐ Is the deployment Level 2 or above? If yes, avoid platforms with auto-switching between modes. Use API with explicit model string and mode.
+- ☐ Does the vendor default to Thinking mode (e.g. Qwen3)? If yes, explicitly disable it unless the use case requires it.
+- ☐ Is the deployment local (Ollama, LM Studio)? If yes, factor in VRAM and output length for Thinking models.
 - ☐ Whatever mode is used: record it in `validated_by` with a `mode` field.
-
----
 
 ---
 
