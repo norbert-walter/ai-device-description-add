@@ -417,6 +417,7 @@ document is safe to deploy with each of them.
 |-------|-------|--------|-------------|
 | `name` | mandatory | string | AI model family name (e.g. `"Claude"`, `"GPT"`). |
 | `version` | mandatory | string | Exact model version string as the model identifies itself (e.g. `"claude-sonnet-4-20250514"`). Copy verbatim — do not paraphrase. |
+| `mode` | mandatory | `"instant"`, `"thinking"`, `"auto"` | Operating mode at validation time. `"instant"` = no explicit reasoning phase. `"thinking"` = explicit chain-of-thought reasoning phase active. `"auto"` = platform switches between modes automatically — session behavior is non-deterministic. A document validated in one mode is not automatically valid for the same model in another mode. |
 | `validated_at` | mandatory | ISO 8601 string | Timestamp of this model's validation run. |
 | `status` | mandatory | `"passed"`, `"passed_with_warnings"`, `"failed"` | Overall result for this model. `"failed"` means this model must not be used for autonomous operation with this document. |
 | `score` | mandatory | object | Per-category pass/fail/warning scores. See score categories below. |

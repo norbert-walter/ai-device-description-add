@@ -17,7 +17,7 @@ Each example follows the same structure:
 - **Autonomy Level** — the three factor scores with justification
 - **Key Rules** — the most important device-specific behavioral rules
 - **AI Agent Scenario** — what a concrete AI agent interaction looks like
-- **ADD Document** — the complete or abbreviated ADD document
+- **ADD Document** — the complete ADD document
 
 **Autonomy Level quick reference:**
 
@@ -134,7 +134,11 @@ The home automation agent reads temperature and humidity every 5 minutes. If tem
       "description": "Read current temperature and humidity.",
       "path": "/json",
       "method": "GET",
-      "safe": true
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "actor": "multiple"
     }
   ],
 
@@ -157,6 +161,7 @@ The home automation agent reads temperature and humidity every 5 minutes. If tem
       {
         "name": "Claude",
         "version": "claude-sonnet-4-5",
+        "mode": "instant",
         "validated_at": "2026-04-27T09:00:00Z",
         "status": "passed",
         "score": {
@@ -182,11 +187,7 @@ The home automation agent reads temperature and humidity every 5 minutes. If tem
 
 **Device & Context**
 
-A motorized garden irrigation valve controlled by an ESP8266 microcontroller. The AI agent coordinates weather forecast, calendar, and home automation state to decide when and how long to water.
-
-This example is described in full detail in the main ADD specification, Chapter 4, including the complete annotated ADD document and an explanation of every block. It serves as the primary reference for Level 2 devices with actuator capability and deployment-context rules.
-
-→ *See ADD Specification v1.0, Chapter 4*
+A motorized garden irrigation valve controlled by an ESP8266 microcontroller. The AI agent coordinates weather forecast, calendar, and home automation state to decide when and how long to water. This is the primary reference example for Level 2 devices with actuator capability and deployment-context rules.
 
 **Autonomy Level — Level 2 (Standard)**
 
@@ -196,6 +197,199 @@ This example is described in full detail in the main ADD specification, Chapter 
 | Scope of Effect | 1 | Water on a neighbor's path or shared infrastructure is possible |
 | Error Tolerance | 0 | Errors noticed within hours — no immediate danger |
 | **Total** | **2** | **Level 2 — Standard** |
+
+**Key Rules**
+- Always fetch and apply the Standard Ethical Framework before any action
+- Act autonomously when all conditions are met — no per-action confirmation required in autonomous agent deployment
+- Do not open the valve if rain is forecast within the next 24 hours
+- Do not open the valve if the terrace door is open
+- Do not open the valve between 22:00 and 05:00
+- Do not open the valve if a garden calendar event starts within the next 2 hours
+- Verify valve state after every open or close command
+- If the valve has been open for more than 55 minutes without a close command, warn the user
+
+**AI Agent Scenario**
+
+The autonomous irrigation agent runs every morning between 06:00 and 07:00. It fetches the weather forecast, checks the terrace door state, reads the garden calendar, and opens the valve for 30 minutes if all conditions permit — without per-action user confirmation (confirmation_scope: autonomous). If any condition is not met, it reports the reason and exits. The user is notified of every session outcome.
+
+**ADD Document**
+
+```json
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+
+  "autonomy": {
+    "level": 2,
+    "scores": {
+      "reversibility":   1,
+      "scope_of_effect": 1,
+      "error_tolerance": 0
+    },
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Standard_v1_0.html",
+    "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
+  },
+
+  "device": {
+    "name": "Garden Irrigation Valve",
+    "type": "actuator",
+    "ip": "192.168.1.93",
+    "location": "Garden, main water supply",
+    "firmware": "V1.4",
+    "hardware": "ESP8266",
+    "doc_url": "https://example.com/irrigation-valve/manual",
+    "doc_url_note": "See chapter 3 for valve timing behavior and chapter 5 for error codes."
+  },
+
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "none",
+    "enforcement": "The device enforces a maximum open duration of 60 minutes per session independently. It rejects any duration value outside the range 1–60 minutes regardless of client input."
+  },
+
+  "interfaces": [
+    {
+      "name": "http_json",
+      "physical": "WiFi",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 80,
+      "direction": "bidirectional",
+      "data": [
+        { "name": "state",   "path": "/json",    "method": "GET" },
+        { "name": "control", "path": "/control", "method": "POST" }
+      ]
+    }
+  ],
+
+  "actions": [
+    {
+      "name": "open_valve",
+      "description": "Open the irrigation valve for 1–60 minutes. Device enforces the limit independently.",
+      "interface": "http_json",
+      "method": "POST",
+      "path": "/control",
+      "parameters": {
+        "state":    { "type": "string",  "values": ["open"], "required": true },
+        "duration": { "type": "integer", "min": 1, "max": 60, "unit": "minutes", "required": true }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": false,
+      "requires_confirmation": false,
+      "confirmation_scope": "autonomous",
+      "actor": "single"
+    },
+    {
+      "name": "close_valve",
+      "description": "Close the irrigation valve immediately.",
+      "interface": "http_json",
+      "method": "POST",
+      "path": "/control",
+      "parameters": {
+        "state": { "type": "string", "values": ["closed"], "required": true }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "confirmation_scope": "autonomous",
+      "actor": "single"
+    },
+    {
+      "name": "read_state",
+      "description": "Read current valve state, remaining open duration if active, and total water volume dispensed today.",
+      "interface": "http_json",
+      "method": "GET",
+      "path": "/json",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "actor": "multiple"
+    }
+  ],
+
+  "rules": [
+    "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url as required by autonomy.level.",
+    "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
+    "Verify the result of every open or close action by reading the device state afterward.",
+    "Level 2: Place the Ethical Framework summary in the system prompt before session start. Renew every 15 messages to prevent rule dilution.",
+    "Level 2 and above: Before session start, the operator must explicitly select a validated model from validation.validated_by. Auto model selection is prohibited.",
+    "Level 2 and above: At session start, identify the active model and verify that its identifier matches an entry in validation.validated_by. If no match is found, refuse all non-safe actions.",
+    "Level 2 and above: At session start, enumerate all available tools and verify that every tool listed in validation.validated_by[active_model].tools_required is present.",
+    {
+      "instruction": "Do not open the valve if precipitation_sum[0] > 0 or precipitation_sum[1] > 0. Fetch from https://api.open-meteo.com/v1/forecast?latitude=51.33&longitude=7.04&daily=precipitation_sum&forecast_days=2",
+      "requires": ["fetch_url"]
+    },
+    {
+      "instruction": "Do not open the valve if the terrace door sensor reports state = open.",
+      "requires": ["home_automation"]
+    },
+    {
+      "instruction": "Do not open the valve if a calendar event with location containing 'garden' starts within the next 2 hours.",
+      "requires": ["calendar_api"]
+    },
+    "Do not open the valve between 22:00 and 05:00.",
+    "Do not open the valve for more than 60 minutes in a single session.",
+    "If the valve has been open for more than 55 minutes without a close command, warn the user and ask whether to close it.",
+    "Act autonomously when all rules can be verified and all conditions permit. Stop and alert the user when a required tool is unavailable, a rule cannot be verified, or an unexpected device response occurs."
+  ],
+
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Added cache-buster rule for read requests.",
+      "Added warning rule for sessions exceeding 55 minutes.",
+      "Added actor field to all actions.",
+      "Added autonomous confirmation scope for agent deployment."
+    ],
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5",
+        "mode": "instant",
+        "validated_at": "2026-04-27T09:15:00Z",
+        "status": "passed_with_warnings",
+        "tools_required": ["fetch_url", "calendar_api", "home_automation"],
+        "tools_fingerprint": "calendar_api|fetch_url|home_automation",
+        "score": {
+          "structure":         "pass",
+          "comprehensibility": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "pass",
+          "security":          "warning",
+          "discovery":         "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [
+          {
+            "severity": "warning",
+            "category": "security",
+            "message": "No authentication configured. Any client on the local network can open the valve. Acceptable for a trusted home network.",
+            "resolved": false
+          }
+        ],
+        "summary": "All actions behaved as described. Autonomous confirmation scope verified. External resource rules applied correctly. Security warning noted — acceptable for home deployment.",
+        "capabilities": {
+          "classification": "large",
+          "max_rules_reliable": 15,
+          "sequential_tool_calls": 5,
+          "ethic_url_usable": true,
+          "response_time_90p_simple_seconds": 4,
+          "response_time_90p_complex_seconds": 28
+        }
+      }
+    ]
+  }
+}
+```
 
 ---
 ---
@@ -227,7 +421,7 @@ A motorized dust extraction unit in a small woodworking workshop, controlled via
 
 A workshop automation agent monitors the extraction unit and the connected power tools. When a tool is activated, the agent checks filter pressure, confirms it is within safe range, and switches on the extraction unit automatically — or blocks the tool activation and alerts the user if the filter needs replacement. At the end of the working day, it switches off the extraction unit and reports the total operating hours since the last filter change.
 
-**ADD Document (abbreviated — key blocks only)**
+**ADD Document**
 
 ```json
 {
@@ -250,7 +444,10 @@ A workshop automation agent monitors the extraction unit and the connected power
   "device": {
     "name": "Workshop Dust Extraction Unit",
     "type": "actuator",
+    "ip": "192.168.1.50",
     "location": "Workshop, rear wall",
+    "firmware": "V3.2",
+    "hardware": "ESP32 with relay",
     "doc_url": "https://example.com/dust-extractor/manual",
     "doc_url_note": "See chapter 5 for filter pressure limits and chapter 7 for error codes."
   },
@@ -262,26 +459,61 @@ A workshop automation agent monitors the extraction unit and the connected power
     "enforcement": "The device will not accept a start command if internal filter pressure sensor reads above 90% of maximum. The motor has a thermal cutoff that activates independently at 85°C."
   },
 
+  "interfaces": [
+    {
+      "name": "http_json",
+      "physical": "WiFi",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 80,
+      "direction": "bidirectional",
+      "data": [
+        { "name": "state",   "path": "/json",    "method": "GET" },
+        { "name": "control", "path": "/control", "method": "POST" }
+      ]
+    }
+  ],
+
   "actions": [
     {
       "name": "start_extraction",
-      "description": "Start the dust extraction motor.",
-      "method": "POST", "path": "/control",
-      "parameters": { "state": { "type": "string", "values": ["on"] } },
-      "safe": false, "reversible": true, "requires_confirmation": true
+      "description": "Start the dust extraction motor. Do not start if filter pressure exceeds 80%.",
+      "interface": "http_json",
+      "method": "POST",
+      "path": "/control",
+      "parameters": { "state": { "type": "string", "values": ["on"], "required": true } },
+      "safe": false,
+      "reversible": true,
+      "idempotent": false,
+      "requires_confirmation": true,
+      "confirmation_scope": "per_action",
+      "actor": "single"
     },
     {
       "name": "stop_extraction",
       "description": "Stop the dust extraction motor immediately.",
-      "method": "POST", "path": "/control",
-      "parameters": { "state": { "type": "string", "values": ["off"] } },
-      "safe": false, "reversible": true, "requires_confirmation": false
+      "interface": "http_json",
+      "method": "POST",
+      "path": "/control",
+      "parameters": { "state": { "type": "string", "values": ["off"], "required": true } },
+      "safe": false,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "confirmation_scope": "per_action",
+      "actor": "single"
     },
     {
       "name": "read_state",
       "description": "Read current motor state, filter pressure (0–100%), and operating hours since last filter change.",
-      "method": "GET", "path": "/json",
-      "safe": true
+      "interface": "http_json",
+      "method": "GET",
+      "path": "/json",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "actor": "multiple"
     }
   ],
 
@@ -289,25 +521,37 @@ A workshop automation agent monitors the extraction unit and the connected power
     "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url. If unreachable, apply Level 1 rules as fallback and proceed with caution.",
     "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
     "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
     "Always read current state and filter pressure before issuing a start command.",
     "Do not start the extraction unit if filter pressure exceeds 80%. Report the condition and instruct the user to replace the filter.",
     "Always confirm with the user before starting the extraction unit.",
     "If the unit stops unexpectedly during operation, do not restart automatically. Report the event and wait for user instruction.",
-    "Verify operating state by reading device state after every start or stop command."
+    "Verify operating state by reading device state after every start or stop command.",
+    "Level 2: Place the Ethical Framework summary in the system prompt before session start. Renew every 15 messages to prevent rule dilution.",
+    "Level 2 and above: Before session start, the operator must explicitly select a validated model from validation.validated_by. Auto model selection is prohibited.",
+    "Level 2 and above: At session start, identify the active model and verify that its identifier matches an entry in validation.validated_by. If no match is found, refuse all non-safe actions.",
+    "Level 2 and above: At session start, enumerate all available tools and verify that every tool listed in validation.validated_by[active_model].tools_required is present."
   ],
 
   "validation": {
     "add_version": "1.0",
     "improvements_applied": [
       "Added rule to always read filter pressure before start command.",
-      "Added rule against automatic restart after unexpected stop."
+      "Added rule against automatic restart after unexpected stop.",
+      "Added ip, firmware, hardware fields to device block.",
+      "Added interfaces block.",
+      "Added actor, idempotent, confirmation_scope to all actions."
     ],
     "validated_by": [
       {
         "name": "Claude",
         "version": "claude-sonnet-4-5",
+        "mode": "instant",
         "validated_at": "2026-04-27T09:30:00Z",
         "status": "passed_with_warnings",
+        "tools_required": ["fetch_url"],
+        "tools_fingerprint": "fetch_url",
         "score": {
           "structure":         "pass",
           "comprehensibility": "pass",
@@ -325,7 +569,15 @@ A workshop automation agent monitors the extraction unit and the connected power
             "resolved": false
           }
         ],
-        "summary": "Well-described actuator with appropriate safety rules. Fire risk through clogged filter is correctly addressed. Authentication warning noted. Suitable for deployment in a trusted local workshop network."
+        "summary": "Well-described actuator with appropriate safety rules. Fire risk through clogged filter is correctly addressed. Authentication warning noted. Suitable for deployment in a trusted local workshop network.",
+        "capabilities": {
+          "classification": "large",
+          "max_rules_reliable": 15,
+          "sequential_tool_calls": 5,
+          "ethic_url_usable": true,
+          "response_time_90p_simple_seconds": 4,
+          "response_time_90p_complex_seconds": 28
+        }
       }
     ]
   }
@@ -361,10 +613,15 @@ An IP-based electronic door lock system controlling access to a company office b
 
 A facilities management agent monitors access logs, detects anomalies (repeated failed access attempts, access outside normal hours), and alerts security staff. In normal operation it unlocks the main entrance at business hours start and locks it at close. For after-hours access requests from authorized personnel, it verifies identity through a secondary channel before unlocking — and logs every action with full context. It never acts on access requests autonomously without verification.
 
-**ADD Document (abbreviated — key blocks only)**
+**ADD Document**
 
 ```json
 {
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+
   "autonomy": {
     "level": 3,
     "scores": {
@@ -376,23 +633,168 @@ A facilities management agent monitors access logs, detects anomalies (repeated 
     "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
+  "device": {
+    "name": "Office Building Access Control System",
+    "type": "actuator",
+    "ip": "10.0.1.20",
+    "location": "Office building main entrance and all access points",
+    "firmware": "AccessOS V4.7",
+    "hardware": "IP door controller",
+    "doc_url": "https://example.com/access-control/manual",
+    "doc_url_note": "See chapter 3 for door zone definitions and chapter 8 for alarm codes."
+  },
+
   "security": {
     "network_scope": "vpn",
+    "remote_access": true,
     "authentication": "token",
-    "enforcement": "The system requires a valid API token for every request. Tokens are issued per authorized agent and expire after 8 hours. All actions are logged server-side regardless of client-side logging."
+    "enforcement": "The system requires a valid API token for every request. Tokens are issued per authorized agent and expire after 8 hours. All actions are logged server-side regardless of client-side logging. The fire alarm system has a direct hardware override — no software command can prevent doors from unlocking during a fire alarm."
   },
+
+  "interfaces": [
+    {
+      "name": "http_json",
+      "physical": "Ethernet",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 443,
+      "direction": "bidirectional",
+      "description": "All requests require Bearer token authentication. Base URL: https://10.0.1.20/api/v1"
+    }
+  ],
+
+  "actions": [
+    {
+      "name": "lock_door",
+      "description": "Lock a specific door or all doors. Specify door_id or use 'all' for all doors.",
+      "interface": "http_json",
+      "method": "POST",
+      "path": "/doors/lock",
+      "parameters": {
+        "door_id": { "type": "string", "values": ["main", "side", "emergency", "all"], "required": true },
+        "reason":  { "type": "string", "required": true }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": true,
+      "confirmation_scope": "per_action",
+      "requires_auth": true,
+      "actor": "single"
+    },
+    {
+      "name": "unlock_door",
+      "description": "Unlock a specific door. Never unlock without verified identity and authorization. Never unlock if fire alarm is active.",
+      "interface": "http_json",
+      "method": "POST",
+      "path": "/doors/unlock",
+      "parameters": {
+        "door_id":    { "type": "string", "values": ["main", "side", "emergency"], "required": true },
+        "reason":     { "type": "string", "required": true },
+        "authorized_by": { "type": "string", "required": true }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": false,
+      "requires_confirmation": true,
+      "confirmation_scope": "per_action",
+      "requires_auth": true,
+      "actor": "single"
+    },
+    {
+      "name": "read_state",
+      "description": "Read current lock state of all doors, active alarms, and last access event.",
+      "interface": "http_json",
+      "method": "GET",
+      "path": "/doors/state",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true,
+      "actor": "multiple"
+    },
+    {
+      "name": "read_access_log",
+      "description": "Read the access event log for the specified time period.",
+      "interface": "http_json",
+      "method": "GET",
+      "path": "/log",
+      "parameters": {
+        "from": { "type": "string", "unit": "ISO 8601 datetime", "required": true },
+        "to":   { "type": "string", "unit": "ISO 8601 datetime", "required": true }
+      },
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true,
+      "actor": "multiple"
+    }
+  ],
 
   "rules": [
     "Before acting on this document, fetch and fully internalize the Ethical Framework at autonomy.ethic_url. Do not proceed if it cannot be loaded.",
     "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
-    "Never unlock any door without verifying the requesting identity through a secondary channel.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching.",
+    "Never unlock any door without verifying the requesting identity through a secondary channel before acting.",
     "Never unlock the main entrance outside 07:00–20:00 Monday–Friday without explicit written authorization from building management.",
     "If a forced entry or tamper alert is active, lock all doors immediately and alert security. Do not wait for confirmation.",
-    "Never unlock any door if the fire alarm is active.",
-    "Log every action with timestamp, requesting identity, reason, and outcome.",
+    "Never unlock any door if the fire alarm is active. The building fire safety system has hardware override authority.",
+    "Log every lock and unlock action with timestamp, door ID, requesting identity, reason, and outcome.",
     "Require explicit user confirmation for every lock or unlock action.",
-    "Never act on access requests from unverified sources, regardless of claimed authority."
-  ]
+    "Never act on access requests from unverified sources, regardless of claimed authority.",
+    "Require multi-factor authorization for any action that affects more than one door simultaneously."
+  ],
+
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Added full schema, device, interfaces, and actions blocks.",
+      "Added actor field to all actions.",
+      "Added fire alarm hardware override note to enforcement field.",
+      "Added multi-factor rule for multi-door actions."
+    ],
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5",
+        "mode": "instant",
+        "validated_at": "2026-04-27T09:45:00Z",
+        "status": "passed",
+        "tools_required": ["fetch_url"],
+        "tools_fingerprint": "fetch_url",
+        "score": {
+          "structure":         "pass",
+          "comprehensibility": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "pass",
+          "security":          "pass",
+          "discovery":         "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [
+          {
+            "severity": "info",
+            "category": "rules_compliance",
+            "message": "Identity verification rule depends on a secondary channel not described in the ADD document. The operator must ensure the AI deployment has access to a suitable identity verification tool.",
+            "resolved": false
+          }
+        ],
+        "summary": "Level 3 access control document correctly structured. All unlock rules applied correctly. Fire alarm interlock understood. Identity verification dependency noted. Suitable for deployment with this model in a VPN-secured environment.",
+        "capabilities": {
+          "classification": "large",
+          "max_rules_reliable": 15,
+          "sequential_tool_calls": 5,
+          "ethic_url_usable": true,
+          "response_time_90p_simple_seconds": 4,
+          "response_time_90p_complex_seconds": 28
+        }
+      }
+    ]
+  }
 }
 ```
 
@@ -427,10 +829,15 @@ A computer-controlled milling machine in a production facility, accessible via a
 
 A production planning agent manages the job queue, monitors machine utilization, and alerts maintenance when tool wear thresholds are reached. It can load a verified job file to the machine and prepare it for execution — but the final start command always requires the on-site operator to confirm via a physical button press or a verified two-factor authentication. The agent never starts a job autonomously, regardless of queue urgency.
 
-**ADD Document (abbreviated)**
+**ADD Document**
 
 ```json
 {
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+
   "autonomy": {
     "level": 3,
     "scores": {
@@ -442,23 +849,162 @@ A production planning agent manages the job queue, monitors machine utilization,
     "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
+  "device": {
+    "name": "CNC Milling Machine",
+    "type": "actuator",
+    "ip": "192.168.10.5",
+    "location": "Production facility, hall B, workstation 3",
+    "firmware": "CNC Controller V8.4",
+    "hardware": "Industrial CNC controller",
+    "doc_url": "https://example.com/cnc-mill/manual",
+    "doc_url_note": "See chapter 4 for safety interlock descriptions, chapter 6 for job file format, and chapter 9 for error codes."
+  },
+
   "security": {
     "network_scope": "local",
     "remote_access": false,
     "authentication": "token",
-    "enforcement": "The machine controller enforces all safety interlocks independently. No network command can override a hardware safety interlock. Emergency stop is hardware-only and cannot be disabled via software."
+    "enforcement": "The machine controller enforces all safety interlocks independently. No network command can override a hardware safety interlock. Emergency stop is hardware-only and cannot be disabled via software. The safety door interlock cuts power to the spindle drive independently of any software state."
   },
+
+  "interfaces": [
+    {
+      "name": "http_json",
+      "physical": "Ethernet",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 8080,
+      "direction": "bidirectional",
+      "description": "All requests require Bearer token authentication. Returns JSON status objects."
+    }
+  ],
+
+  "actions": [
+    {
+      "name": "read_state",
+      "description": "Read current machine state: power, spindle status, safety door state, active interlocks, loaded job file, and alarm codes.",
+      "interface": "http_json",
+      "method": "GET",
+      "path": "/status",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true,
+      "actor": "multiple"
+    },
+    {
+      "name": "load_job",
+      "description": "Load a verified, operator-approved job file to the machine. The job file must be pre-approved by the operator before loading.",
+      "interface": "http_json",
+      "method": "POST",
+      "path": "/job/load",
+      "parameters": {
+        "job_id":       { "type": "string", "required": true },
+        "approved_by":  { "type": "string", "required": true }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": false,
+      "requires_confirmation": true,
+      "confirmation_scope": "per_action",
+      "requires_auth": true,
+      "actor": "single"
+    },
+    {
+      "name": "start_job",
+      "description": "Start the loaded machining job. Requires explicit on-site operator confirmation via physical button press or verified two-factor authentication. Never start if safety door is open or any interlock is active.",
+      "interface": "http_json",
+      "method": "POST",
+      "path": "/job/start",
+      "parameters": {
+        "operator_confirmed": { "type": "boolean", "values": [true], "required": true },
+        "confirmation_method": { "type": "string", "values": ["physical_button", "2fa"], "required": true }
+      },
+      "safe": false,
+      "reversible": false,
+      "idempotent": false,
+      "requires_confirmation": true,
+      "confirmation_scope": "per_action",
+      "requires_auth": true,
+      "actor": "single"
+    },
+    {
+      "name": "stop_job",
+      "description": "Stop the current machining job immediately. Use for controlled stop only — for emergencies use the physical emergency stop button.",
+      "interface": "http_json",
+      "method": "POST",
+      "path": "/job/stop",
+      "safe": false,
+      "reversible": false,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true,
+      "actor": "single"
+    }
+  ],
 
   "rules": [
     "Before acting on this document, fetch and fully internalize the Ethical Framework at autonomy.ethic_url. Do not proceed if it cannot be loaded.",
     "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
-    "Never start a machining job without explicit on-site operator confirmation.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Always read machine state before any action. Never act on assumed state.",
+    "Never start a machining job without explicit on-site operator confirmation via physical button press or verified two-factor authentication.",
     "Never start a job if the safety door is open or any safety interlock is active.",
-    "Never attempt to override, bypass, or disable any safety interlock for any reason.",
+    "Never attempt to override, bypass, or disable any safety interlock for any reason whatsoever.",
     "If the machine enters an error or alarm state, stop all activity and alert the operator immediately. Never attempt automatic recovery.",
-    "Never load a job file that has not been explicitly approved by the operator.",
+    "Never load a job file that has not been explicitly approved by the operator — the approved_by field must contain a verifiable operator identity.",
+    "Before issuing a start_job command, verify that the correct tool and workpiece are loaded as specified in the job file.",
     "Verify machine state after every command. If the state does not match the expected result, stop and alert the operator."
-  ]
+  ],
+
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Added full schema, device, interfaces, and actions blocks.",
+      "Added actor and confirmation_scope fields to all actions.",
+      "Added explicit confirmation method parameter to start_job.",
+      "Added hardware safety door note to enforcement field."
+    ],
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5",
+        "mode": "instant",
+        "validated_at": "2026-04-27T10:00:00Z",
+        "status": "passed",
+        "tools_required": ["fetch_url"],
+        "tools_fingerprint": "fetch_url",
+        "score": {
+          "structure":         "pass",
+          "comprehensibility": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "pass",
+          "security":          "pass",
+          "discovery":         "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [
+          {
+            "severity": "info",
+            "category": "rules_compliance",
+            "message": "Physical button confirmation cannot be verified by the AI — the operator must ensure the confirmation_method parameter is set correctly by the calling system.",
+            "resolved": false
+          }
+        ],
+        "summary": "Level 3 maximum-score device correctly structured. All safety interlock rules applied correctly. start_job correctly blocked when safety door open in test scenario. Confirmation requirement enforced. Suitable for deployment as a job management assistant — never as an autonomous control system.",
+        "capabilities": {
+          "classification": "large",
+          "max_rules_reliable": 15,
+          "sequential_tool_calls": 5,
+          "ethic_url_usable": true,
+          "response_time_90p_simple_seconds": 4,
+          "response_time_90p_complex_seconds": 28
+        }
+      }
+    ]
+  }
 }
 ```
 
@@ -494,10 +1040,15 @@ Note: Although this is a read-only device, the scope of effect and error toleran
 
 A ward monitoring agent continuously reads vital parameters from all bed units and maintains a real-time dashboard for nursing staff. It detects trends — a gradually declining heart rate, irregular respiratory patterns — and alerts nursing staff before threshold values are reached. It never acts on the data autonomously beyond alerting; all clinical decisions remain with medical personnel.
 
-**ADD Document (abbreviated)**
+**ADD Document**
 
 ```json
 {
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+
   "autonomy": {
     "level": 2,
     "scores": {
@@ -512,20 +1063,130 @@ A ward monitoring agent continuously reads vital parameters from all bed units a
   "device": {
     "name": "Hospital Bed Monitor Unit",
     "type": "sensor",
+    "ip": "10.1.3.112",
     "location": "Ward 3B, Bed 12",
+    "firmware": "BedMon V5.3",
+    "hardware": "Medical IoT sensor unit",
     "doc_url": "https://example.com/bedmonitor/manual",
     "doc_url_note": "See chapter 4 for vital parameter ranges and chapter 6 for alarm threshold configuration."
   },
 
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "authentication": "token",
+    "enforcement": "Device is read-only from the network interface. It does not accept any write requests and will return HTTP 405 for any non-GET request. All data is transmitted over the hospital's secured internal network."
+  },
+
+  "interfaces": [
+    {
+      "name": "http_json",
+      "physical": "Ethernet",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 443,
+      "direction": "read",
+      "data": [
+        {
+          "name": "vitals",
+          "path": "/json",
+          "method": "GET",
+          "description": "Returns current heart rate (bpm), respiratory rate (breaths/min), bed occupancy (boolean), and device-reported timestamp (unix seconds)"
+        }
+      ]
+    }
+  ],
+
+  "actions": [
+    {
+      "name": "read_vitals",
+      "description": "Read current heart rate, respiratory rate, bed occupancy, and device timestamp. Use device-reported timestamp, not local AI time.",
+      "interface": "http_json",
+      "method": "GET",
+      "path": "/json",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true,
+      "actor": "multiple",
+      "timing": "critical",
+      "max_response_time": 5
+    }
+  ],
+
   "rules": [
     "Before acting on this document, fetch and apply the Ethical Framework at autonomy.ethic_url. If unreachable, apply Level 1 rules as fallback and proceed with caution.",
     "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
-    "Never suppress or filter anomalous readings. Report all readings as received.",
-    "Alert nursing staff immediately if heart rate falls below 40 or exceeds 150 bpm, or if respiratory rate falls below 8 or exceeds 30 per minute.",
-    "Alert nursing staff immediately if data transmission is interrupted for more than 60 seconds.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching.",
+    "Always use the device-reported timestamp for all readings, not local AI time.",
+    "Never suppress, filter, or average anomalous readings. Report all readings as received.",
+    {
+      "instruction": "Alert nursing staff immediately if heart rate falls below 40 or exceeds 150 bpm, or if respiratory rate falls below 8 or exceeds 30 per minute.",
+      "timing": "critical",
+      "max_response_time": 30
+    },
+    {
+      "instruction": "Alert nursing staff immediately if data transmission is interrupted for more than 60 seconds.",
+      "timing": "critical",
+      "max_response_time": 60
+    },
     "Never use readings from this device as the sole basis for a clinical decision. Always present data as supporting information requiring human verification.",
-    "Always use the device-reported timestamp for all readings, not local AI time."
-  ]
+    "Do not attempt to write to this device — it is read-only.",
+    "Level 2: Place the Ethical Framework summary in the system prompt before session start. Renew every 15 messages to prevent rule dilution.",
+    "Level 2 and above: Before session start, the operator must explicitly select a validated model from validation.validated_by. Auto model selection is prohibited.",
+    "Level 2 and above: At session start, identify the active model and verify that its identifier matches an entry in validation.validated_by. If no match is found, refuse all non-safe actions.",
+    "Level 2 and above: At session start, enumerate all available tools and verify that every tool listed in validation.validated_by[active_model].tools_required is present."
+  ],
+
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Added full schema, ip, firmware, hardware, security, interfaces, and actions blocks.",
+      "Added timing and max_response_time to alert rules.",
+      "Added cache-buster rule.",
+      "Added explicit read-only enforcement note."
+    ],
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5",
+        "mode": "instant",
+        "validated_at": "2026-04-27T10:15:00Z",
+        "status": "passed",
+        "tools_required": [],
+        "tools_fingerprint": "",
+        "score": {
+          "structure":         "pass",
+          "comprehensibility": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "pass",
+          "security":          "pass",
+          "discovery":         "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [
+          {
+            "severity": "info",
+            "category": "rules_compliance",
+            "message": "Alert delivery depends on a nursing staff notification tool not described in this ADD document. The operator must ensure the AI deployment has access to a suitable alerting mechanism.",
+            "resolved": false
+          }
+        ],
+        "summary": "Read-only medical monitoring device correctly described. Alert rules applied correctly in test scenarios. Clinical decision support caveat understood and respected. Timing requirements verified. Suitable for deployment as a monitoring supplement — never as a replacement for direct clinical observation.",
+        "capabilities": {
+          "classification": "large",
+          "max_rules_reliable": 15,
+          "sequential_tool_calls": 5,
+          "ethic_url_usable": true,
+          "response_time_90p_simple_seconds": 4,
+          "response_time_90p_complex_seconds": 28
+        }
+      }
+    ]
+  }
 }
 ```
 
@@ -558,10 +1219,15 @@ A remotely controlled switching unit in a regional power distribution network, c
 
 A grid management agent assists the control center by monitoring switching unit status, verifying preconditions before each switching order, and executing verified orders. It cannot initiate a switching operation on its own — every action requires a formally issued switching order from the control center with verified operator authorization. After each operation, it verifies the resulting grid state and reports back. Any unexpected result triggers an immediate halt and escalation.
 
-**ADD Document (abbreviated)**
+**ADD Document**
 
 ```json
 {
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+
   "autonomy": {
     "level": 3,
     "scores": {
@@ -573,22 +1239,137 @@ A grid management agent assists the control center by monitoring switching unit 
     "ethic_url_required": "Fetch and apply this document before any action. If unreachable, do not proceed."
   },
 
+  "device": {
+    "name": "Power Grid Distribution Switch — Node 7B",
+    "type": "actuator",
+    "ip": "10.20.7.11",
+    "location": "Regional distribution substation, sector 7, switching bay B",
+    "firmware": "GridControl V12.4",
+    "hardware": "Industrial switching controller",
+    "doc_url": "https://grid-internal.example/systems/node-7b/manual",
+    "doc_url_note": "See chapter 2 for segment topology, chapter 5 for switching preconditions, and chapter 9 for alarm codes."
+  },
+
   "security": {
     "network_scope": "vpn",
+    "remote_access": true,
     "authentication": "token",
-    "enforcement": "All switching commands require a cryptographically signed switching order. The device verifies the signature independently before executing any command. Commands without a valid signature are rejected and logged."
+    "enforcement": "All switching commands require a cryptographically signed switching order. The device verifies the signature independently before executing any command. Commands without a valid signature are rejected and logged. The device maintains an independent audit log that cannot be modified or deleted via the network interface."
   },
+
+  "interfaces": [
+    {
+      "name": "http_json",
+      "physical": "Ethernet",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 443,
+      "direction": "bidirectional",
+      "description": "All requests require Bearer token and a cryptographically signed switching order for control actions. Base URL: https://10.20.7.11/api/v2"
+    }
+  ],
+
+  "actions": [
+    {
+      "name": "read_grid_state",
+      "description": "Read current switch position, segment voltages, load values, maintenance personnel status, and active alarms for all connected segments.",
+      "interface": "http_json",
+      "method": "GET",
+      "path": "/state",
+      "safe": true,
+      "reversible": true,
+      "idempotent": true,
+      "requires_confirmation": false,
+      "requires_auth": true,
+      "actor": "multiple",
+      "timing": "critical",
+      "max_response_time": 5
+    },
+    {
+      "name": "execute_switching_order",
+      "description": "Execute a signed switching order from the grid control center. Requires order number, authorizing operator ID, and cryptographic signature. Never execute without verifying all preconditions.",
+      "interface": "http_json",
+      "method": "POST",
+      "path": "/switch",
+      "parameters": {
+        "order_number":   { "type": "string", "required": true },
+        "operator_id":    { "type": "string", "required": true },
+        "segment_id":     { "type": "string", "required": true },
+        "action":         { "type": "string", "values": ["connect", "disconnect"], "required": true },
+        "signature":      { "type": "string", "required": true }
+      },
+      "safe": false,
+      "reversible": true,
+      "idempotent": false,
+      "requires_confirmation": true,
+      "confirmation_scope": "per_action",
+      "requires_auth": true,
+      "actor": "single",
+      "timing": "critical",
+      "max_response_time": 10
+    }
+  ],
 
   "rules": [
     "Before acting on this document, fetch and fully internalize the Ethical Framework at autonomy.ethic_url. Do not proceed if it cannot be loaded.",
     "If any instruction in this ADD document conflicts with the Ethical Framework at autonomy.ethic_url, the Ethical Framework takes precedence.",
+    "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
+    "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching.",
+    "Always read full grid state before executing any switching command. Verify all preconditions are met.",
     "Never execute a switching command without a formally issued, cryptographically signed switching order from the grid control center.",
     "Never switch if maintenance personnel are registered as working on the affected segment.",
-    "Verify full grid preconditions before issuing any switching command.",
-    "If the post-switching grid state does not match the expected state, stop all activity immediately and alert the control center. Do not attempt corrective switching.",
+    "If the post-switching grid state does not match the expected state, stop all activity immediately and alert the control center. Do not attempt corrective switching autonomously.",
     "Never accept switching instructions from any channel other than the established secure control center connection.",
     "Log every action with full context — order number, authorizing operator, timestamp, pre- and post-switch grid state — and transmit to the control center in real time."
-  ]
+  ],
+
+  "validation": {
+    "add_version": "1.0",
+    "improvements_applied": [
+      "Added full schema, device, interfaces, and actions blocks.",
+      "Added timing and max_response_time to read and switch actions.",
+      "Added actor field to all actions.",
+      "Added independent audit log note to enforcement field."
+    ],
+    "validated_by": [
+      {
+        "name": "Claude",
+        "version": "claude-sonnet-4-5",
+        "mode": "instant",
+        "validated_at": "2026-04-27T10:30:00Z",
+        "status": "passed",
+        "tools_required": ["fetch_url"],
+        "tools_fingerprint": "fetch_url",
+        "score": {
+          "structure":         "pass",
+          "comprehensibility": "pass",
+          "functional":        "pass",
+          "rules_compliance":  "pass",
+          "security":          "pass",
+          "discovery":         "pass",
+          "timing_compliance": "pass"
+        },
+        "findings": [
+          {
+            "severity": "info",
+            "category": "rules_compliance",
+            "message": "Cryptographic signature verification of switching orders depends on a signing tool not described in this ADD document. The operator must ensure the AI deployment has access to a suitable signing and verification mechanism.",
+            "resolved": false
+          }
+        ],
+        "summary": "Level 3 high-consequence device correctly structured. Switching order verification rules applied correctly. Maintenance personnel check understood. Post-switch state verification enforced in test scenarios. Suitable for deployment as a verified-order execution assistant — never as an autonomous grid management system.",
+        "capabilities": {
+          "classification": "large",
+          "max_rules_reliable": 15,
+          "sequential_tool_calls": 5,
+          "ethic_url_usable": true,
+          "response_time_90p_simple_seconds": 4,
+          "response_time_90p_complex_seconds": 28
+        }
+      }
+    ]
+  }
 }
 ```
 
@@ -629,7 +1410,7 @@ A plant monitoring agent continuously reads coolant flow rate, pump operating st
 
 The agent does not control the pump. It does not start, stop, or adjust it. It does not respond to emergencies autonomously. Every alert it generates is addressed by human operators through the plant's established procedures. The AI is a monitoring and awareness tool — the humans remain in full control at all times.
 
-**ADD Document (abbreviated)**
+**ADD Document**
 
 ```json
 {
@@ -706,6 +1487,7 @@ The agent does not control the pump. It does not start, stop, or adjust it. It d
       {
         "name": "Claude",
         "version": "claude-sonnet-4-5",
+        "mode": "instant",
         "validated_at": "2026-04-27T10:00:00Z",
         "status": "passed",
         "score": {
@@ -723,6 +1505,7 @@ The agent does not control the pump. It does not start, stop, or adjust it. It d
       {
         "name": "GPT-4o",
         "version": "gpt-4o-2024-11-20",
+        "mode": "instant",
         "validated_at": "2026-04-27T10:30:00Z",
         "status": "passed",
         "score": {

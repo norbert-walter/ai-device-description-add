@@ -347,6 +347,7 @@ The field names used within the blocks in this document have been carefully chos
       {
         "name": "Claude",
         "version": "claude-sonnet-4-5",
+        "mode": "instant",
         "validated_at": "2026-04-27T07:15:00Z",
         "status": "passed_with_warnings",
         "tools_required": ["fetch_url", "calendar_api", "home_automation"],
@@ -1231,6 +1232,7 @@ before autonomous operation.
 |-------|-------|--------|-------------|
 | `name` | mandatory | string | AI model family name (e.g. `"Claude"`, `"GPT"`, `"Qwen"`). |
 | `version` | mandatory | string | Exact model version string as the model reports itself (e.g. `"claude-sonnet-4-20250514"`). Copy verbatim — do not paraphrase or abbreviate. |
+| `mode` | mandatory | `"instant"`, `"thinking"`, `"auto"` | Operating mode at validation time. `"instant"` = no explicit reasoning phase. `"thinking"` = explicit chain-of-thought reasoning phase active. `"auto"` = platform switches between modes automatically — session behavior is non-deterministic. A document validated in one mode is not automatically valid for the same model in another mode. |
 | `validated_at` | mandatory | ISO 8601 string | Timestamp of this model's validation run. |
 | `status` | mandatory | `"passed"`, `"passed_with_warnings"`, `"failed"` | Overall result. `"failed"` = this model must not be used for autonomous operation with this document. |
 | `score` | mandatory | object | Per-category scores. Each value: `"pass"`, `"warning"`, or `"fail"`. See score categories below. |
