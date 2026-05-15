@@ -406,7 +406,8 @@ The only meaningful test is whether the AI that will actually use the document c
     {
       "name": "Claude",
       "version": "claude-sonnet-4-20250514",
-      "result": "pass",
+      "mode": "instant",
+      "status": "passed",
       "validated_at": "2026-05-13",
       "tools_required": ["fetch_url", "calendar_api"],
       "tools_fingerprint": "calendar_api|fetch_url",
@@ -1696,6 +1697,7 @@ A large model reliably navigates multiple interfaces on the same device — for 
       {
         "name": "Claude",
         "version": "claude-sonnet-4-20250514",
+        "mode": "instant",
         "status": "passed",
         "validated_at": "2026-05-13",
         "tools_required": ["fetch_url", "calendar_api", "home_automation"],
@@ -3047,6 +3049,7 @@ A complete `validated_by` entry looks like this:
     {
       "name": "Claude",
       "version": "claude-sonnet-4-5",
+      "mode": "instant",
       "validated_at": "2026-04-27T07:15:00Z",
       "status": "passed_with_warnings",
       "score": {
