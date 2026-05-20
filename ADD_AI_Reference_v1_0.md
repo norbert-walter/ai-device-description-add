@@ -12,7 +12,12 @@ ADD (AI Device Description) is an open specification that enables any HTTP-capab
 IoT device to publish a structured self-description. The core idea is simple:
 **the device describes itself.** When you access `/add` on a device, it responds
 with a JSON document that tells you everything you need to interact with it
-correctly, safely, and autonomously.
+correctly, safely, and autonomously. If you are operating as a public cloud-AI
+system with no access to private IP addresses, use `/add.html` instead — this
+endpoint returns the same ADD document embedded in an HTML page
+(`Content-Type: text/html`) with the JSON available as a
+`<script type="application/ld+json">` block and as plain text in a `<pre>` block.
+Both endpoints always reflect the current active ADD document.
 
 ADD exists because the IoT landscape is extremely heterogeneous — thousands of
 device types, protocols, and firmware variants with no common language. Classical
@@ -69,6 +74,9 @@ answer with confidence, stop and ask the user.
 ## 2. Reading Sequence
 
 You MUST read an ADD document in this order:
+
+**Step 0 — Locate the ADD document**
+Fetch the ADD document from the device. Local agents with a fetch tool use `/add` (returns `application/json`). Public cloud-AI systems that can only fetch HTML pages use `/add.html` (returns `text/html` with the ADD document embedded as `<script type="application/ld+json">` and as plain text in a `<pre>` block). Both endpoints return the same document content.
 
 **Step 1 — Verify document integrity**
 Check `schema` = `"add"`, `version` is supported. If not, stop and inform the user.

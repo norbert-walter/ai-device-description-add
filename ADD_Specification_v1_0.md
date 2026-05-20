@@ -448,16 +448,17 @@ Before an AI agent can read a device description, it needs to find it. ADD solve
 
 ### 5.1 The Discovery Paths
 
-ADD defines one mandatory and two optional discovery endpoints for devices that host their own ADD document. For devices where this is not possible, ADD documents may also be hosted in external repositories. Device authors choose the level of discoverability that fits their deployment.
+ADD defines one mandatory and three optional discovery endpoints for devices that host their own ADD document. For devices where this is not possible, ADD documents may also be hosted in external repositories. Device authors choose the level of discoverability that fits their deployment.
 
 | Endpoint / Method | Requirement | Purpose |
 |---|---|---|
-| `http://<device-ip>/add` | **MUST** (if hosted on device) | The ADD document itself — the primary endpoint |
+| `http://<device-ip>/add` | **MUST** (if hosted on device) | The ADD document itself — the primary endpoint, returns `application/json` |
+| `http://<device-ip>/add.html` | SHOULD (for cloud-AI deployments) | HTML page with the ADD document embedded as `application/ld+json` — required for public cloud-AI systems that only accept `text/html` responses |
 | `http://<device-ip>/llms.txt` | SHOULD | Human- and AI-readable index pointing to the ADD endpoint |
 | `http://<device-ip>/.well-known/add` | MAY | Standard well-known URI for automated discovery by AI agents |
 | External repository URL | Alternative | ADD document hosted externally — for legacy devices, subsystems, or centrally managed fleets |
 
-A device that implements only `/add` is fully ADD-conformant. The additional endpoints improve discoverability for AI systems that use different discovery strategies, but they are never required. External repositories are described in Section 5.5.
+A device that implements only `/add` is fully ADD-conformant. The additional endpoints improve discoverability for AI systems that use different discovery strategies, but they are never required. External repositories are described in Section 5.6.
 
 ---
 
@@ -479,7 +480,31 @@ http://<device-ip>/add?t=1745490000
 
 ---
 
-### 5.3 Discovery via `llms.txt` (Recommended)
+### 5.3 The `/add.html` Endpoint (Recommended for cloud-AI deployments)
+
+Public cloud-AI systems — ChatGPT, Gemini, Copilot, and similar — operate in isolated cloud infrastructure and cannot reach private IP addresses. Their available tools are typically limited to web fetch tools that expect `text/html` responses; raw JSON responses from `/add` are not reliably parsed by these tools. Devices intended for control by public cloud-AI systems SHOULD additionally expose the ADD document as an HTML page:
+
+```
+http://<device-ip>/add.html
+```
+
+This endpoint returns `Content-Type: text/html; charset=utf-8` and embeds the complete ADD document in two forms: as a `<script type="application/ld+json">` block in the `<head>` for structured parsing, and as a `<pre>` block in the `<body>` for human readability and plain-text extraction.
+
+The endpoint MUST return the HTTP headers `Cache-Control: no-store, no-cache, must-revalidate` and `Pragma: no-cache` to prevent cloud-side caching of the device description.
+
+The `/add` endpoint is retained unchanged. ADD-compatible local agents use `/add` directly. Public cloud-AI systems use `/add.html`. Both endpoints always reflect the current active ADD document.
+
+The `llms.txt` file SHOULD reference both endpoints:
+
+```
+# AI Device Description (ADD)
+- ADD (JSON): [Device Description](/add)
+- ADD (HTML): [Device Description for Cloud-AI](/add.html)
+```
+
+---
+
+### 5.4 Discovery via `llms.txt` (Recommended)
 
 Devices SHOULD additionally provide a `llms.txt` file at the root of their HTTP server:
 
@@ -500,7 +525,7 @@ Additional entries — documentation links, API references, changelog URLs — m
 
 ---
 
-### 5.4 The `/.well-known/add` Endpoint (Optional)
+### 5.5 The `/.well-known/add` Endpoint (Optional)
 
 Devices MAY additionally expose the ADD document at the standardized well-known URI path:
 
@@ -514,9 +539,9 @@ Implementing all three endpoints is recommended for devices intended for broad o
 
 ---
 
-### 5.5 External ADD Document Repositories
+### 5.6 External ADD Document Repositories
 
-The three discovery paths described above assume that the ADD document is served directly from the device. This is the preferred architecture — the device carries its own description. But it is not the only option.
+The four discovery paths described above assume that the ADD document is served directly from the device. This is the preferred architecture — the device carries its own description. But it is not the only option.
 
 An ADD document is a JSON file. It can be stored and served from any location that is accessible to the AI agent: a GitHub repository, an internal document management system, a local file server, or any web server. The AI does not need to know or care where the document is hosted — it needs to be able to read it.
 
@@ -549,7 +574,7 @@ The security of the ADD document and the security of the device it describes are
 
 ---
 
-### 5.6 Session Timeout
+### 5.7 Session Timeout
 
 Devices with resource constraints — such as microcontrollers with limited concurrent connection capacity — MAY implement a session timeout mechanism. If a session timeout is in effect, the ADD description SHOULD indicate the remaining session time and the maximum number of session extensions available, so the AI can manage its interaction within the available window.
 
