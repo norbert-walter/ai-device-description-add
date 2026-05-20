@@ -1,5 +1,5 @@
 # ADD – AI Device Description
-## Developer Guide v1.0
+## Developer Guide v1.1
 *© 2026 Norbert Walter — CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/*
 
 ---
@@ -3634,6 +3634,229 @@ If an agent cannot or will not report this information accurately, it cannot pro
 
 ---
 
+## 12. ADD with Public Cloud-AI Systems
+
+### 12.1 Scope and Motivation
+
+The preceding chapters assume a deployment environment in which the AI agent has direct network access to the target device — either through a local network connection or through an MCP-capable tool such as `fetch:fetch`. This assumption holds for local agents, Claude Desktop with MCP configuration, and API-based deployments where the tool environment is fully controlled.
+
+Public cloud-AI systems — ChatGPT, Gemini, Copilot, and similar — operate under fundamentally different constraints. They run in isolated cloud infrastructure with no access to private IP address ranges (RFC 1918: `192.168.x.x`, `10.x.x.x`, `172.16–31.x.x`). Their available tools are limited to what the provider exposes — typically a web fetch tool and a web search tool. Query parameters in URLs may be stripped, cached, or rejected. And every action that touches external infrastructure requires explicit prior authorization from the human user.
+
+These constraints do not make ADD incompatible with cloud-AI systems. They require a specific deployment pattern that adapts the ADD interaction model to the capabilities of the environment. The ADD document structure remains unchanged. What changes is the content of the document: action endpoints are redefined as path-based HTML URLs without GET or POST parameters, and each endpoint returns an HTML page with embedded JSON. The action descriptions and tool references in the ADD document are updated accordingly. This also requires that the firmware of the IoT device is adapted to serve HTML-compliant responses.
+
+### 12.2 Infrastructure Requirements
+
+A device controlled by a public cloud-AI system must be reachable from the public internet. For devices that are physically on a local network, this requires a reverse proxy that exposes the device through a public IP address or a registered domain name.
+
+**Minimum infrastructure:**
+
+```
+Cloud-AI System (ChatGPT, Gemini, etc.)
+        ↓  HTTPS  — public internet
+Reverse Proxy (e.g. Nginx, Caddy)
+        ↓  HTTP  — local network
+IoT Device (valve, sensor, actuator, ...)
+```
+
+The reverse proxy serves two functions: it terminates TLS (cloud-AI systems require HTTPS for outbound requests) and it handles authentication before requests reach the device. The device itself does not need to be modified.
+
+**HTTPS is mandatory.** Public cloud-AI systems will not fetch plain HTTP URLs. A valid TLS certificate is required — services such as Let's Encrypt provide this at no cost and integrate directly with Nginx and Caddy.
+
+### 12.3 URL Structure for Cloud-AI Compatibility
+
+Public cloud-AI web fetch tools do not reliably handle query parameters. A URL such as `/cm?cmnd=Power%20On` may have its query string stripped, cached as a static resource, or refused outright. The solution is to encode all parameters directly in the URL path.
+
+**Standard ADD URL (query parameter style — not suitable for cloud-AI):**
+```
+/cm?cmnd=Power%20On
+/cm?cmnd=Power%20Off
+/cm?cmnd=Power
+```
+
+**Cloud-AI compatible URL (path parameter style):**
+```
+/valve_open.html
+/valve_close.html
+/valve_state.html
+/valve_open_30s.html
+/valve_open_300s.html
+/valve_open_60m.html
+```
+
+For actions that require a duration or other numeric parameter, the value is encoded directly in the path name.
+
+The server parses the parameter from the URL path and executes the corresponding command. Every action endpoint returns `text/html` — even if the primary content is structured data. The JSON response is embedded in the HTML body using `<script type="application/ld+json">` and additionally rendered in a `<pre>` block for human readability. This ensures compatibility with all web fetch tools regardless of how they handle content types.
+
+**Example response for `/valve_open_30s.html`:**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Valve — Open 30s</title>
+  <script type="application/ld+json">
+  {"action": "switch_on", "result": "OK", "POWER": "ON", "duration_s": 30}
+  </script>
+</head>
+<body>
+  <pre>{"action": "switch_on", "result": "OK", "POWER": "ON", "duration_s": 30}</pre>
+</body>
+</html>
+```
+
+**Preventing caching:** Device command endpoints must never be served from a cache — every request must reach the device and return a fresh response. The server must include the following HTTP headers on all action endpoints:
+
+```
+Cache-Control: no-store, no-cache, must-revalidate
+Pragma: no-cache
+```
+
+If a cloud-AI web fetch tool ignores these headers and serves a cached response despite them, the agent should append a Unix timestamp as a path segment to force a unique URL per request:
+
+```
+/valve_state_1748000000.html
+/valve_state_1748000042.html
+```
+
+The server must be prepared to accept and ignore such a timestamp segment. The ADD document action description should instruct the agent to use this fallback if caching is suspected.
+
+### 12.4 The ADD Discovery Endpoint for Cloud-AI
+
+The standard ADD endpoint `/add` returns `application/json`. Most public cloud-AI web fetch tools expect `text/html` and will not correctly parse a raw JSON response. The solution is a parallel HTML discovery endpoint.
+
+The ADD simulator implements this as `/add.html`. This endpoint:
+
+- Returns `Content-Type: text/html; charset=utf-8`
+- Embeds the complete ADD document as `<script type="application/ld+json">` in the `<head>`
+- Renders the same JSON in a `<pre>` block in the `<body>` for human readability
+- Links back to the raw `/add` endpoint for ADD-compatible agents
+
+The `/add` endpoint is retained unchanged. ADD-compatible agents with a proper fetch tool use `/add` directly. Cloud-AI systems use `/add.html`. Both endpoints always reflect the currently active ADD document.
+
+In the ADD document itself, the action descriptions must reference the cloud-AI compatible URLs explicitly:
+
+```json
+"actions": [
+  {
+    "name": "switch_on",
+    "description": "Open the valve. Fetch /valve_open.html using the web fetch tool. Response is an HTML page containing embedded JSON with field POWER: ON on success. If the response appears stale or cached, append a Unix timestamp as a path segment to force a fresh request, e.g. /valve_open_1748000042.html.",
+    "tool": "web_fetcher"
+  }
+]
+```
+
+For cloud-AI systems that do not support a dedicated web fetch tool, the action can alternatively be triggered via a web search query directed at the exact device URL:
+
+```json
+"actions": [
+  {
+    "name": "switch_on",
+    "description": "Open the valve. Use the web search tool with the exact query: site:myserver.example.com/valve_open.html — this retrieves the page directly. Response is an HTML page containing embedded JSON with field POWER: ON on success. If the response appears stale or cached, append a Unix timestamp as a path segment, e.g. site:myserver.example.com/valve_open_1748000042.html.",
+    "tool": "web_search"
+  }
+]
+```
+
+The `tool` field explicitly names the tool the agent should use. This is required for cloud-AI deployments — without an explicit tool name, agents may substitute an incorrect tool or fail silently.
+
+### 12.5 Authentication
+
+Devices exposed to the public internet require authentication. HTTP Basic Auth implemented at the reverse proxy level is sufficient for most IoT deployments and is universally supported by cloud-AI web fetch tools.
+
+**Nginx configuration example:**
+
+```nginx
+location / {
+    auth_basic "ADD Device";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+    proxy_pass http://127.0.0.1:5000;
+}
+```
+
+Credentials are not stored in the ADD document. The ADD document describes only that authentication is required:
+
+```json
+"security": {
+    "authentication": "basic"
+}
+```
+
+How credentials are obtained — whether via the session initialization prompt or another mechanism — is a deployment concern and belongs in the session initialization, not in the ADD document.
+
+### 12.6 Session Initialization
+
+Public cloud-AI systems do not maintain persistent state between sessions. Every session begins with no knowledge of previous interactions, no stored credentials, and no pre-authorized URLs. The human user must explicitly initialize the session before the agent can act.
+
+Session initialization is outside the scope of the ADD standard. The ADD document describes the device — not the protocol for establishing a session with a specific AI system. However, the following pattern has proven effective in practice and is provided here as a reference.
+
+**Elements of an effective initialization prompt:**
+
+```
+1. The discovery URL (full HTTPS path to /add.html)
+2. Credentials (user and password for Basic Auth)
+3. The complete list of permitted action URLs (full paths, no wildcards)
+4. The deployment context (what is connected, what is the purpose)
+5. Any session-specific constraints (maximum duration, time window, etc.)
+```
+
+**Example initialization prompt:**
+
+```
+Read the device description at https://myserver.example.com/add.html
+Credentials: user=operator, password=s3cur3
+
+You are authorized to fetch the following URLs only:
+- https://myserver.example.com/valve_state.html
+- https://myserver.example.com/valve_open_30s.html
+- https://myserver.example.com/valve_open_60s.html
+- https://myserver.example.com/valve_open_300s.html
+- https://myserver.example.com/valve_close.html
+
+Deployment context: garden irrigation valve, main water supply.
+Maximum session duration: 60 minutes. Do not open the valve without my confirmation.
+```
+
+The explicit URL list is not optional. Public cloud-AI systems apply their own content policies to outbound requests. Without an explicit human-provided URL whitelist, the system may refuse to fetch device URLs or ask for confirmation before every call. The explicit list — provided by the human in the first prompt — constitutes the user's authorization and satisfies the provider's safety requirements.
+
+**Modell-specific initialization prompts** may be needed. Different cloud-AI systems respond differently to the same prompt structure. ChatGPT, Gemini, and Copilot each have distinct behaviors regarding URL authorization, tool selection, and confirmation requirements. If a generic prompt does not produce correct agent behavior, a model-specific variant may be required.
+
+Model-specific initialization prompts are not part of the ADD document and are not standardized by ADD. They may be maintained externally — as files on a server, as entries in a shared document, or as locally stored templates — according to the security and operational requirements of the deployment. The ADD document may optionally hint at their existence:
+
+```json
+"notes": "Model-specific initialization prompts are available from the device operator."
+```
+
+### 12.7 Security Considerations
+
+Exposing an IoT device to the public internet introduces risks that do not exist in local-only deployments. The following principles apply regardless of whether the controlling agent is a cloud-AI system or a human using a browser.
+
+**The URL is the command.** A path-based URL such as `/valve_open_300s.html` is semantically equivalent to a button. Anyone who can reach the URL can execute the action. HTTPS and Basic Auth are the primary access controls — they must be correctly configured before any device is exposed.
+
+**The ADD document is public.** The `/add.html` endpoint is intended to be publicly readable — that is its purpose. It must not contain credentials, private network topology, or any information that would be useful to an attacker. Credentials belong in the initialization prompt, not in the ADD document.
+
+**The agent acts on behalf of the human.** A public cloud-AI system executing device commands is acting as an agent for the human who initialized the session. The human bears responsibility for the actions the agent performs. The session initialization prompt — the URL whitelist, the credentials, the deployment context — is the human's authorization. It should be treated with the same care as any access control configuration.
+
+**Cloud-AI systems are not autonomous.** A cloud-AI system controlled via session initialization does not act independently. Every session requires a human to provide the initialization prompt. This is not a limitation — it is a deliberate safety property. The human's explicit involvement at session start is what distinguishes this pattern from an autonomous agent and what keeps the human in the authorization loop.
+
+### 12.8 Summary
+
+| Property | Standard ADD (local agent) | Cloud-AI Deployment |
+|---|---|---|
+| Network | Local / private IP | Public internet, HTTPS required |
+| Discovery endpoint | `/add` → `application/json` | `/add.html` → `text/html` + JSON-LD |
+| Action URLs | Query parameters `/cm?cmnd=Power%20On` | Path parameters `/valve_open_300s.html` |
+| Response format | JSON | HTML with embedded JSON |
+| Tool | `fetch:fetch` via MCP service | `web_fetcher` or equivalent |
+| Authentication | Device-level or none | Reverse proxy, HTTP Basic Auth |
+| Credentials | In agent task or system prompt | In session initialization prompt |
+| Session start | Automatic / system prompt | Human-provided initialization prompt |
+| ADD document | Unchanged | Unchanged |
+
+The ADD document itself requires no modification for cloud-AI deployments. The adaptation is entirely in the infrastructure (reverse proxy, HTTPS, path-based URLs) and in the session initialization protocol (human-provided URL whitelist and credentials). This separation is intentional: ADD describes the device, not the deployment environment.
+
+---
+
 ## Appendix — Model Performance Profiles
 
 This appendix documents measured performance characteristics of AI models tested against the ADD Simulator. All tests were conducted under identical conditions using the ADD Simulator at `https://norbert-walter.dnshome.de` — a Flask-based simulator that responds instantly and deterministically to Tasmota-style HTTP GET requests. Because the simulator introduces no latency of its own, all measured response times reflect the AI model and network exclusively.
@@ -3809,4 +4032,6 @@ Overhead is not constant — it grows with the specified wait time, approximatel
 ---
 
 *Additional model profiles will be added as testing is completed. To contribute a profile, follow the Standard Test Protocol above and submit results with full timestamp logs from the simulator live log.*
+
+---
 
