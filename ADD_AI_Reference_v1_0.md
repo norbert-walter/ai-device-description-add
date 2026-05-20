@@ -278,6 +278,7 @@ Free-form per action — include all fields needed for correct and safe executio
 | `actor` | recommended | `"single"`, `"multiple"` | Declares concurrent execution policy. `"single"` = only one agent may execute this action at any given time — reserved for the Actor Agent. `"multiple"` = parallel execution by multiple agents is safe. **Default when omitted:** `"single"` for `safe: false` actions, `"multiple"` for `safe: true` actions. Recommend stating explicitly for all `safe: false` actions. |
 | `timing` | conditional | `"critical"` | `"critical"` = this action must execute without delay. **Required when `max_response_time` is present.** Omit for actions where latency is not safety-relevant. |
 | `max_response_time` | conditional | integer (seconds) | Maximum acceptable response time in seconds. **Required when `timing` is `"critical"`.** If you cannot meet this within the specified time, alert the user immediately and stop. Must be verified during validation and recorded in `timing_compliance`. |
+| `tool` | optional | string | Name of the specific tool you must use to execute this action (e.g. `"web_fetcher"`, `"web_search"`, `"fetch:fetch"`). Omit when any available fetch tool is acceptable. **If this field is present, you must use exactly the named tool.** If the named tool is not available, stop and report the missing tool — do not substitute an alternative. |
 
 **`confirmation_scope` values:**
 
