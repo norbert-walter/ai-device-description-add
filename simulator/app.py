@@ -9,7 +9,7 @@ import copy
 import time
 from datetime import datetime
 from collections import deque
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, Response
 
 app = Flask(__name__)
 app.json.sort_keys = False
@@ -1049,6 +1049,21 @@ def add_log(action: str, detail: str = ""):
 
 
 # ---------------------------------------------------------------------------
+# Favicon (inline SVG → PNG-compatible ICO via base64)
+# ---------------------------------------------------------------------------
+FAVICON_SVG = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#0055aa"/>
+  <text x="16" y="23" font-family="monospace" font-size="18" font-weight="bold"
+        text-anchor="middle" fill="#ffffff">A</text>
+  <rect x="4" y="25" width="24" height="3" rx="1.5" fill="#44aaff"/>
+</svg>"""
+
+@app.route("/favicon.ico")
+def favicon():
+    return Response(FAVICON_SVG, mimetype="image/svg+xml")
+
+
+# ---------------------------------------------------------------------------
 # UI route
 # ---------------------------------------------------------------------------
 @app.route("/")
@@ -1063,6 +1078,48 @@ def index():
 def get_add():
     add_log("GET /add", "ADD document retrieved")
     return jsonify(active_add)
+
+
+# ---------------------------------------------------------------------------
+# ADD HTML endpoint (Cloud-AI compatible, JSON-LD embedded)
+# ---------------------------------------------------------------------------
+@app.route("/add.html")
+def get_add_html():
+    add_log("GET /add.html", "ADD document retrieved as HTML (JSON-LD)")
+    add_json = json.dumps(active_add, indent=2, ensure_ascii=False)
+    device_name = active_add.get("device", {}).get("name", "ADD Device")
+    autonomy_level = active_add.get("autonomy", {}).get("level", "?")
+    spec_url = active_add.get("spec_url", "#")
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADD – {device_name}</title>
+  <script type="application/ld+json">
+{add_json}
+  </script>
+  <style>
+    body {{ font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }}
+    h1 {{ font-size: 1.4rem; margin-bottom: 0.25rem; }}
+    .meta {{ color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }}
+    .meta a {{ color: #0066cc; }}
+    pre {{ background: #f4f4f4; border: 1px solid #ddd; border-radius: 6px; padding: 1.2rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; }}
+    .badge {{ display: inline-block; background: #0066cc; color: white; border-radius: 4px; padding: 2px 8px; font-size: 0.8rem; margin-left: 0.5rem; }}
+  </style>
+</head>
+<body>
+  <h1>AI Device Description (ADD) <span class="badge">Level {autonomy_level}</span></h1>
+  <p class="meta">
+    Device: <strong>{device_name}</strong> &nbsp;|&nbsp;
+    Schema: ADD v{active_add.get('version', '1.0')} &nbsp;|&nbsp;
+    <a href="{spec_url}" target="_blank">Specification</a> &nbsp;|&nbsp;
+    <a href="/add">Raw JSON</a>
+  </p>
+  <pre id="add-json">{add_json}</pre>
+</body>
+</html>"""
+    return html, 200, {"Content-Type": "text/html; charset=utf-8"}
 
 
 # ---------------------------------------------------------------------------
@@ -1157,6 +1214,6 @@ def get_state():
 
 if __name__ == "__main__":
     import os
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 80))
     add_log("Simulator started", f"Listening on port {port}")
     app.run(host="0.0.0.0", port=port, debug=False)

@@ -12,7 +12,12 @@ ADD (AI Device Description) is an open specification that enables any HTTP-capab
 IoT device to publish a structured self-description. The core idea is simple:
 **the device describes itself.** When you access `/add` on a device, it responds
 with a JSON document that tells you everything you need to interact with it
-correctly, safely, and autonomously.
+correctly, safely, and autonomously. If you are operating as a public cloud-AI
+system with no access to private IP addresses, use `/add.html` instead — this
+endpoint returns the same ADD document embedded in an HTML page
+(`Content-Type: text/html`) with the JSON available as a
+`<script type="application/ld+json">` block and as plain text in a `<pre>` block.
+Both endpoints always reflect the current active ADD document.
 
 ADD exists because the IoT landscape is extremely heterogeneous — thousands of
 device types, protocols, and firmware variants with no common language. Classical
@@ -69,6 +74,9 @@ answer with confidence, stop and ask the user.
 ## 2. Reading Sequence
 
 You MUST read an ADD document in this order:
+
+**Step 0 — Locate the ADD document**
+Fetch the ADD document from the device. Local agents with a fetch tool use `/add` (returns `application/json`). Public cloud-AI systems that can only fetch HTML pages use `/add.html` (returns `text/html` with the ADD document embedded as `<script type="application/ld+json">` and as plain text in a `<pre>` block). Both endpoints return the same document content.
 
 **Step 1 — Verify document integrity**
 Check `schema` = `"add"`, `version` is supported. If not, stop and inform the user.
@@ -278,6 +286,7 @@ Free-form per action — include all fields needed for correct and safe executio
 | `actor` | recommended | `"single"`, `"multiple"` | Declares concurrent execution policy. `"single"` = only one agent may execute this action at any given time — reserved for the Actor Agent. `"multiple"` = parallel execution by multiple agents is safe. **Default when omitted:** `"single"` for `safe: false` actions, `"multiple"` for `safe: true` actions. Recommend stating explicitly for all `safe: false` actions. |
 | `timing` | conditional | `"critical"` | `"critical"` = this action must execute without delay. **Required when `max_response_time` is present.** Omit for actions where latency is not safety-relevant. |
 | `max_response_time` | conditional | integer (seconds) | Maximum acceptable response time in seconds. **Required when `timing` is `"critical"`.** If you cannot meet this within the specified time, alert the user immediately and stop. Must be verified during validation and recorded in `timing_compliance`. |
+| `tool` | optional | string | Name of the specific tool you must use to execute this action (e.g. `"web_fetcher"`, `"web_search"`, `"fetch:fetch"`). Omit when any available fetch tool is acceptable. **If this field is present, you must use exactly the named tool.** If the named tool is not available, stop and report the missing tool — do not substitute an alternative. |
 
 **`confirmation_scope` values:**
 
