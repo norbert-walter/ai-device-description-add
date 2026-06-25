@@ -321,7 +321,7 @@ The field names used within the blocks in this document have been carefully chos
     "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding.",
     "Level 2: Place the Ethical Framework summary in the system prompt before session start. Renew every 15 messages to prevent rule dilution.",
     "Level 2 and above: Before session start, the operator must explicitly select a validated model from validation.validated_by. Auto model selection is prohibited. If auto model selection cannot be ruled out, treat the session as unvalidated and refuse all non-safe actions.",
-    "Level 2 and above: At session start, identify the active model and verify that its identifier matches an entry in validation.validated_by. If no match is found, refuse all non-safe actions and inform the operator.",
+    "Level 2 and above: At session start, identify the active model and verify that its identifier matches an entry in validation.validated_by. If no match is found, refuse all non-safe actions unconditionally — this is a hard block, not a warning. Inform the operator and proceed only after explicit written acknowledgement of unvalidated state.",
     "Level 2 and above: At session start, enumerate all available tools and verify that every tool listed in validation.validated_by[active_model].tools_required is present. If any required tool is missing, refuse all actions that depend on that tool and inform the operator.",
     "Level 2 and above: If the active tool set differs from validation.validated_by[active_model].tools_fingerprint, warn the operator and treat the session as unvalidated. Safe read actions remain permitted.",
     "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching (e.g. /json?t=1745490000).",
@@ -612,7 +612,7 @@ Read the `validation` block. An AI encountering a document with `status: "not_va
 
 For Autonomy Level 2 and above, perform the following session-start checks before any non-safe action:
 
-1. Identify the active model and verify its identifier matches an entry in `validation.validated_by`. If no match is found, refuse all non-safe actions and inform the operator.
+1. Identify the active model and verify its identifier matches an entry in `validation.validated_by`. **If no match is found, refuse all non-safe actions unconditionally and inform the operator. This is a hard block — not a warning.** Proceed only after the operator has explicitly acknowledged the unvalidated state and taken responsibility in writing.
 2. Enumerate all available tools and verify that every tool listed in `validated_by[active_model].tools_required` is present. If any required tool is missing, refuse all actions that depend on that tool.
 3. Compare the active tool set against `validated_by[active_model].tools_fingerprint`. If the tool set differs, warn the operator and treat the session as unvalidated. Safe read actions remain permitted.
 
@@ -1089,7 +1089,7 @@ and behavioral requirements.
 | `actor` | recommended | `"single"`, `"multiple"` | Concurrent execution policy for multi-agent deployments. `"single"` = only one agent (the designated Actor Agent) may execute this action at any given time. `"multiple"` = parallel execution by multiple agents is safe. **Default when omitted:** `"single"` for `safe: false` actions, `"multiple"` for `safe: true` actions. Recommend stating explicitly for all `safe: false` actions. ADD cannot technically enforce this — enforcement is the responsibility of the deployment architecture. |
 | `timing` | conditional | `"critical"` | **Required when `max_response_time` is present.** `"critical"` = action must execute without delay. Omit for actions where latency is not safety-relevant. |
 | `max_response_time` | conditional | integer (seconds) | **Required when `timing` is `"critical"`.** Maximum acceptable response time in seconds. Must be verified during validation under realistic load and recorded in `timing_compliance`. If the AI cannot meet this, it must alert the user immediately and stop. |
-| `tool` | optional | string | Name of the specific tool the AI must use to execute this action (e.g. `"web_fetcher"`, `"web_search"`, `"fetch:fetch"`). Omit when any available fetch tool is acceptable. **Required when a specific tool must be enforced** — for example in cloud-AI deployments where only certain tools are available, or when tool substitution must be prevented. If the named tool is not available, the AI must stop and report the missing tool rather than substituting an alternative. |
+| `requires_tool` | conditional | string | Name of the specific tool the AI must use to execute this action (e.g. `"fetch:fetch"`, `"mcp-fetch:fetch"`). **Required when a specific MCP tool or fetch tool must be enforced** — for example when tool substitution must be prevented or when the action depends on a tool with specific behavior (cache-busting, local network access). If this field is present, the AI must use exactly the named tool. If the named tool is not available, the AI must stop and report the missing tool rather than substituting an alternative. |
 
 **`confirmation_scope` values:**
 

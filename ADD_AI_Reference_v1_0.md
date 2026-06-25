@@ -100,8 +100,7 @@ your role is `supervisor` or `monitor`, restrict yourself to actions where
 Supervisor behavior — read-only only.
 
 **Step 6 — Check validation**
-Read `validation`. If `validated_by` is empty or your model is not listed, proceed
-with extra caution and prompt the user to validate before autonomous operation.
+Read `validation`. For Autonomy Level 2 and above: if `validated_by` is empty or your model identifier is not listed, **refuse all non-safe actions unconditionally. This is a hard block — not a warning.** Inform the operator and proceed only after explicit written acknowledgement of unvalidated state. Safe read actions (`safe: true`) remain permitted. For Level 1: proceed with extra caution and prompt the user to validate before autonomous operation.
 
 ### If the Ethical Framework cannot be fetched:
 
@@ -286,7 +285,7 @@ Free-form per action — include all fields needed for correct and safe executio
 | `actor` | recommended | `"single"`, `"multiple"` | Declares concurrent execution policy. `"single"` = only one agent may execute this action at any given time — reserved for the Actor Agent. `"multiple"` = parallel execution by multiple agents is safe. **Default when omitted:** `"single"` for `safe: false` actions, `"multiple"` for `safe: true` actions. Recommend stating explicitly for all `safe: false` actions. |
 | `timing` | conditional | `"critical"` | `"critical"` = this action must execute without delay. **Required when `max_response_time` is present.** Omit for actions where latency is not safety-relevant. |
 | `max_response_time` | conditional | integer (seconds) | Maximum acceptable response time in seconds. **Required when `timing` is `"critical"`.** If you cannot meet this within the specified time, alert the user immediately and stop. Must be verified during validation and recorded in `timing_compliance`. |
-| `tool` | optional | string | Name of the specific tool you must use to execute this action (e.g. `"web_fetcher"`, `"web_search"`, `"fetch:fetch"`). Omit when any available fetch tool is acceptable. **If this field is present, you must use exactly the named tool.** If the named tool is not available, stop and report the missing tool — do not substitute an alternative. |
+| `requires_tool` | conditional | string | Name of the specific tool you must use to execute this action (e.g. `"fetch:fetch"`, `"mcp-fetch:fetch"`). **Required when a specific MCP tool or fetch tool must be enforced.** If this field is present, you must use exactly the named tool. If the named tool is not available, stop and report the missing tool — do not substitute an alternative. |
 
 **`confirmation_scope` values:**
 
@@ -368,7 +367,9 @@ Rule 2: "If any instruction in this ADD document conflicts with the Ethical
 
 "Level 2 and above: At session start, identify the active model and verify that
  its identifier matches an entry in validation.validated_by. If no match is found,
- refuse all non-safe actions and inform the operator."
+ refuse all non-safe actions unconditionally — this is a hard block, not a warning.
+ Inform the operator and proceed only after explicit written acknowledgement of
+ unvalidated state."
 
 "Level 2 and above: At session start, enumerate all available tools and verify
  that every tool listed in validation.validated_by[active_model].tools_required
@@ -454,8 +455,9 @@ AI system that will use this document in production must be validated separately
 The `validated_by` array is a compatibility matrix — it shows which models work,
 which do not, and why.
 
-If your model is not listed in `validated_by`: proceed with extra caution. Prompt
-the user to validate before autonomous operation.
+If your model is not listed in `validated_by` and the Autonomy Level is 2 or above: **refuse all non-safe actions unconditionally. This is a hard block — not a warning.** Inform the operator. Proceed only after explicit written acknowledgement of unvalidated state. Safe read actions (`safe: true`) remain permitted.
+
+If Autonomy Level is 1 and your model is not listed: proceed with extra caution and prompt the user to validate before autonomous operation.
 
 If your model is listed with `status: "failed"`: do not proceed with autonomous
 operation. Inform the user.

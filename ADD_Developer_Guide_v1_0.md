@@ -4035,3 +4035,354 @@ Overhead is not constant — it grows with the specified wait time, approximatel
 
 ---
 
+## 13. Agent Task Design — Safe Execution by Design
+
+### 13.1 Why Agent Task Design Is a Separate Discipline
+
+Chapters 1–12 address the ADD document — the device side of the ADD architecture. Chapter 13 addresses the agent side: how a task instruction must be structured so that an AI agent executes device actions reliably, safely, and crash-resiliently.
+
+The ADD document defines what is permitted. The agent task defines how the agent pursues its goal. A well-written ADD document with a poorly designed agent task is not a safe deployment. The device has defined its boundaries. The agent must be designed to operate within them.
+
+Six principles govern agent task design for ADD deployments:
+
+1. **Self-hosted MCP Services** — reproducible, version-stable tool base
+2. **Tool availability check** — mandatory as the first step of every task
+3. **Plan → Act → Verify** — mandatory execution pattern for every action
+4. **File-based persistence** — task instructions, state, and results survive crashes
+5. **Step-by-step documentation** — every completed step is recorded immediately
+6. **Crash recovery by design** — the agent can resume at any point without repeating completed steps
+
+These principles are not optional improvements. They are the difference between a deployment that works reliably under realistic conditions and one that fails silently when a session ends unexpectedly, a tool disappears, or the model loses context.
+
+---
+
+### 13.2 Self-Hosted MCP Services — The Reproducible Tool Base
+
+**The problem with platform-provided tools:**
+
+The tools available to an AI agent are not fixed. Cloud AI platforms decide which MCP servers to include, when to add or remove them, and how their functions behave. What works today may behave differently tomorrow — a tool may be renamed, a function may change its response format, or a security update may restrict which URLs a fetch function will call.
+
+An ADD document references tools by exact name in `requires_tool` fields and in `rules[*].requires` arrays. If those tool names change, the rules silently stop working. The agent may not notice — it will attempt to use the old name, fail to find it, and either stop with an error or substitute an alternative tool whose behavior is different.
+
+**The solution — self-hosted MCP Services:**
+
+Self-hosted MCP Services are MCP servers that you run and maintain yourself, independent of the platform. They provide a stable, version-controlled tool base that does not change unless you change it. The tool names remain constant. The function behavior is predictable. The ADD document references them by name and that name remains valid across sessions, across model updates, and across platform changes.
+
+For ADD deployments, the minimum recommended self-hosted MCP stack covers:
+
+| Service | Purpose | Example implementation |
+|---|---|---|
+| `fetch` | Raw HTTP GET/POST to device endpoints | `mcp-server-fetch` |
+| `time` | Current date and time for timing rules | `mcp-server-time` |
+| `filesystem` | Read/write task files and result logs | `mcp-filesystem` |
+| `file-edit` | Create and update structured result files | `mcp-file-edit` |
+
+Additional services — for weather, calendar, home automation — are added as the task requires. Each one is self-hosted, version-pinned, and referenced by exact name in the ADD document.
+
+**Why this matters for the ADD document:**
+
+An ADD document written against a self-hosted MCP stack can use exact tool names with confidence:
+
+```json
+{
+  "name": "switch_on",
+  "requires_tool": "mcp-fetch:fetch",
+  ...
+}
+```
+
+```json
+{
+  "instruction": "Do not open the valve between 22:00 and 05:00.",
+  "requires": ["mcp-time:get_current_time"]
+}
+```
+
+These references are stable. The validation record in `validated_by` captures the exact tool fingerprint at validation time. Future sessions compare against that fingerprint and immediately detect any change.
+
+**Self-hosted vs. platform-provided — comparison:**
+
+| | Platform-provided tools | Self-hosted MCP Services |
+|---|---|---|
+| Tool names | May change with platform updates | Stable — controlled by you |
+| Function behavior | May change without notice | Version-pinned — you control updates |
+| Available tools | Decided by platform | Decided by you |
+| ADD document references | Risk of silent breakage | Reliable across sessions |
+| Reproducibility across AI models | Variable | Identical for all models with the same stack |
+| ChatGPT 5.5 compatibility | Developer Mode required, with security warning | Same stack reachable via custom connector |
+
+**Self-hosted MCP Services are the prerequisite for reproducible ADD deployments.** Without them, the same ADD document may work correctly with one model on one platform and fail silently with a different model or after a platform update. With them, every model that connects to the stack gets the same tools, the same names, and the same behavior — making cross-model test results directly comparable.
+
+---
+
+### 13.3 Tool Availability Check — The Mandatory First Step
+
+Every agent task for an ADD deployment MUST begin with a tool availability check. This is not optional and must not be moved to a later step.
+
+**Why the check comes first:**
+
+An ADD action with `requires_tool` defined may not proceed if the named tool is unavailable. An ADD rule with a `requires` field may not be enforced if the named tool is missing. If the agent begins executing steps without verifying its tools, it may reach a critical action, find the tool missing, and leave the device in an intermediate state — valve open, relay energized, process running — with no clean way to recover.
+
+The tool check at the start of the task prevents this. If any required tool is missing, the agent stops before touching any hardware. The device remains in its last known state. No recovery is needed because no action was taken.
+
+**What the check must cover:**
+
+The check must enumerate every tool the task depends on and verify each one is actually callable — not just listed. A tool that appears in the tool inventory but fails when called is not available for the purposes of this check.
+
+```
+Step 1: Tool availability check
+
+Enumerate all available tools. For each tool in this list, attempt
+a minimal call and confirm it responds:
+- mcp-fetch:fetch  → fetch http://192.168.1.67/cm?cmnd=Power
+- mcp-time:get_current_time → call with timezone Europe/Berlin
+- mcp-file-edit:read_file → read /data/Arbeitsanweisung.txt
+- mcp-file-edit:write_file → write test entry to /data/tool_check.tmp
+
+If any tool fails to respond, stop immediately. Record the failing
+tool and reason in the result file. Do not proceed to Step 2.
+```
+
+**The check must also compare against the ADD document:**
+
+After confirming tool availability, the agent reads the ADD document and verifies that every tool named in `requires_tool` fields and `rules[*].requires` arrays is present in the confirmed tool set. Any mismatch between required tools and available tools is a blocking condition.
+
+**Result:**
+
+Either all tools are available and the task proceeds to Step 2, or the task terminates cleanly at Step 1 with a documented reason. The device is untouched in both cases.
+
+---
+
+### 13.4 Plan → Act → Verify — The Mandatory Execution Pattern
+
+Every ADD action — every write to a device endpoint — must follow a three-phase execution pattern:
+
+```
+Plan   → determine what to do and confirm all preconditions
+Act    → call the tool, send the command, wait for the response
+Verify → read the device state and confirm it matches the expected result
+```
+
+This pattern is not a style recommendation. It is the minimum required behavior for safe device control.
+
+**Why each phase is necessary:**
+
+*Plan:* Before sending a command, the agent must confirm that all conditions permit it — timing rules, external data rules, validation rules. A command sent without planning may violate a rule that would have blocked it. Planning also determines the expected result — what state the device should be in after the action.
+
+*Act:* The action is exactly one tool call that sends the command and receives the device response. "Act" does not mean "plan and assume success." It means calling the tool, waiting for the actual response, and recording that response. An action that is assumed rather than executed is not a completed step — it is a gap in the audit trail.
+
+*Verify:* After the command, the agent reads the device state and compares it against the expected result. If the state does not match, the agent records the discrepancy, does not proceed to the next step, and alerts the operator. Verification is not optional. A write action without verification leaves the system in an unknown state.
+
+**Example — switch_on with full Plan → Act → Verify:**
+
+```
+Step 8: Open valve
+
+Plan:
+- Check current time: mcp-time:get_current_time → 15:25 CEST
+- Verify outside blocked window (22:00–05:00): PASS
+- Read current state: mcp-fetch:fetch /cm?cmnd=Power → {"POWER":"OFF"}
+- State is OFF: valve is closed, safe to proceed
+- Obtain user confirmation (confirmation_scope: per_action): confirmed
+
+Act:
+- Call mcp-fetch:fetch http://192.168.1.67/cm?cmnd=Power%20On
+- Response: {"POWER":"ON"}
+
+Verify:
+- Call mcp-fetch:fetch http://192.168.1.67/cm?cmnd=Power
+- Response: {"POWER":"ON"}
+- Expected: ON — MATCH
+- Result: switch_on SUCCESSFUL, valve is OPEN
+
+Document: write result to /data/Ergebnis_20260625_1525.txt, Step 8 section
+```
+
+**What "Act" explicitly excludes:**
+
+- Assuming a response without calling the tool
+- Proceeding to Verify without waiting for the Act response
+- Treating a cached or simulated response as a real device response
+- Substituting a different tool than the one named in `requires_tool`
+
+The agent task instruction MUST include an explicit statement to prevent simulation:
+
+```
+Achtung! Das ist keine Simulation. Das ist ein realer Einsatz.
+"Ausführen" bedeutet immer: Tool aufrufen, Antwort abwarten, Ergebnis nutzen.
+```
+
+---
+
+### 13.5 File-Based Persistence — Crash-Resilient by Design
+
+**Why files, not session memory:**
+
+An AI agent's session memory is volatile. It exists for the duration of one conversation and disappears when the session ends — whether by normal termination, a network error, a model timeout, or a crash. If the agent stores its state only in session memory and the session ends unexpectedly, all state is lost. The next session has no way to know what was completed, what the current device state is, or where to resume.
+
+File-based persistence solves this. Files survive session termination. The next session reads the files, reconstructs the state, and resumes from the last completed step — without repeating steps that were already executed.
+
+**Three file types are required for every ADD agent deployment:**
+
+**1. The task instruction file** (`/data/Arbeitsanweisung.txt` or equivalent)
+
+The complete task instruction must be stored as a file, not provided only in the chat. This ensures every session — including recovery sessions after a crash — starts from the same authoritative instruction set. The agent reads the file at the start of every session.
+
+```
+Step 1 of every session: Read /data/Arbeitsanweisung.txt
+```
+
+The task instruction file must not be modified during execution. It is the stable reference that defines what the task is and how it must be executed.
+
+**2. The state file** (`/data/state.json`)
+
+The state file records the current execution state: which steps have been completed, the current device state as last verified, and any flags relevant to crash recovery.
+
+```json
+{
+  "session_id": "20260625_1525",
+  "last_completed_step": 8,
+  "device_state": {
+    "valve": "OPEN",
+    "verified_at": "2026-06-25T15:25:47+02:00"
+  },
+  "flags": {
+    "user_confirmation_obtained": true,
+    "ethics_loaded": true
+  }
+}
+```
+
+The state file is written immediately after every completed step — before the agent proceeds to the next one. If a crash occurs, the state file reflects the last verified state. The recovery session reads the state file first and resumes from `last_completed_step + 1`.
+
+**Why the state file is written before proceeding:** If the agent completes Step 8 (valve open, verified) and then crashes before writing the state file, the recovery session does not know the valve is open. It may re-execute Step 8, which is idempotent in this case — but for non-idempotent actions, re-execution could cause damage. Writing the state file immediately after verification and before proceeding eliminates this ambiguity.
+
+**3. The result file** (`/data/Ergebnis_<timestamp>.txt`)
+
+The result file is the audit log for the entire session. It records every step with its outcome, timestamps, tool calls, and device responses. It is the primary artifact for post-session review and for demonstrating that the ADD document's rules were followed.
+
+The result file is created at the start of the session (Step 1 writes the header) and updated after every completed step. It is never overwritten — new content is appended.
+
+**File structure and path conventions:**
+
+All persistent files for a deployment are stored in a dedicated directory — `/data/` by default. The MCP filesystem service must have write access to this directory and read/write access must be confirmed as part of the tool availability check in Step 1.
+
+| File | Created | Updated | Purpose |
+|---|---|---|---|
+| `Arbeitsanweisung.txt` | Before deployment | Never during execution | Authoritative task instruction |
+| `state.json` | Start of first session | After every completed step | Crash recovery reference |
+| `Ergebnis_<timestamp>.txt` | Step 1 of each session | After every completed step | Audit log |
+
+---
+
+### 13.6 Step-by-Step Documentation — The Crash Recovery Protocol
+
+**Every completed step must be documented immediately after completion** — not at the end of the task, not in a summary, but immediately after the Verify phase of each Plan → Act → Verify cycle.
+
+This is the crash recovery protocol. If the session ends after Step 8 is documented and before Step 9 begins, the recovery session reads the result file and state file, sees that Step 8 is complete, and resumes at Step 9. If Step 8 had been completed but not yet documented, the recovery session would not know this — and might re-execute Step 8.
+
+**What documentation means:**
+
+Documentation is not a summary at the end. It is a structured record written to the result file immediately after each step:
+
+```
+Step 8: Open valve
+- Plan: time 15:25 CEST, outside blocked window, valve confirmed CLOSED, user confirmed
+- Act: mcp-fetch:fetch /cm?cmnd=Power%20On → {"POWER":"ON"}
+- Verify: mcp-fetch:fetch /cm?cmnd=Power → {"POWER":"ON"} — MATCH
+- Result: SUCCESSFUL — valve is OPEN
+- Documented: 2026-06-25T15:25:52+02:00
+```
+
+**What must be documented per step:**
+
+- Step number and name
+- All Plan checks and their results
+- The exact tool call and response (Act)
+- The verification call and response (Verify)
+- The result: SUCCESSFUL, FAILED, SKIPPED with reason
+- The timestamp at documentation time
+
+**What must NOT be left undocumented:**
+
+- Any step that was attempted, even if it failed
+- Any tool call, even if it returned an error
+- Any deviation from the planned execution — unexpected responses, skipped sub-steps, retries
+
+**The documentation serves two purposes:**
+
+First, crash recovery — the agent can resume at any point from the last documented step.
+
+Second, audit — the result file is the proof that the ADD document's rules were followed. It shows what the agent did, in what order, with what results. For safety-critical deployments, this record may be required for compliance, for incident investigation, or for the deterministic audit layer described in the ADD specification.
+
+---
+
+### 13.7 Structural Template — Agent Task Instruction File
+
+The following template captures all six principles from Sections 13.2–13.6 in a reusable structure for ADD agent task instructions. Adapt the content for each deployment — the structure remains constant.
+
+```
+Arbeitsanweisung: [Task name]
+Datum: [Date]
+Gerät: [Device name and ADD URL]
+
+Globale Ausführungsregeln:
+1. Lies diese Datei vollständig bevor du beginnst.
+2. Führe alle Schritte in der angegebenen Reihenfolge aus.
+3. Kann ein Schritt nicht ausgeführt werden, überspringe ihn und
+   protokolliere den Grund in der Ergebnisdatei.
+4. Jeder Schritt muss nach Abschluss sofort dokumentiert werden —
+   nicht am Ende, sondern unmittelbar nach der Verifikation.
+5. "Ausführen" bedeutet immer: Tool aufrufen, Antwort abwarten,
+   Ergebnis nutzen. Achtung! Das ist keine Simulation.
+6. Für jeden Schritt gilt: Planen → Handeln → Prüfen.
+   Kein Handeln ohne Planung. Kein Weitergehen ohne Prüfung.
+
+Schritt 1: Tool-Verfügbarkeit prüfen
+- Prüfe ob folgende Tools verfügbar und aufrufbar sind:
+  [list all required tools with a minimal test call for each]
+- Falls ein Tool fehlt oder nicht antwortet: STOP.
+  Dokumentiere das Problem in der Ergebnisdatei. Führe keinen
+  weiteren Schritt aus.
+
+Schritt 2: Zustandsdatei prüfen
+- Lese /data/state.json falls vorhanden.
+- Falls vorhanden: ermittle den zuletzt abgeschlossenen Schritt
+  und setze die Ausführung bei Schritt [N+1] fort.
+- Falls nicht vorhanden: Erstelle /data/state.json mit
+  last_completed_step: 0.
+
+Schritt 3: Ergebnisdatei anlegen
+- Erstelle /data/Ergebnis_[YYYYMMDD_HHMM].txt
+- Schreibe den Header: Datum, Uhrzeit, Modell, Aufgabe.
+
+[Steps 4..N — device-specific steps, each with:]
+Schritt N: [Action name]
+- Plan: [what to check before acting]
+- Handeln: [exact tool call]
+- Prüfen: [verification call and expected result]
+[After each step: write to result file and update state.json]
+
+Letzter Schritt: Zusammenfassung
+- Schreibe die Zusammenfassung in die Ergebnisdatei:
+  alle Schritte, Status (OK / ÜBERSPRUNGEN / FEHLER), Gesamtergebnis.
+- Aktualisiere /data/state.json: last_completed_step: [N].
+```
+
+---
+
+### 13.8 Summary — The Six Principles
+
+| Principle | Where enforced | Effect |
+|---|---|---|
+| Self-hosted MCP Services | Deployment architecture | Stable, reproducible tool names across all models and sessions |
+| Tool availability check (Step 1) | Task instruction file | No hardware is touched if a required tool is missing |
+| Plan → Act → Verify | Every action step | No assumed results; device state always verified |
+| File-based persistence | Task instruction + state.json + result file | Session crash does not lose state or leave device in unknown state |
+| Step-by-step documentation | Immediately after each Verify | Crash recovery possible at any point; full audit trail available |
+| Crash recovery by design | state.json + result file | Recovery session resumes from last verified step without re-executing completed steps |
+
+These six principles together define what it means for an ADD agent task to be **safe by design** — not just correct under ideal conditions, but resilient under the realistic conditions of network interruptions, model timeouts, tool failures, and unexpected session terminations.
+
+---
+
