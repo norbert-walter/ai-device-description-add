@@ -473,6 +473,7 @@
     <div class="panel-header">
       <h2>Live Log</h2>
       <div class="actions">
+        <button class="btn-save" onclick="downloadLog()">Download</button>
         <button class="btn-clear" onclick="clearLog()">Clear</button>
       </div>
     </div>
@@ -751,6 +752,16 @@
       badge.textContent = 'OFF — CLOSED';
       badge.className = 'valve-toggle-btn state-off';
     }
+  }
+
+  // ---- Download log as JSON ----
+  function downloadLog() {
+    const a = document.createElement('a');
+    a.href = '/api/log/download';
+    a.download = 'log.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   // ---- Clear log ----

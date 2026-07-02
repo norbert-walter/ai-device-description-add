@@ -1198,6 +1198,16 @@ def get_log():
     return jsonify(list(log_entries))
 
 
+@app.route("/api/log/download")
+def download_log():
+    data = json.dumps(list(log_entries), ensure_ascii=False, indent=2)
+    return Response(
+        data,
+        mimetype="application/json",
+        headers={"Content-Disposition": "attachment; filename=log.json"}
+    )
+
+
 @app.route("/api/log/clear", methods=["POST"])
 def clear_log():
     log_entries.clear()
