@@ -144,11 +144,8 @@ https://add-simulator.norbert-walter.dnshome.de/add?t=<unix-timestamp>
 **Prompt to use:**
 
 ```
-Read the ADD device description at
-https://add-simulator.norbert-walter.dnshome.de/add?t=<unix-timestamp>
-and help me control the valve.
-For every subsequent request append a current Unix timestamp as query
-parameter ?t=<unix-timestamp> to avoid cached responses.
+Read the ADD device description at https://add-simulator.norbert-walter.dnshome.de/add?t=<unix-timestamp> and help me control the valve.
+For every subsequent request append a current Unix timestamp as query parameter ?t=<unix-timestamp> to avoid cached responses.
 ```
 
 Replace `<unix-timestamp>` with the current Unix time (e.g. `1751500000`).
@@ -252,9 +249,7 @@ Each MCP service must be added as a separate Custom Connector.
 #### Prompt to use with MCP:
 
 ```
-Use the fetch tool to read the ADD device description at
-https://add-simulator.norbert-walter.dnshome.de/add
-and help me control the valve.
+Use the fetch tool to read the ADD device description at https://add-simulator.norbert-walter.dnshome.de/add and help me control the valve.
 Use the fetch tool for all subsequent requests to the simulator.
 Do not use your built-in web access for this session.
 ```
