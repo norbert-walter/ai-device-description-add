@@ -103,19 +103,19 @@
   - [12.6 Session Initialization](#126-session-initialization)
   - [12.7 Security Considerations](#127-security-considerations)
   - [12.8 Summary](#128-summary)
-- [13. Agent Task Design — Safe Execution by Design](#13-agent-task-design-safe-execution-by-design)
-  - [13.1 Why Agent Task Design Is a Separate Discipline](#131-why-agent-task-design-is-a-separate-discipline)
-  - [13.2 Self-Hosted MCP Services — The Reproducible Tool Base](#132-self-hosted-mcp-services-the-reproducible-tool-base)
-  - [13.3 Tool Availability Check — The Mandatory First Step](#133-tool-availability-check-the-mandatory-first-step)
-  - [13.4 Plan → Act → Verify — The Mandatory Execution Pattern](#134-plan-→-act-→-verify-the-mandatory-execution-pattern)
-  - [13.5 File-Based Persistence — Crash-Resilient by Design](#135-file-based-persistence-crash-resilient-by-design)
-  - [13.6 Step-by-Step Documentation — The Crash Recovery Protocol](#136-step-by-step-documentation-the-crash-recovery-protocol)
-  - [13.7 Structural Template — Agent Task Instruction File](#137-structural-template-agent-task-instruction-file)
-  - [13.8 Summary — The Six Principles](#138-summary-the-six-principles)
-- [Appendix — Model Performance Profiles](#appendix-model-performance-profiles)
-  - [Why the ADD Simulator is the Required Test Environment](#why-the-add-simulator-is-the-required-test-environment)
-  - [Standard Test Protocol](#standard-test-protocol)
-  - [Model Profile: Claude Sonnet 4.6 — Cloud API via Claude Desktop + MCP fetch](#model-profile-claude-sonnet-46-cloud-api-via-claude-desktop-mcp-fetch)
+- [13. Agent Task Design — Safe Execution by Design](#sec-13-agent-task-design)
+  - [13.1 Why Agent Task Design Is a Separate Discipline](#sec-13-1-agent-task-design-discipline)
+  - [13.2 Self-Hosted MCP Services — The Reproducible Tool Base](#sec-13-2-self-hosted-mcp-services)
+  - [13.3 Tool Availability Check — The Mandatory First Step](#sec-13-3-tool-availability-check)
+  - [13.4 Plan → Act → Verify — The Mandatory Execution Pattern](#sec-13-4-plan-act-verify)
+  - [13.5 File-Based Persistence — Crash-Resilient by Design](#sec-13-5-file-based-persistence)
+  - [13.6 Step-by-Step Documentation — The Crash Recovery Protocol](#sec-13-6-step-by-step-documentation)
+  - [13.7 Structural Template — Agent Task Instruction File](#sec-13-7-structural-template)
+  - [13.8 Summary — The Six Principles](#sec-13-8-summary)
+- [Appendix — Model Performance Profiles](#sec-appendix-model-performance-profiles)
+  - [Why the ADD Simulator is the Required Test Environment](#sec-appendix-simulator-test-environment)
+  - [Standard Test Protocol](#sec-appendix-standard-test-protocol)
+  - [Model Profile: Claude Sonnet 4.6 — Cloud API via Claude Desktop + MCP fetch](#sec-appendix-model-profile-claude-sonnet-46)
 
 ## 1. Before Writing Your First ADD Document
 
@@ -3970,8 +3970,10 @@ The ADD document itself requires no modification for cloud-AI deployments. The a
 
 ---
 
+<a id="sec-13-agent-task-design"></a>
 ## 13. Agent Task Design — Safe Execution by Design
 
+<a id="sec-13-1-agent-task-design-discipline"></a>
 ### 13.1 Why Agent Task Design Is a Separate Discipline
 
 Chapters 1–12 address the ADD document — the device side of the ADD architecture. Chapter 13 addresses the agent side: how a task instruction must be structured so that an AI agent executes device actions reliably, safely, and crash-resiliently.
@@ -3991,6 +3993,7 @@ These principles are not optional improvements. They are the difference between 
 
 ---
 
+<a id="sec-13-2-self-hosted-mcp-services"></a>
 ### 13.2 Self-Hosted MCP Services — The Reproducible Tool Base
 
 **The problem with platform-provided tools:**
@@ -4050,6 +4053,7 @@ These references are stable. The validation record in `validated_by` captures th
 
 ---
 
+<a id="sec-13-3-tool-availability-check"></a>
 ### 13.3 Tool Availability Check — The Mandatory First Step
 
 Every agent task for an ADD deployment MUST begin with a tool availability check. This is not optional and must not be moved to a later step.
@@ -4088,6 +4092,7 @@ Either all tools are available and the task proceeds to Step 2, or the task term
 
 ---
 
+<a id="sec-13-4-plan-act-verify"></a>
 ### 13.4 Plan → Act → Verify — The Mandatory Execution Pattern
 
 Every ADD action — every write to a device endpoint — must follow a three-phase execution pattern:
@@ -4149,6 +4154,7 @@ Achtung! Das ist keine Simulation. Das ist ein realer Einsatz.
 
 ---
 
+<a id="sec-13-5-file-based-persistence"></a>
 ### 13.5 File-Based Persistence — Crash-Resilient by Design
 
 **Why files, not session memory:**
@@ -4210,6 +4216,7 @@ All persistent files for a deployment are stored in a dedicated directory — `/
 
 ---
 
+<a id="sec-13-6-step-by-step-documentation"></a>
 ### 13.6 Step-by-Step Documentation — The Crash Recovery Protocol
 
 **Every completed step must be documented immediately after completion** — not at the end of the task, not in a summary, but immediately after the Verify phase of each Plan → Act → Verify cycle.
@@ -4252,6 +4259,7 @@ Second, audit — the result file is the proof that the ADD document's rules wer
 
 ---
 
+<a id="sec-13-7-structural-template"></a>
 ### 13.7 Structural Template — Agent Task Instruction File
 
 The following template captures all six principles from Sections 13.2–13.6 in a reusable structure for ADD agent task instructions. Adapt the content for each deployment — the structure remains constant.
@@ -4306,6 +4314,7 @@ Letzter Schritt: Zusammenfassung
 
 ---
 
+<a id="sec-13-8-summary"></a>
 ### 13.8 Summary — The Six Principles
 
 | Principle | Where enforced | Effect |
@@ -4321,10 +4330,12 @@ These six principles together define what it means for an ADD agent task to be *
 
 ---
 
+<a id="sec-appendix-model-performance-profiles"></a>
 ## Appendix — Model Performance Profiles
 
 This appendix documents measured performance characteristics of AI models tested against the ADD Simulator. All tests were conducted under identical conditions using the ADD Simulator at `https://norbert-walter.dnshome.de` — a Flask-based simulator that responds instantly and deterministically to Tasmota-style HTTP GET requests. Because the simulator introduces no latency of its own, all measured response times reflect the AI model and network exclusively.
 
+<a id="sec-appendix-simulator-test-environment"></a>
 ### Why the ADD Simulator is the Required Test Environment
 
 Testing AI model latency against real hardware introduces an uncontrolled variable: the device itself. A slow device response, an unstable WiFi connection, or firmware behavior that differs from the ADD document description can all distort latency measurements. The ADD Simulator eliminates these variables entirely.
@@ -4338,6 +4349,7 @@ Skipping the simulator and testing directly against real hardware makes it impos
 
 ---
 
+<a id="sec-appendix-standard-test-protocol"></a>
 ### Standard Test Protocol
 
 All model profiles in this appendix were produced using the following standardized test protocol. To add a new model profile or verify an existing one, follow this protocol exactly — do not modify the test prompts or sequence, as this would make results incomparable.
@@ -4398,6 +4410,7 @@ For Test B, calculate: minimum, maximum, mean, median, P90, P95. Use the P90 val
 
 ---
 
+<a id="sec-appendix-model-profile-claude-sonnet-46"></a>
 ### Model Profile: Claude Sonnet 4.6 — Cloud API via Claude Desktop + MCP fetch
 
 **Test environment:**

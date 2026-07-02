@@ -39,39 +39,39 @@
   - [7.3 Handling Uncertainty](#73-handling-uncertainty)
   - [7.4 The Scope of AI Action](#74-the-scope-of-ai-action)
   - [7.5 Two Special Deployment Patterns](#75-two-special-deployment-patterns)
-- [8. Why a Fixed Top-Level Schema?](#8-why-a-fixed-top-level-schema)
-  - [8.1 The Design Principle: Opinionated Framework, Flexible Extensions](#81-the-design-principle-opinionated-framework-flexible-extensions)
-  - [8.2 Why the Core Must Be Fixed](#82-why-the-core-must-be-fixed)
-  - [8.3 Why the Extensions Must Be Flexible](#83-why-the-extensions-must-be-flexible)
-- [9. The Top-Level Schema](#9-the-top-level-schema)
-  - [9.1 Top-Level Fields](#91-top-level-fields)
-  - [9.2 The Header Fields](#92-the-header-fields)
-- [10. The Blocks in Detail](#10-the-blocks-in-detail)
-  - [10.1 The autonomy Block](#101-the-autonomy-block)
-  - [10.2 The device Block](#102-the-device-block)
-  - [10.3 The security Block](#103-the-security-block)
-  - [10.4 The interfaces Block](#104-the-interfaces-block)
-  - [10.5 The actions Block](#105-the-actions-block)
-  - [10.6 The rules Block](#106-the-rules-block)
-  - [10.7 The validation Block](#107-the-validation-block)
-- [11. Workflow: From Device to Deployed ADD Document](#11-workflow-from-device-to-deployed-add-document)
-- [12. Authoring an ADD Document with AI](#12-authoring-an-add-document-with-ai)
-  - [12.1 Why AI Authoring Makes Sense](#121-why-ai-authoring-makes-sense)
-  - [12.2 The Authoring Workflow](#122-the-authoring-workflow)
-  - [12.3 The Authoring Prompt](#123-the-authoring-prompt)
-  - [12.4 Reviewing the Draft](#124-reviewing-the-draft)
-  - [12.5 The Limits of AI-Based Authoring](#125-the-limits-of-ai-based-authoring)
-- [13. Validating an ADD Document with AI](#13-validating-an-add-document-with-ai)
-  - [13.1 Why AI Validation Is the Only Meaningful Test](#131-why-ai-validation-is-the-only-meaningful-test)
-  - [13.2 What Validation Covers](#132-what-validation-covers)
-  - [13.3 The Validation Prompt](#133-the-validation-prompt)
-  - [13.4 Writing the Validation Result into the Document](#134-writing-the-validation-result-into-the-document)
-  - [13.5 When to Re-Validate](#135-when-to-re-validate)
-- [14. Versioning](#14-versioning)
-  - [14.1 The ADD Schema Version](#141-the-add-schema-version)
-  - [14.2 Version Traceability](#142-version-traceability)
-  - [14.3 Versioning and the Workflow](#143-versioning-and-the-workflow)
-- [15. Governance](#15-governance)
+- [8. Why a Fixed Top-Level Schema?](#sec-8-fixed-top-level-schema)
+  - [8.1 The Design Principle: Opinionated Framework, Flexible Extensions](#sec-8-1-design-principle)
+  - [8.2 Why the Core Must Be Fixed](#sec-8-2-core-must-be-fixed)
+  - [8.3 Why the Extensions Must Be Flexible](#sec-8-3-extensions-must-be-flexible)
+- [9. The Top-Level Schema](#sec-9-top-level-schema)
+  - [9.1 Top-Level Fields](#sec-9-1-top-level-fields)
+  - [9.2 The Header Fields](#sec-9-2-header-fields)
+- [10. The Blocks in Detail](#sec-10-blocks-in-detail)
+  - [10.1 The autonomy Block](#sec-10-1-autonomy-block)
+  - [10.2 The device Block](#sec-10-2-device-block)
+  - [10.3 The security Block](#sec-10-3-security-block)
+  - [10.4 The interfaces Block](#sec-10-4-interfaces-block)
+  - [10.5 The actions Block](#sec-10-5-actions-block)
+  - [10.6 The rules Block](#sec-10-6-rules-block)
+  - [10.7 The validation Block](#sec-10-7-validation-block)
+- [11. Workflow: From Device to Deployed ADD Document](#sec-11-workflow)
+- [12. Authoring an ADD Document with AI](#sec-12-authoring-with-ai)
+  - [12.1 Why AI Authoring Makes Sense](#sec-12-1-why-ai-authoring)
+  - [12.2 The Authoring Workflow](#sec-12-2-authoring-workflow)
+  - [12.3 The Authoring Prompt](#sec-12-3-authoring-prompt)
+  - [12.4 Reviewing the Draft](#sec-12-4-reviewing-the-draft)
+  - [12.5 The Limits of AI-Based Authoring](#sec-12-5-limits-of-ai-authoring)
+- [13. Validating an ADD Document with AI](#sec-13-validating-with-ai)
+  - [13.1 Why AI Validation Is the Only Meaningful Test](#sec-13-1-why-ai-validation)
+  - [13.2 What Validation Covers](#sec-13-2-what-validation-covers)
+  - [13.3 The Validation Prompt](#sec-13-3-validation-prompt)
+  - [13.4 Writing the Validation Result into the Document](#sec-13-4-writing-validation-result)
+  - [13.5 When to Re-Validate](#sec-13-5-when-to-revalidate)
+- [14. Versioning](#sec-14-versioning)
+  - [14.1 The ADD Schema Version](#sec-14-1-add-schema-version)
+  - [14.2 Version Traceability](#sec-14-2-version-traceability)
+  - [14.3 Versioning and the Workflow](#sec-14-3-versioning-workflow)
+- [15. Governance](#sec-15-governance)
 
 ## 1. The Problem
 
@@ -790,10 +790,12 @@ All conditions that could block an action must be declared as verifiable rules w
 For a full treatment of both patterns including complete ADD document examples, see the ADD Developer Guide.
 
 ---
+<a id="sec-8-fixed-top-level-schema"></a>
 ## 8. Why a Fixed Top-Level Schema?
 
 Before describing the schema in detail, it is worth stating clearly why it is designed the way it is — and why the top-level structure is fixed while the content within each block is free-form.
 
+<a id="sec-8-1-design-principle"></a>
 ### 8.1 The Design Principle: Opinionated Framework, Flexible Extensions
 
 ADD follows a single governing design principle: **"Opinionated Framework, Flexible Extensions."**
@@ -806,6 +808,7 @@ The seven top-level blocks are the irreducible minimum for an AI-usable device d
 
 ---
 
+<a id="sec-8-2-core-must-be-fixed"></a>
 ### 8.2 Why the Core Must Be Fixed
 
 The fixed top-level structure serves one purpose: **guaranteeing that an AI agent always has the minimum information it needs to act, without having to search for it or ask.**
@@ -828,6 +831,7 @@ The fixed structure enforces completeness. It ensures that a device author canno
 
 ---
 
+<a id="sec-8-3-extensions-must-be-flexible"></a>
 ### 8.3 Why the Extensions Must Be Flexible
 
 The content within each block is intentionally free-form for an equally important reason: **no fixed schema can anticipate the full diversity of IoT devices.**
@@ -841,6 +845,7 @@ By leaving the content free-form, ADD delegates the descriptive work to the peop
 ---
 
 This stability is a feature that device authors and AI developers can rely on.
+<a id="sec-9-top-level-schema"></a>
 ## 9. The Top-Level Schema
 
 Every ADD document is a JSON object with a fixed set of top-level fields. This is the complete structure:
@@ -863,6 +868,7 @@ Every ADD document is a JSON object with a fixed set of top-level fields. This i
 
 ---
 
+<a id="sec-9-1-top-level-fields"></a>
 ### 9.1 Top-Level Fields
 
 | Field | Type | Required | Description |
@@ -881,6 +887,7 @@ Every ADD document is a JSON object with a fixed set of top-level fields. This i
 
 ---
 
+<a id="sec-9-2-header-fields"></a>
 ### 9.2 The Header Fields
 
 The four fields above the seven blocks form the document header. They identify the document, link it to its specification, and carry attribution information.
@@ -903,6 +910,7 @@ consult the ADD specification at the URL provided in spec_url before proceeding.
 ```
 
 
+<a id="sec-10-blocks-in-detail"></a>
 ## 10. The Blocks in Detail
 
 Each of the seven top-level blocks is described in this section. For each block:
@@ -920,6 +928,7 @@ its purpose, a complete field table, and a concrete example.
 ---
 
 
+<a id="sec-10-1-autonomy-block"></a>
 ### 10.1 The `autonomy` Block
 
 **Purpose:** Declares the risk profile and links to the Ethical Framework. Read
@@ -999,6 +1008,7 @@ obligations and must refuse to proceed.
 
 ---
 
+<a id="sec-10-2-device-block"></a>
 ### 10.2 The `device` Block
 
 **Purpose:** Describes device identity, location, and reachability. Tells the AI
@@ -1054,6 +1064,7 @@ document alone is not sufficient.
 
 ---
 
+<a id="sec-10-3-security-block"></a>
 ### 10.3 The `security` Block
 
 **Purpose:** Describes the security context in which the device operates and
@@ -1098,6 +1109,7 @@ declaration for their specific deployment.
 
 ---
 
+<a id="sec-10-4-interfaces-block"></a>
 ### 10.4 The `interfaces` Block
 
 **Purpose:** Describes how the AI communicates with the device. Each array entry
@@ -1136,6 +1148,7 @@ ADD does not enumerate or restrict protocols.
 
 ---
 
+<a id="sec-10-5-actions-block"></a>
 ### 10.5 The `actions` Block
 
 **Purpose:** Defines exactly what an AI is permitted to do with the device. Each
@@ -1238,6 +1251,7 @@ define the risk profile of each action:
 
 ---
 
+<a id="sec-10-6-rules-block"></a>
 ### 10.6 The `rules` Block
 
 **Purpose:** Behavioral instructions addressed directly to the AI. Rules encode
@@ -1307,6 +1321,7 @@ Each entry is either a plain string or a structured object.
 
 ---
 
+<a id="sec-10-7-validation-block"></a>
 ### 10.7 The `validation` Block
 
 **Purpose:** Records which AI models have tested this document and whether it is
@@ -1361,6 +1376,7 @@ must be validated separately and its result recorded.
 
 ---
 
+<a id="sec-11-workflow"></a>
 ## 11. Workflow: From Device to Deployed ADD Document
 
 Creating an ADD document follows three phases. Each phase has a clear purpose, a defined output, and a human decision point before the next phase begins. The device author is present and in control at every transition — the AI does the analytical and drafting work, the human reviews, corrects, and approves.
@@ -1386,8 +1402,10 @@ Phase 3 — Deployment
 **Phase 3 — Deployment** is simple: the completed ADD document in JSON format is served at the `/add` endpoint on the device's HTTP server. Optionally, a `llms.txt` file and a `/.well-known/add` endpoint are added for broader discoverability (see Chapter 5). From this point, any AI agent that can reach the device can discover, read, and act upon it — without any further configuration or setup.
 
 ---
+<a id="sec-12-authoring-with-ai"></a>
 ## 12. Authoring an ADD Document with AI
 
+<a id="sec-12-1-why-ai-authoring"></a>
 ### 12.1 Why AI Authoring Makes Sense
 
 Writing an ADD document manually is possible — but doing it with AI assistance is significantly better, for a reason that is easy to overlook.
@@ -1400,6 +1418,7 @@ The device author bears full responsibility for the final document. The AI produ
 
 ---
 
+<a id="sec-12-2-authoring-workflow"></a>
 ### 12.2 The Authoring Workflow
 
 **Phase 1 — Device Exploration**
@@ -1430,6 +1449,7 @@ After producing the draft, the AI provides a short summary: what it determined f
 
 ---
 
+<a id="sec-12-3-authoring-prompt"></a>
 ### 12.3 The Authoring Prompt
 
 The following prompt initiates an AI-based ADD authoring session. Replace the placeholders before use.
@@ -1485,6 +1505,7 @@ Then perform the following steps:
 
 ---
 
+<a id="sec-12-4-reviewing-the-draft"></a>
 ### 12.4 Reviewing the Draft
 
 The output of the authoring process is a starting point, not a finished document. Before proceeding to validation, the device author SHOULD review every field carefully, with particular attention to:
@@ -1499,6 +1520,7 @@ Once the author is satisfied that the draft accurately reflects the device and i
 
 ---
 
+<a id="sec-12-5-limits-of-ai-authoring"></a>
 ### 12.5 The Limits of AI-Based Authoring
 
 AI-based authoring is powerful, but it has a fundamental constraint that every device author must understand: **the AI can only analyze what it can access over the network.**
@@ -1518,8 +1540,10 @@ All of this knowledge lives with the device author, not with the AI. The clarifi
 This is why the device author's review of the draft is not a formality. The AI produces the best description it can from what it can observe. The author fills in what the AI cannot reach. Together, they produce a description that is both technically accurate and contextually complete.
 
 ---
+<a id="sec-13-validating-with-ai"></a>
 ## 13. Validating an ADD Document with AI
 
+<a id="sec-13-1-why-ai-validation"></a>
 ### 13.1 Why AI Validation Is the Only Meaningful Test
 
 Because ADD sub-schemas are intentionally free-form, there is no generic schema validator for ADD documents. A classical parser can check whether JSON is syntactically correct — but it cannot determine whether the description is clear enough for an AI to act upon correctly, whether the rules are complete, or whether the device actually behaves as described.
@@ -1532,6 +1556,7 @@ One practical consequence: an ADD document validated with one AI system cannot b
 
 ---
 
+<a id="sec-13-2-what-validation-covers"></a>
 ### 13.2 What Validation Covers
 
 A complete validation covers six areas:
@@ -1556,6 +1581,7 @@ If the ADD document defines `timing: "critical"` and `max_response_time` on any 
 
 ---
 
+<a id="sec-13-3-validation-prompt"></a>
 ### 13.3 The Validation Prompt
 
 The following prompt initiates an AI-based ADD validation session. Replace the placeholders before use.
@@ -1633,6 +1659,7 @@ Please perform the following steps:
 
 ---
 
+<a id="sec-13-4-writing-validation-result"></a>
 ### 13.4 Writing the Validation Result into the Document
 
 After completing the validation, the AI produces a completed `validation` block in JSON format. The device author:
@@ -1650,6 +1677,7 @@ An ADD document is **deployment-ready** when:
 
 ---
 
+<a id="sec-13-5-when-to-revalidate"></a>
 ### 13.5 When to Re-Validate
 
 Validation is not a one-time event. The document SHOULD be re-validated after:
@@ -1662,8 +1690,10 @@ Validation is not a one-time event. The document SHOULD be re-validated after:
 Each re-validation run is recorded in `validated_by` with the AI system name, version, and timestamp. Over time, this array becomes a transparent history of which AI systems have been tested with this document and what they found.
 
 ---
+<a id="sec-14-versioning"></a>
 ## 14. Versioning
 
+<a id="sec-14-1-add-schema-version"></a>
 ### 14.1 The ADD Schema Version
 
 The ADD schema version is declared in the top-level `version` field of every ADD document. This specification defines **ADD core schema v1.0**.
@@ -1680,6 +1710,7 @@ Changes to the content within blocks — within `device`, `interfaces`, `actions
 
 ---
 
+<a id="sec-14-2-version-traceability"></a>
 ### 14.2 Version Traceability
 
 The `spec_url` field MUST point to the specific version of the specification the document was written against — not the latest version. This ensures that an AI system reading the document can always consult the exact specification the author used, even if newer versions have been published since.
@@ -1692,6 +1723,7 @@ An AI system that encounters a `version` field it does not recognize SHOULD info
 
 ---
 
+<a id="sec-14-3-versioning-workflow"></a>
 ### 14.3 Versioning and the Workflow
 
 From a workflow perspective, the version field is relevant at two points:
@@ -1701,6 +1733,7 @@ From a workflow perspective, the version field is relevant at two points:
 **During validation:** The `validation` block records the ADD schema version validated against in the `add_version` field. If the document is later updated to conform to a newer schema version, it SHOULD be re-validated and the `add_version` field updated accordingly.
 
 ---
+<a id="sec-15-governance"></a>
 ## 15. Governance
 
 ADD is an open specification. Contributions, implementations, and feedback are welcome.
