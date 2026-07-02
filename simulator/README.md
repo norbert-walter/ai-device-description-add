@@ -50,9 +50,9 @@ Open http://localhost:5000 in your browser.
 
 A public instance is available at:
 
-```
+
 https://add-simulator.norbert-walter.dnshome.de/
-```
+
 
 No installation required — use it directly with any AI client.
 
