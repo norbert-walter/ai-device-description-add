@@ -1214,6 +1214,6 @@ def get_state():
 
 if __name__ == "__main__":
     import os
-    port = int(os.environ.get("PORT", 80))
+    port = int(os.environ.get("PORT", 5000))
     add_log("Simulator started", f"Listening on port {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
