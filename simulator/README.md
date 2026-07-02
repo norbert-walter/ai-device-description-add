@@ -11,8 +11,28 @@ to install. Point any AI client with web access at `/add` and start exploring.
 
 ## Quickstart — Docker
 
+There are two ways to run the simulator as a Docker container: build it
+yourself from the source code, or pull the ready-to-use image from Docker Hub.
+
+**Option 1 — Build from source:**
+
 ```bash
 docker compose up --build
+```
+
+**Option 2 — Pull from Docker Hub:**
+
+A pre-built image is available at:
+
+```
+https://hub.docker.com/r/openboatprojects/add-simulator
+```
+
+Pull and start it with:
+
+```bash
+docker pull openboatprojects/add-simulator
+docker compose up
 ```
 
 Open http://localhost:5000 in your browser.
@@ -245,14 +265,6 @@ Do not use your built-in web access for this session.
 > **Important:** The explicit instruction to use the `fetch` tool is required.
 > Without it, some AI clients fall back to their native web access, which may
 > return cached responses.
-
----
-
-## Port configuration
-
-```bash
-PORT=8080 docker compose up --build
-```
 
 ---
 
