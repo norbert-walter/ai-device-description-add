@@ -4,15 +4,14 @@ Interactive simulator for the **AI Device Description (ADD)** open standard.
 
 <img src="../pictures/ADD-Simulator.png" alt="ADD Simulator" width="800">
 
-Simulates a Tasmota-style valve device with a live web UI — no tools or APIs
-to install. Point any AI client with web access at `/add` and start exploring.
+Simulates a Tasmota-style valve device with a live web UI — no tools or APIs to install.
+Point any AI client with web access at `/add` and start exploring.
 
 ---
 
 ## Quickstart — Docker
 
-There are two ways to run the simulator as a Docker container: build it
-yourself from the source code, or pull the ready-to-use image from Docker Hub.
+There are two ways to run the simulator as a Docker container: build it yourself from the source code, or pull the ready-to-use image from Docker Hub.
 
 **Option 1 — Build from source:**
 
@@ -68,8 +67,7 @@ No installation required — use it directly with any AI client.
 
 ## How to use with an AI client
 
-Start the simulator locally or use the hosted demo, then choose one of the
-two variants below depending on your AI client setup.
+Start the simulator locally or use the hosted demo, then choose one of the two variants below depending on your AI client setup.
 
 ### Web UI
 
@@ -93,32 +91,24 @@ The AI client controls the simulated valve via these endpoints:
 | `GET /cm?cmnd=Power%20On` | Open valve |
 | `GET /cm?cmnd=Power%20Off` | Close valve |
 
-The AI client reads `/add` to understand the device capabilities and rules,
-then uses the `/cm` endpoints to control the valve. Every call appears in
-the Live Log with timestamp and response.
+The AI client reads `/add` to understand the device capabilities and rules, then uses the `/cm` endpoints to control the valve.
+Every call appears in the Live Log with timestamp and response.
 
 ### How an AI accesses the device
 
-An AI client interacts with the simulator exclusively via HTTP GET requests —
-the same mechanism a browser uses to load a web page. The AI first fetches
-the ADD document at `/add` to read the device description, capabilities, and
-rules. It then sends control commands to the `/cm` endpoints to operate the
-valve.
+An AI client interacts with the simulator exclusively via HTTP GET requests — the same mechanism a browser uses to load a web page.
+The AI first fetches the ADD document at `/add` to read the device description, capabilities, and rules.
+It then sends control commands to the `/cm` endpoints to operate the valve.
 
-To make these HTTP requests, the AI needs a **fetch mechanism**. There are
-two ways to provide this:
+To make these HTTP requests, the AI needs a **fetch mechanism**.
+There are two ways to provide this:
 
-- **Built-in web access** — most AI clients include a native web fetch
-  capability that allows them to retrieve URLs during a conversation. No
-  additional setup is required, but responses may be cached within a session.
-  In addition, many AI clients apply strict internal security policies to
-  their built-in web access, which can limit or block requests to certain
-  URLs, local addresses, or non-standard endpoints.
-- **MCP fetch tool** — an external MCP service provides a `fetch` tool that
-  the AI can call explicitly. This bypasses client-side caching entirely and
-  gives the AI direct, reliable access to the simulator at any time. MCP
-  tools are not subject to the same security restrictions as built-in web
-  access, making them significantly more flexible for hardware interaction.
+- **Built-in web access** — most AI clients include a native web fetch capability that allows them to retrieve URLs during a conversation.
+  No additional setup is required, but responses may be cached within a session.
+  In addition, many AI clients apply strict internal security policies to their built-in web access, which can limit or block requests to certain URLs, local addresses, or non-standard endpoints.
+- **MCP fetch tool** — an external MCP service provides a `fetch` tool that the AI can call explicitly.
+  This bypasses client-side caching entirely and gives the AI direct, reliable access to the simulator at any time.
+  MCP tools are not subject to the same security restrictions as built-in web access, making them significantly more flexible for hardware interaction.
 
 Both approaches are described below.
 
@@ -126,16 +116,14 @@ Both approaches are described below.
 
 ### Variant A — Native web access (no MCP, no Pro subscription required)
 
-Most AI clients (Claude, ChatGPT, Perplexity, …) support built-in web access
-that can fetch URLs directly. This variant works without any additional setup.
+Most AI clients (Claude, ChatGPT, Perplexity, …) support built-in web access that can fetch URLs directly.
+This variant works without any additional setup.
 
 **Known limitation:** Some AI clients cache HTTP responses within a session.
-If the simulator was temporarily unreachable when you first started the
-conversation, the client may return a cached error on subsequent requests.
+If the simulator was temporarily unreachable when you first started the conversation, the client may return a cached error on subsequent requests.
 **Start a fresh conversation** to clear the session cache.
 
-As an additional safeguard, append a Unix timestamp to every URL to prevent
-caching:
+As an additional safeguard, append a Unix timestamp to every URL to prevent caching:
 
 ```
 https://add-simulator.norbert-walter.dnshome.de/add?t=<unix-timestamp>
@@ -144,10 +132,8 @@ https://add-simulator.norbert-walter.dnshome.de/add?t=<unix-timestamp>
 **Prompt to use:**
 
 ```
-Read the ADD device description at https://add-simulator.norbert-walter.dnshome.de/add?t=<unix-timestamp>
-and help me control the valve.
-For every subsequent request append a current Unix timestamp as query parameter
-?t=<unix-timestamp> to avoid cached responses.
+Read the ADD device description at https://add-simulator.norbert-walter.dnshome.de/add?t=<unix-timestamp> and help me control the valve.
+For every subsequent request append a current Unix timestamp as query parameter ?t=<unix-timestamp> to avoid cached responses.
 ```
 
 Replace `<unix-timestamp>` with the current Unix time (e.g. `1751500000`).
@@ -157,9 +143,8 @@ You can get the current value at https://www.unixtimestamp.com/.
 
 ### Variant B — MCP-based access (recommended, requires Pro subscription)
 
-Using MCP services bypasses all client-side caching and gives the AI
-direct, reliable HTTP access to the simulator. This is the recommended approach
-for serious testing and ADD validation.
+Using MCP services bypasses all client-side caching and gives the AI direct, reliable HTTP access to the simulator.
+This is the recommended approach for serious testing and ADD validation.
 
 **Requirements:**
 - Claude Pro or ChatGPT Plus/Team/Enterprise subscription
@@ -198,8 +183,7 @@ Name: mcp-file-edit
 URL:  https://mcp-file-edit.norbert-walter.dnshome.de/mcp
 ```
 
-After saving, the tools will appear under Connectors and are available
-in every new conversation.
+After saving, the tools will appear under Connectors and are available in every new conversation.
 
 ---
 
@@ -251,8 +235,7 @@ Each MCP service must be added as a separate Custom Connector.
 #### Prompt to use with MCP:
 
 ```
-Use the fetch tool to read the ADD device description at
-https://add-simulator.norbert-walter.dnshome.de/add and help me control the valve.
+Use the fetch tool to read the ADD device description at https://add-simulator.norbert-walter.dnshome.de/add and help me control the valve.
 Use the fetch tool for all subsequent requests to the simulator.
 Do not use your built-in web access for this session.
 ```
