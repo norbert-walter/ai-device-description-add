@@ -2,7 +2,7 @@
 
 Interactive simulator for the **AI Device Description (ADD)** open standard.
 
-<img src="pictures/ADD-Simulator.png" alt="ADD Simulator" width="800">
+<img src="../pictures/ADD-Simulator.png" alt="ADD Simulator" width="800">
 
 Simulates a Tasmota-style valve device with a live web UI — no tools or APIs
 to install. Point any AI client with web access at `/add` and start exploring.
