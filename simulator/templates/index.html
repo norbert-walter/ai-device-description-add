@@ -567,6 +567,9 @@
           }, { passive: false });
         }
       }
+
+      // Keep device.ip aligned with current host on every load, including first page load.
+      updateLoadedDeviceIpToCurrentOrigin();
     } catch(e) {
       setStatus('Could not load ADD document: ' + e, 'error');
     }
@@ -597,7 +600,6 @@
       const data = await r.json();
       if (data.status === 'ok') {
         await loadADD();
-        updateLoadedDeviceIpToCurrentOrigin();
         const label = document.getElementById('preset-select').options[document.getElementById('preset-select').selectedIndex].text;
         setStatus('Preset loaded: ' + label, 'ok');
         setReadonly(data.readonly === true);
