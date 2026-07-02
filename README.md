@@ -4,6 +4,8 @@
 
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
+<img src="pictures/ADD_Overview_3_en.png" alt="ADD Simulator" width="800">
+
 ---
 
 ## What is ADD?
