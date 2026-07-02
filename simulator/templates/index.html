@@ -580,7 +580,7 @@
       if (!doc || typeof doc !== 'object' || !doc.device || typeof doc.device !== 'object') {
         return false;
       }
-      doc.device.ip = window.location.origin;
+      doc.device.ip = window.location.hostname;
       editor.setValue(JSON.stringify(doc, null, 2));
       return true;
     } catch (e) {
