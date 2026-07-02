@@ -2,6 +2,8 @@
 
 Interactive simulator for the **AI Device Description (ADD)** open standard.
 
+<img src="pictures/ADD-Simulator.png" alt="ADD Simulator" width="800">
+
 Simulates a Tasmota-style valve device with a live web UI — no tools or APIs
 to install. Point any AI client with web access at `/add` and start exploring.
 
@@ -52,6 +54,57 @@ No installation required — use it directly with any AI client.
 Start the simulator locally or use the hosted demo, then choose one of the
 two variants below depending on your AI client setup.
 
+### Web UI
+
+Open the simulator URL in your browser to monitor and interact with the device:
+
+| Area | Function |
+|------|----------|
+| **ADD Document** (left) | Edit the live ADD JSON, save changes, reset to default |
+| **Device State** (middle) | Visual valve state — updates in real time |
+| **Live Log** (right) | Every endpoint call with timestamp and response |
+
+### Device endpoints
+
+The AI client controls the simulated valve via these endpoints:
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /add` | ADD device description (JSON) — the AI reads this first |
+| `GET /add.html` | ADD document rendered as HTML |
+| `GET /cm?cmnd=Power` | Read current valve state |
+| `GET /cm?cmnd=Power%20On` | Open valve |
+| `GET /cm?cmnd=Power%20Off` | Close valve |
+
+The AI client reads `/add` to understand the device capabilities and rules,
+then uses the `/cm` endpoints to control the valve. Every call appears in
+the Live Log with timestamp and response.
+
+### How an AI accesses the device
+
+An AI client interacts with the simulator exclusively via HTTP GET requests —
+the same mechanism a browser uses to load a web page. The AI first fetches
+the ADD document at `/add` to read the device description, capabilities, and
+rules. It then sends control commands to the `/cm` endpoints to operate the
+valve.
+
+To make these HTTP requests, the AI needs a **fetch mechanism**. There are
+two ways to provide this:
+
+- **Built-in web access** — most AI clients include a native web fetch
+  capability that allows them to retrieve URLs during a conversation. No
+  additional setup is required, but responses may be cached within a session.
+  In addition, many AI clients apply strict internal security policies to
+  their built-in web access, which can limit or block requests to certain
+  URLs, local addresses, or non-standard endpoints.
+- **MCP fetch tool** — an external MCP service provides a `fetch` tool that
+  the AI can call explicitly. This bypasses client-side caching entirely and
+  gives the AI direct, reliable access to the simulator at any time. MCP
+  tools are not subject to the same security restrictions as built-in web
+  access, making them significantly more flexible for hardware interaction.
+
+Both approaches are described below.
+
 ---
 
 ### Variant A — Native web access (no MCP, no Pro subscription required)
@@ -88,13 +141,13 @@ You can get the current value at https://www.unixtimestamp.com/.
 
 ### Variant B — MCP-based access (recommended, requires Pro subscription)
 
-Using an MCP fetch service bypasses all client-side caching and gives the AI
+Using MCP services bypasses all client-side caching and gives the AI
 direct, reliable HTTP access to the simulator. This is the recommended approach
 for serious testing and ADD validation.
 
 **Requirements:**
 - Claude Pro or ChatGPT Plus/Team/Enterprise subscription
-- An MCP server providing a `fetch` tool
+- MCP services connected to the AI client
 
 Public MCP services are available at:
 
@@ -192,28 +245,6 @@ Do not use your built-in web access for this session.
 > **Important:** The explicit instruction to use the `fetch` tool is required.
 > Without it, some AI clients fall back to their native web access, which may
 > return cached responses.
-
----
-
-## Available endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/add` | GET | ADD device description (JSON) |
-| `/add.html` | GET | ADD document rendered as HTML |
-| `/cm?cmnd=Power` | GET | Read current valve state |
-| `/cm?cmnd=Power%20On` | GET | Open valve |
-| `/cm?cmnd=Power%20Off` | GET | Close valve |
-
----
-
-## UI Features
-
-| Area | Function |
-|------|----------|
-| **ADD Document** (left) | Edit the live ADD JSON, save changes, reset to default |
-| **Device State** (middle) | Visual valve state — updates in real time |
-| **Live Log** (right) | Every endpoint call with timestamp and response |
 
 ---
 
