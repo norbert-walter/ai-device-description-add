@@ -4333,7 +4333,7 @@ These six principles together define what it means for an ADD agent task to be *
 <a id="sec-appendix-model-performance-profiles"></a>
 ## Appendix — Model Performance Profiles
 
-This appendix documents measured performance characteristics of AI models tested against the ADD Simulator. All tests were conducted under identical conditions using the ADD Simulator at `https://norbert-walter.dnshome.de` — a Flask-based simulator that responds instantly and deterministically to Tasmota-style HTTP GET requests. Because the simulator introduces no latency of its own, all measured response times reflect the AI model and network exclusively.
+This appendix documents measured performance characteristics of AI models tested against the ADD Simulator. All tests were conducted under identical conditions using the ADD Simulator at `https://add-simulator.norbert-walter.dnshome.de` — a Flask-based simulator that responds instantly and deterministically to Tasmota-style HTTP GET requests. Because the simulator introduces no latency of its own, all measured response times reflect the AI model and network exclusively.
 
 <a id="sec-appendix-simulator-test-environment"></a>
 ### Why the ADD Simulator is the Required Test Environment
