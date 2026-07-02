@@ -1,5 +1,5 @@
 # ADD – AI Device Description
-## Developer Guide v1.1
+## Developer Guide v1.0
 *© 2026 Norbert Walter — CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/*
 
 ---
