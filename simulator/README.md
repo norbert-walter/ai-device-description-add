@@ -56,16 +56,13 @@ https://add-simulator.norbert-walter.dnshome.de/
 
 No installation required — use it directly with any AI client.
 
-> **Shared instance notice:** This is a single shared simulator instance used
-> by all visitors simultaneously. The valve state is global — any user or AI
-> client can change it at any time. The web UI can be opened on multiple
-> clients at the same time and updates in real time, but only one client
-> should actively control the valve at a time to avoid conflicting commands.
+> **Shared instance notice:** This is a single shared simulator instance used by all visitors simultaneously.
+> The valve state is global — any user or AI client can change it at any time.
+> The web UI can be opened on multiple clients at the same time and updates in real time, but only one client should actively control the valve at a time to avoid conflicting commands.
 > Coordinate with other users before running automated test sequences.
 >
-> **For serious testing:** The hosted instance is a simplified simulation
-> intended to demonstrate the ADD concept. For reliable and reproducible
-> tests, run a local instance of the simulator instead (see Quickstart above).
+> **For serious testing:** The hosted instance is a simplified simulation intended to demonstrate the ADD concept.
+> For reliable and reproducible tests, run a local instance of the simulator instead (see Quickstart above).
 
 ---
 
@@ -263,8 +260,7 @@ Do not use your built-in web access for this session.
 ```
 
 > **Important:** The explicit instruction to use the `fetch` tool is required.
-> Without it, some AI clients fall back to their native web access, which may
-> return cached responses.
+> Without it, some AI clients fall back to their native web access, which may return cached responses.
 
 ---
 
