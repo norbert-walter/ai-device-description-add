@@ -23,9 +23,9 @@ docker compose up --build
 
 A pre-built image is available at:
 
-```
+
 https://hub.docker.com/r/openboatprojects/add-simulator
-```
+
 
 Pull and start it with:
 
