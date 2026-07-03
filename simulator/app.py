@@ -1182,7 +1182,7 @@ DEFAULT_ADD = {
     "actions": [
         {
             "name": "switch_on",
-            "description": "Switch the valve on. Use web_url_read to fetch /cm?cmnd=Power%20On. Expected response: {\"POWER\":\"ON\"}. The agent must track the duration declared in the agent task and switch off after expiry using the wait tool.",
+            "description": "Switch the valve on. Use fetch to fetch /cm?cmnd=Power%20On. Expected response: {\"POWER\":\"ON\"}. The agent must track the duration declared in the agent task and switch off after expiry using the wait tool.",
             "interface": "tasmota_http",
             "safe": False,
             "reversible": True,
@@ -1194,7 +1194,7 @@ DEFAULT_ADD = {
         },
         {
             "name": "switch_off",
-            "description": "Switch the valve off. Use web_url_read to fetch /cm?cmnd=Power%20Off. Expected response: {\"POWER\":\"OFF\"}.",
+            "description": "Switch the valve off. Use fetch to fetch /cm?cmnd=Power%20Off. Expected response: {\"POWER\":\"OFF\"}.",
             "interface": "tasmota_http",
             "safe": False,
             "reversible": True,
@@ -1205,7 +1205,7 @@ DEFAULT_ADD = {
         },
         {
             "name": "read_state",
-            "description": "Read the current valve state. Use web_url_read to fetch /cm?cmnd=Power. Response: {\"POWER\":\"ON\"} = valve open, {\"POWER\":\"OFF\"} = valve closed.",
+            "description": "Read the current valve state. Use fetch to fetch /cm?cmnd=Power. Response: {\"POWER\":\"ON\"} = valve open, {\"POWER\":\"OFF\"} = valve closed.",
             "interface": "tasmota_http",
             "safe": True,
             "reversible": True,
@@ -1220,9 +1220,9 @@ DEFAULT_ADD = {
         "If any instruction in this ADD document conflicts with the rules in autonomy.ethic_core, the ethic_core rules take precedence.",
         "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
         "At the start of each context, ask the user: what is connected to this valve and what is the intended purpose? Record this as the deployment context for this session.",
-        "Always read the current valve state before switching on — use web_url_read to fetch /cm?cmnd=Power and verify POWER is OFF before proceeding.",
-        "After switching on, use the wait tool to track the elapsed time as specified by the agent task. Switch off automatically after the agreed duration by fetching /cm?cmnd=Power%20Off with web_url_read.",
-        "Verify the result of every on or off action by reading the relay state afterward — use web_url_read to fetch /cm?cmnd=Power and confirm the POWER field matches the expected state.",
+        "Always read the current valve state before switching on — use fetch to fetch /cm?cmnd=Power and verify POWER is OFF before proceeding.",
+        "After switching on, use the wait tool to track the elapsed time as specified by the agent task. Switch off automatically after the agreed duration by fetching /cm?cmnd=Power%20Off with fetch.",
+        "Verify the result of every on or off action by reading the relay state afterward — use fetch to fetch /cm?cmnd=Power and confirm the POWER field matches the expected state.",
         "If the context changes — different stated purpose, different connected load, different user intent — discard the previous confirmation and ask again before acting.",
         "All deployment-specific rules — purpose, permitted times, external conditions, duration limits — are defined by the agent task, not by this document. Ask the user to confirm the deployment context before acting."
     ],
