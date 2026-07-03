@@ -167,6 +167,7 @@ An AI reading this document immediately knows what the device is, how to control
 | [Ethical Framework — Basic](ADD_Ethical_Framework_Basic_v1_0.md) | For Autonomy Level 1 |
 | [Ethical Framework — Standard](ADD_Ethical_Framework_Standard_v1_0.md) | For Autonomy Level 2 |
 | [Ethical Framework — Full](ADD_Ethical_Framework_Full_v1_0.md) | For Autonomy Level 3 |
+| [ADD Simulator](simulator/README.md) | Interactive simulator for testing ADD-compatible devices and AI behavior |
 
 ---
 
@@ -174,10 +175,10 @@ An AI reading this document immediately knows what the device is, how to control
 
 | Example | Description |
 |---|---|
-| [Lamp Example](examples/lamp_example.json) | Simple on/off lamp — Autonomy Level 1 |
-| [Sensor Minimal Example](examples/sensor_minimal_example.json) | Read-only sensor — minimal valid ADD document |
-| [Irrigation Valve — Small Model](examples/irrigation_valve_small.json) | Garden valve optimized for small AI models |
-| [Irrigation Valve — Large Model](examples/irrigation_valve_large.json) | Garden valve with full rule set for frontier models |
+| [Lamp Example](examples/by-model-size/small-models/generic-switch-minimal.json) | Simple on/off lamp style switch — minimal valid ADD document |
+| [Sensor Minimal Example](examples/by-domain/home-automation/climate-sensor-basic.json) | Read-only climate sensor — compact ADD document |
+| [Irrigation Valve — Small Model](examples/by-model-size/small-models/irrigation-valve-standard-small.json) | Garden valve optimized for small AI models |
+| [Irrigation Valve — Large Model](examples/by-model-size/large-models/irrigation-valve-standard-large.json) | Garden valve with full rule set for frontier models |
 
 → [Browse all examples](examples/)
 
