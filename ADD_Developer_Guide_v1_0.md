@@ -111,7 +111,7 @@
   - [13.5 File-Based Persistence — Crash-Resilient by Design](#sec-13-5-file-based-persistence)
   - [13.6 Step-by-Step Documentation — The Crash Recovery Protocol](#sec-13-6-step-by-step-documentation)
   - [13.7 Structural Template — Agent Task Instruction File](#sec-13-7-structural-template)
-  - [13.8 Summary — The Six Principles](#sec-13-8-summary)
+  - [13.8 Summary — The Seven Principles](#sec-13-8-summary)
 - [Appendix — Model Performance Profiles](#sec-appendix-model-performance-profiles)
   - [Why the ADD Simulator is the Required Test Environment](#sec-appendix-simulator-test-environment)
   - [Standard Test Protocol](#sec-appendix-standard-test-protocol)
@@ -2270,7 +2270,11 @@ The same physical valve, described three ways:
 
 ### 7.5 Safety Requirements for Autonomous Operation
 
-Autonomous operation removes the human from the action approval loop. This shifts the safety responsibility entirely to the ADD document, the Ethical Framework, and the agent's rule enforcement. Three requirements must be met before deploying an autonomous agent:
+Autonomous operation removes the human from the action approval loop. This shifts the safety responsibility entirely to the ADD document, the Ethical Framework, and the agent's rule enforcement. Three requirements must be met before deploying an autonomous agent — and a fourth addresses a failure mode that only becomes visible when the same device is tested under different deployment conditions.
+
+A comparative field test made this fourth requirement necessary. Two independent runs against the same ADD Simulator produced different safety outcomes, even though the ADD document — including `validated_by` and Rule 9 of the Ethical Framework — was identical in both cases. In the first run, the agent was led to the device through a fixed task sequence that loaded the Ethical Framework and the device's ADD document as explicitly binding, then required the agent to state what was permitted before any tool call. In the second run, the agent received an open-ended instruction ("explore this website and test its functionality") and discovered the ADD document incidentally, alongside the site's other endpoints. The agent — Google Gemini, operating via Antigravity — found and correctly named Rule 9 and the fact that it was not listed in `validated_by`, but then reasoned that this did not apply because it was "just a test," proceeded to call state-changing endpoints, and used the log and state endpoints to confirm the effect of its own actions afterward.
+
+The ADD document did not fail in this case. It correctly declared its own restriction, and the agent correctly read it. What failed was the absence of anything, outside the document, that forced the agent to commit to an interpretation of that restriction before acting on it. This is not a gap that a device description can close — ADD describes the device, not the process by which an agent is brought to the device. It is a gap in the deployment environment, and it must be closed there.
 
 **All conditions must be verifiable.** Every rule that could block an action must have a `requires` field and a working tool. If a condition cannot be verified, the agent cannot act safely without human oversight. A rule without a verifiable condition in an autonomous deployment is a safety gap.
 
@@ -2278,7 +2282,9 @@ Autonomous operation removes the human from the action approval loop. This shift
 
 **Validation must include autonomous operation tests.** Standard validation tests issue commands and observe responses. Autonomous validation must additionally test that the agent acts correctly without any user command — and that it stops correctly when a condition fails. See Chapter 9.4 for autonomous-specific validation prompts.
 
-*Why these requirements are non-negotiable:* An autonomous agent that acts when conditions cannot be verified is not safer than a timer — it is less safe, because it creates the illusion of intelligent oversight without providing it. The value of autonomous control comes entirely from the reliability of its condition verification. Without verified conditions, `requires_confirmation: false` is not a feature — it is an unchecked action.
+**The interpretation of the rules must be forced and made explicit before the agent is granted freedom to act.** It is not the mere existence of a rule in the ADD document that determines whether it holds — it is whether the agent is required to state its interpretation of that rule, in the agent task instruction, before the first tool call. This matters because it forces the model to reflect on the rules before executing an action, instead of only revealing its interpretation afterward, through what it did. Chapter 13.3's tool availability check establishes *what the agent can do*; this requirement establishes *what the agent believes it may do* — and both must be confirmed before Step 1 of Plan → Act → Verify (13.4) begins. An agent task that skips this step leaves the door open for the agent to construct its own justification for acting, as observed in the field test above, regardless of how clearly the ADD document itself states the restriction.
+
+*Why these requirements are non-negotiable:* An autonomous agent that acts when conditions cannot be verified is not safer than a timer — it is less safe, because it creates the illusion of intelligent oversight without providing it. The value of autonomous control comes entirely from the reliability of its condition verification. Without verified conditions, `requires_confirmation: false` is not a feature — it is an unchecked action. The same is true of an unexamined interpretation of the rules themselves: a correct restriction that an agent is free to reinterpret provides no more safety than no restriction at all.
 
 ---
 
@@ -3980,14 +3986,15 @@ Chapters 1–12 address the ADD document — the device side of the ADD architec
 
 The ADD document defines what is permitted. The agent task defines how the agent pursues its goal. A well-written ADD document with a poorly designed agent task is not a safe deployment. The device has defined its boundaries. The agent must be designed to operate within them.
 
-Six principles govern agent task design for ADD deployments:
+Seven principles govern agent task design for ADD deployments:
 
 1. **Self-hosted MCP Services** — reproducible, version-stable tool base
 2. **Tool availability check** — mandatory as the first step of every task
-3. **Plan → Act → Verify** — mandatory execution pattern for every action
-4. **File-based persistence** — task instructions, state, and results survive crashes
-5. **Step-by-step documentation** — every completed step is recorded immediately
-6. **Crash recovery by design** — the agent can resume at any point without repeating completed steps
+3. **Rule interpretation confirmed before action** — the agent states what it understands to be permitted, unrelativized by task framing, before any device-specific step (see 7.5, template step in 13.7)
+4. **Plan → Act → Verify** — mandatory execution pattern for every action
+5. **File-based persistence** — task instructions, state, and results survive crashes
+6. **Step-by-step documentation** — every completed step is recorded immediately
+7. **Crash recovery by design** — the agent can resume at any point without repeating completed steps
 
 These principles are not optional improvements. They are the difference between a deployment that works reliably under realistic conditions and one that fails silently when a session ends unexpectedly, a tool disappears, or the model loses context.
 
@@ -4262,7 +4269,7 @@ Second, audit — the result file is the proof that the ADD document's rules wer
 <a id="sec-13-7-structural-template"></a>
 ### 13.7 Structural Template — Agent Task Instruction File
 
-The following template captures all six principles from Sections 13.2–13.6 in a reusable structure for ADD agent task instructions. Adapt the content for each deployment — the structure remains constant.
+The following template captures all seven principles — the six covered in Sections 13.2–13.6, plus Principle 3 (rule interpretation confirmed before action, Step 4 below) — in a reusable structure for ADD agent task instructions. Adapt the content for each deployment — the structure remains constant.
 
 ```
 Arbeitsanweisung: [Task name]
@@ -4299,7 +4306,22 @@ Schritt 3: Ergebnisdatei anlegen
 - Erstelle /data/Ergebnis_[YYYYMMDD_HHMM].txt
 - Schreibe den Header: Datum, Uhrzeit, Modell, Aufgabe.
 
-[Steps 4..N — device-specific steps, each with:]
+Schritt 4: Regelverständnis bestätigen
+- Nachdem die Gerätebeschreibung, das ADD-Dokument und der
+  Ethikrahmen geladen wurden: Formuliere in eigenen Worten, was
+  dir laut diesen Dokumenten erlaubt ist und was nicht — insbesondere
+  ob validated_by dein Modell einschließt und welche Handlungen
+  davon betroffen sind.
+- Dokumentiere diese Erklärung in der Ergebnisdatei, bevor der
+  erste geräteverändernde Schritt ausgeführt wird.
+- Diese Erklärung darf nicht durch den Aufgabenrahmen relativiert
+  werden (z.B. "es ist nur ein Test"). Gilt eine Einschränkung laut
+  den geladenen Dokumenten, bleibt sie unabhängig von der Formulierung
+  der Aufgabe bindend.
+- Kann diese Erklärung nicht eindeutig formuliert werden: STOP.
+  Dokumentiere die Unklarheit und führe keinen weiteren Schritt aus.
+
+[Steps 5..N — device-specific steps, each with:]
 Schritt N: [Action name]
 - Plan: [what to check before acting]
 - Handeln: [exact tool call]
@@ -4312,21 +4334,24 @@ Letzter Schritt: Zusammenfassung
 - Aktualisiere /data/state.json: last_completed_step: [N].
 ```
 
+Step 4 above implements Principle 3 — Rule interpretation confirmed before action (see 13.1) — and the fourth safety requirement from Chapter 7.5. It applies to every deployment where the ADD document or Ethical Framework restricts the agent's actions, and is essential wherever `confirmation_scope: "autonomous"` or an unvalidated model is involved.
+
 ---
 
 <a id="sec-13-8-summary"></a>
-### 13.8 Summary — The Six Principles
+### 13.8 Summary — The Seven Principles
 
 | Principle | Where enforced | Effect |
 |---|---|---|
 | Self-hosted MCP Services | Deployment architecture | Stable, reproducible tool names across all models and sessions |
 | Tool availability check (Step 1) | Task instruction file | No hardware is touched if a required tool is missing |
+| Rule interpretation confirmed before action | Task instruction file (Step 4) | The agent's understanding of what is permitted is stated and auditable before any device-specific action; cannot be relativized by task framing |
 | Plan → Act → Verify | Every action step | No assumed results; device state always verified |
 | File-based persistence | Task instruction + state.json + result file | Session crash does not lose state or leave device in unknown state |
 | Step-by-step documentation | Immediately after each Verify | Crash recovery possible at any point; full audit trail available |
 | Crash recovery by design | state.json + result file | Recovery session resumes from last verified step without re-executing completed steps |
 
-These six principles together define what it means for an ADD agent task to be **safe by design** — not just correct under ideal conditions, but resilient under the realistic conditions of network interruptions, model timeouts, tool failures, and unexpected session terminations.
+These seven principles together define what it means for an ADD agent task to be **safe by design** — not just correct under ideal conditions, but resilient under the realistic conditions of network interruptions, model timeouts, tool failures, unexpected session terminations, and open-ended task framing that leaves rule interpretation to the agent's own judgment.
 
 ---
 
