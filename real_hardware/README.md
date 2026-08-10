@@ -173,7 +173,7 @@ An overall score was calculated across all categories. Additionally, the number 
 | **Score** | **51** | **51** | **11** | **5** | **50** | **8** |
 | Number of Corrections | 1 | 0 | 0 | 0 | 5 | 0 |
 
-For all dashboards as HTML file refer this folder.
+For all dashboards as HTML file refer this folder (see top).
 
 ### Assessment
 
