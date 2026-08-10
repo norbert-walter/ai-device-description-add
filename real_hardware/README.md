@@ -124,6 +124,9 @@ Depending on the environment, the agent either delivers this file as an artifact
 4. **Watch out for CORS**. Since the dashboard runs as a local file (`file://`) and sends requests to an external domain, depending on browser security settings you may run into CORS restrictions. If that happens, it helps to serve the file via a simple local web server instead (e.g. `python3 -m http.server` in the file's folder and then open `http://localhost:8000/yachta_dashboard.html`), or to upload the file directly to your own web space/GitHub Pages.
 5. **Live test**. Once the dashboard loads, a new measurement should appear from the device every 5 seconds. The validation strip shows the most recently known ADD validation status from the `validation` block.
 
+<img src="../pictures/Dashboard_Claude_Sonnet4.png" alt="ADD Simulator" width="800">
+Pic: Dashboard created with Claude Sonnet4
+
 ### An Invitation to Experiment
 
 The test becomes most insightful when you enter the same prompt **several times in a row** and compare the results. The generated dashboards will **never be identical**. Layout, wording, color nuances, or the choice of individual style guide components vary slightly each time. That's not a bug. It's inherent to an AI agent that plans and implements anew from the same description every time.
