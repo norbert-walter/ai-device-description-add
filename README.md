@@ -168,6 +168,7 @@ An AI reading this document immediately knows what the device is, how to control
 | [Ethical Framework — Standard](ADD_Ethical_Framework_Standard_v1_0.md) | For Autonomy Level 2 |
 | [Ethical Framework — Full](ADD_Ethical_Framework_Full_v1_0.md) | For Autonomy Level 3 |
 | [ADD Simulator](simulator/) | Interactive simulator for testing ADD-compatible devices and AI behavior |
+| [REAL Hardware](real_hardware/) | Real hardware wind sensor Yachta for testing ADD-compatible devices and AI behavior |
 | [ADD Tools](tools/) | Utilities and scripts for testing and validation workflows |
 
 ---
