@@ -173,6 +173,8 @@ An overall score was calculated across all categories. Additionally, the number 
 | **Score** | **51** | **51** | **11** | **5** | **50** | **8** |
 | Number of Corrections | 1 | 0 | 0 | 0 | 5 | 0 |
 
+For all dashboards as HTML file refer this folder.
+
 ### Assessment
 
 **Claude Sonnet 5 and ChatGPT 5.6 sol** are tied at the top with 51 points each. Both implement layout, the specified instrument, and live functionality almost completely. ChatGPT scores marginally higher on the visual look, Claude on layout accuracy; overall, their respective strengths balance out.
