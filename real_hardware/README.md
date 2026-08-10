@@ -1,10 +1,12 @@
 # ADD Test Device Yachta Windsensor (Real Hardware, Simulated Sensor Data)
 
 <img src="../pictures/Yachta_Wind_Sensor.png" alt="ADD Simulator" width="119">
+Pic: Wind Sensor Yachta
 
 This document describes a **real test device for AI Device Description (ADD)**. It is a [Yachta Windsensor](https://github.com/norbert-walter/Windsensor_Yachta) for sailboats, a classic IoT device. The electronics run on a genuine ESP8266 on the original Yachta PCB.
 
 <img src="../pictures/Yachta_BCP_V2.1.png" alt="ADD Simulator" width="200">
+Pic: Yachta PCB with ESP8266
 
 The returned sensor readings (wind direction, wind speed, etc.) are **simulated** for this test setup, however. This makes the device ideal for testing AI agents and dashboards against an ADD-compatible device without depending on real sailing weather.
 
@@ -20,7 +22,7 @@ can be demonstrated end-to-end with this test device. The result is a visible, w
 
 The Yachta Windsensor is an open-hardware wind sensor for sailboats, whose complete build plans have been published by Open Boat Projects and are continuously developed further by the community. All technical documentation, PCB files, and firmware variants are openly available in the repository.
 
-👉 **https://github.com/norbert-walter/Windsensor_Yachta**
+**https://github.com/norbert-walter/Windsensor_Yachta**
 
 In short, the sensor can:
 
@@ -41,7 +43,7 @@ For this ADD test device, the hardware is identical to a regular Yachta Windsens
 
 Like any ADD-compatible device, this wind sensor provides its **ADD device description (JSON)** directly via its web interface.
 
-👉 **https://yachta.norbert-walter.dnshome.de/add**
+**https://yachta.norbert-walter.dnshome.de/add**
 
 Besides `device`, `security`, `interfaces`, `actions`, `rules`, and `validation`, the ADD document also contains a `ui` block that points to the matching ADD Dashboard Style Guide.
 
@@ -67,7 +69,7 @@ as follows:
 
 The complete ADD specification and the style guide are located in the associated standard repository.
 
-👉 **https://github.com/norbert-walter/ai-device-description-add**
+**https://github.com/norbert-walter/ai-device-description-add**
 
 ## Example Prompt to Have the AI Carry Out the Complete Cycle
 
