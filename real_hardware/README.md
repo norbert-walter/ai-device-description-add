@@ -10,7 +10,7 @@ Pic: Yachta PCB with ESP8266
 
 The returned sensor readings (wind direction, wind speed, etc.) are **simulated** for this test setup, however. This makes the device ideal for testing AI agents and dashboards against an ADD-compatible device without depending on real sailing weather.
 
-This test device is permanently **publicly accessible on the internet** and is thus **freely available to anyone** who wants to try out ADD functionality for themselves. It is reachable at `https://yachta.norbert-walter.dnshome.de/add`. No device of your own, no access credentials, and no registration are required. Any AI agent can fetch the ADD device description directly and experiment with it.
+This test device is permanently **publicly accessible on the internet** and is thus **freely available to anyone** who wants to try out ADD functionality for themselves. It is reachable at [https://yachta.norbert-walter.dnshome.de](https://yachta.norbert-walter.dnshome.de). No device of your own, no access credentials, and no registration are required. Any AI agent can fetch the ADD device description directly and experiment with it.
 
 **What does this example actually demonstrate?** The Yachta Windsensor already ships with its own, hard-coded web frontend (see below). But the real point of this test setup is something else. An AI that knows *nothing* about this specific device beyond its ADD description reads it independently, understands the measurements and actions, and plans a suitable dashboard from that. It then **builds an entirely new, standalone web dashboard** that has nothing to do with the built-in frontend. The device itself required neither modification nor reflashing. This exact full cycle
 
@@ -63,7 +63,7 @@ This means the complete cycle can be derived **from that single ADD URL alone**.
 
 as follows:
 
-1. **Read ADD**. Fetch the ADD document at `https://yachta.norbert-walter.dnshome.de/add`.
+1. **Read ADD**. Fetch the ADD document at [https://yachta.norbert-walter.dnshome.de/add](https://yachta.norbert-walter.dnshome.de/add).
 2. **Understand the rules**. Load the Ethical Framework referenced in the `autonomy.ethic_url` field and apply it according to `autonomy.level`. This is mandatory per the `rules` in the document, *before* any action is executed.
 3. **Understand the device**. Derive from `interfaces` and `actions` which measurements are available (`read_state`) and which settings can be safely changed (`set_offset`, `set_average`, `set_speed_unit`).
 4. **Plan the task**. Load the style guide referenced in the `ui` block and derive a suitable dashboard layout from it (which measurements as an instrument, which as a data panel, etc.).
