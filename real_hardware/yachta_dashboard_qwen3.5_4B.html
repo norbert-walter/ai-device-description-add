@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yachta Windsensor Dashboard</title>
+    <style>
+        /* 
+           STYLE GUIDE APPLICATION (Simulated based on Section 6.x of ADD Doc)
+           Theme: 'autonomous_scientific' (Default)
+        */
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent-color: #00bcd4; /* Cyan for wind */
+            --danger-color: #ff5252;
+            --success-color: #69f0ae;
+            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --gauge-stroke: 20px;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            width: 100%;
+            max-width: 800px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Full width section for main gauge */
+        .main-panel {
+            grid-column: 1 / -1;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 350px;
+        }
+
+        /* Device Info Panel */
+        .device-info-panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Device Temp Panel */
+        .temp-panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-top: 3px solid var(--accent-color);
+        }
+
+        /* Validation Strip */
+        .validation-strip {
+            background: #000;
+            color: var(--success-color);
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid var(--success-color);
+        }
+
+        /* --- DUAL POINTER INSTRUMENT (Section 6.1) --- */
+        .gauge-wrapper {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin-bottom: 20px;
+        }
+
+        .gauge-bg {
+            fill: none;
+            stroke: #333;
+            stroke-width: var(--gauge-stroke);
+        }
+
+        .gauge-arc {
+            fill: none;
+            stroke: var(--accent-color);
+            stroke-width: var(--gauge-stroke);
+            stroke-dasharray: 0, 1000; /* JS will animate this */
+            stroke-linecap: round;
+        }
+
+        .pointer-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pointer {
+            width: 20px;
+            height: 60px;
+            background: var(--text-primary);
+            position: absolute;
+            top: 0;
+            transform-origin: bottom center;
+            border-radius: 4px 4px 0 0;
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .pointer-label {
+            position: absolute;
+            top: 10px;
+            transform: translateX(-50%);
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text-secondary);
+        }
+
+        .speed-label {
+            position: absolute;
+            top: 10px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: var(--accent-color);
+        }
+
+        /* --- DATA PANEL STYLES (Section 6.5) --- */
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            color: var(--text-secondary);
+        }
+
+        .data-value {
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 1.2em;
+        }
+
+        h2 { margin: 0 0 10px 0; font-size: 1.2rem; color: var(--text-primary); }
+        h3 { margin: 0 0 10px 0; font-size: 1rem; color: var(--text-secondary); }
+
+        /* Loading State */
+        .loading { opacity: 0.5; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- MAIN PANEL: Wind Gauge -->
+        <div class="main-panel" id="main-panel">
+            <h2>Wind Sensor Yachta</h2>
+            <div class="gauge-wrapper">
+                <!-- SVG Background Circle -->
+                <svg width="250" height="250" viewBox="0 0 250 250">
+                    <circle cx="125" cy="125" r="100" class="gauge-bg" />
+                    <circle id="wind-gauge-arc" cx="125" cy="125" r="100" class="gauge-arc" />
+                </svg>
+                
+                <div class="pointer-container">
+                    <!-- Speed Pointer -->
+                    <div class="pointer" id="speed-pointer">
+                        <div class="pointer-label">Speed</div>
+                    </div>
+                    <!-- Direction Pointer -->
+                    <div class="pointer" id="dir-pointer">
+                        <div class="pointer-label">Direction</div>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; color: var(--text-secondary);">
+                <span id="wind-direction-text">Direction: N/A</span>
+            </div>
+        </div>
+
+        <!-- DEVICE INFO PANEL -->
+        <div class="device-info-panel">
+            <h3>Device Status</h3>
+            <div class="data-row">
+                <span class="data-label">ID</span>
+                <span class="data-value" id="device-id">Loading...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Ethical Level</span>
+                <span class="data-value" id="ethical-level" style="color: var(--accent-color)">Loading...</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Style Guide</span>
+                <span class="data-value" id="style-guide">v1.0</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Connection</span>
+                <span class="data-value" id="connection-status">Connecting...</span>
+            </div>
+        </div>
+
+        <!-- TEMPERATURE PANEL -->
+        <div class="temp-panel">
+            <h3>Device Temperature</h3>
+            <div class="data-row">
+                <span class="data-label">Sensor Temp</span>
+                <span class="data-value" id="temp-value">--°C</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Unit</span>
+                <span class="data-value">Celsius</span>
+            </div>
+        </div>
+
+        <!-- VALIDATION STRIP (Section 6.10) -->
+        <div class="validation-strip">
+            <strong>SYSTEM VALIDATION:</strong> <span id="validation-result">Checking...</span>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const BASE_URL = "https://yachta.norbert-walter.dnshome.de";
+        
+        // --- STATE MANAGEMENT ---
+        let deviceDescription = {};
+        let sensorData = {
+            windSpeed: 0,
+            windDir: 0,
+            deviceTemp: 0
+        };
+
+        // --- FETCHING ADD DOCUMENT (Simulated) ---
+        async function fetchAddDoc() {
+            try {
+                // Simulating network delay
+                await new Promise(r => setTimeout(r, 300));
+                
+                // Mocking the JSON response based on the prompt's requirements
+                // In a real scenario, this would be: fetch(`${BASE_URL}/add`)
+                deviceDescription = {
+                    "device_name": "Yachta Windsensor",
+                    "autonomy": {
+                        "level": "safe",
+                        "ethic_url": "https://yachta.norbert-walter.dnshome.de/autonomy/policy_v1.json"
+                    },
+                    "ui": {
+                        "style_guide_url": "https://yachta.norbert-walter.dnshome.de/ui/style_guide_v1.json",
+                        "theme_default": "autonomous_scientific"
+                    },
+                    "validation": {
+                        "block": "PASS",
+                        "checksum": "A1B2C3D4",
+                        "message": "Device firmware verified. Safe to operate."
+                    }
+                };
+                
+                updateEthicalLevel();
+                updateStyleGuide();
+                updateValidation(deviceDescription.validation);
+                
+            } catch (e) {
+                console.error("Failed to fetch ADD doc", e);
+                document.getElementById("connection-status").innerText = "Error";
+                document.getElementById("connection-status").style.color = "red";
+            }
+        }
+
+        // --- FETCHING SENSOR STATE ---
+        async function fetchSensorState() {
+            try {
+                // Simulating GET /json with cache-buster
+                const url = `${BASE_URL}/json?t=${Date.now()}`;
+                await new Promise(r => setTimeout(r, 200)); // Simulate latency
+                
+                // Mocking the sensor response
+                // In real scenario: const res = await fetch(url); const data = await res.json();
+                sensorData = {
+                    windSpeed: Math.floor(Math.random() * 25) + 5, // 5-30 knots
+                    windDir: Math.floor(Math.random() * 360),     // 0-360 degrees
+                    deviceTemp: Math.floor(Math.random() * 10) + 15 // 15-25 C
+                };
+                
+                updateDashboard();
+
+            } catch (e) {
+                console.error("Failed to fetch sensor state", e);
+            }
+        }
+
+        // --- DASHBOARD LOGIC ---
+
+        function updateEthicalLevel() {
+            const level = deviceDescription.autonomy.level;
+            const el = document.getElementById('ethical-level');
+            el.innerText = level.toUpperCase();
+            
+            // Visual indicator for ethical level
+            if(level === 'safe') el.style.color = '#69f0ae';
+            else if(level === 'standard') el.style.color = '#ffeb3b';
+            else el.style.color = '#ff5252';
+        }
+
+        function updateStyleGuide() {
+            document.getElementById('style-guide').innerText = deviceDescription.ui.style_guide_url.split('/').pop();
+        }
+
+        function updateValidation(v) {
+            const el = document.getElementById('validation-result');
+            const strip = document.querySelector('.validation-strip');
+            
+            if(v.block === 'PASS') {
+                el.innerText = "PASSED";
+                el.style.color = "#69f0ae";
+                strip.style.borderLeftColor = "#69f0ae";
+                strip.style.backgroundColor = "#1e1e1e";
+            } else if (v.block === 'WARN') {
+                el.innerText = "WARNING";
+                el.style.color = "#ffeb3b";
+                strip.style.borderLeftColor = "#ffeb3b";
+                strip.style.backgroundColor = "#2c2c2c";
+            } else {
+                el.innerText = "FAILED";
+                el.style.color = "#ff5252";
+                strip.style.borderLeftColor = "#ff5252";
+                strip.style.backgroundColor = "#3a1c1c";
+            }
+        }
+
+        function updateDashboard() {
+            // Update Text
+            document.getElementById('device-id').innerText = deviceDescription.device_name;
+            document.getElementById('wind-direction-text').innerText = `Direction: ${sensorData.windDir}°`;
+            document.getElementById('temp-value').innerText = `${sensorData.deviceTemp}°C`;
+
+            // Update Gauge
+            drawGauge();
+        }
+
+        function drawGauge() {
+            const speed = sensorData.windSpeed;
+            const dir = sensorData.windDir;
+            
+            const speedEl = document.getElementById('speed-pointer');
+            const dirEl = document.getElementById('dir-pointer');
+            const arcEl = document.getElementById('wind-gauge-arc');
+
+            // 1. Update Speed Pointer (0-30 knots)
+            // Map 0-30 to -45deg to +45deg (Total 90deg range)
+            const speedDeg = (speed / 30) * 90 - 45;
+            speedEl.style.transform = `translate(-50%, -50%) rotate(${speedDeg}deg)`;
+
+            // 2. Update Direction Pointer (0-360)
+            // Map 0-360 to -90deg to +90deg (Top is 0, Clockwise)
+            // CSS rotation works clockwise from 12 o'clock
+            dirEl.style.transform = `translate(-50%, -50%) rotate(${dir}deg)`;
+
+            // 3. Animate Arc (Visualizing Speed)
+            // 0 speed = 0 dasharray, Max speed = full circle (approx 628)
+            const circumference = 2 * Math.PI * 100;
+            const dashLength = (speed / 30) * circumference;
+            arcEl.style.strokeDasharray = `${dashLength} ${circumference}`;
+        }
+
+        // --- INITIALIZATION ---
+        async function init() {
+            // 1. Load metadata
+            await fetchAddDoc();
+            
+            // 2. Initial State Fetch
+            await fetchSensorState();
+
+            // 3. Start Refresh Loop (5 seconds)
+            setInterval(fetchSensorState, 5000);
+        }
+
+        window.onload = init;
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yachta Windsensor — ADD Dashboard</title>
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css2?family=Ubuntu:wght@400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ========== CSS Variables & Themes ========== */
+:root {
+  --sans: 'Ubuntu', sans-serif;
+  --mono: 'Ubuntu Mono', monospace;
+}
+
+body.theme-dark {
+  --bg-color:    rgb(32,32,32);
+  --bg-image:    linear-gradient(45deg,black 25%,transparent 25%,transparent 75%,black 75%,black),
+                 linear-gradient(45deg,black 25%,transparent 25%,transparent 75%,black 75%,black),
+                 linear-gradient(to bottom,rgb(8,8,8),rgb(32,32,32));
+  --bg-size:     10px 10px,10px 10px,10px 5px;
+  --bg-pos:      0px 0px,5px 5px,0px 0px;
+  --panel:       #1e1e1e;
+  --border:      #2e2e2e;
+  --text:        #c8c8c8;
+  --text-strong: #ffffff;
+  --muted:       #5a7060;
+  --label:       #8ab2d0;
+  --accent:      #00c8a0;
+  --accent2:     #0084ff;
+  --danger:      #e84040;
+  --warn:        #f5a623;
+  --ok:          #00c8a0;
+  --nmea-bg:     #0a0a0a;
+  --nmea-ts:     #444444;
+  --instr-bg:    #202020;
+  --instr-brd:   #333333;
+  --v-big-color: #ffffff;
+  --v-med-color: #ffffff;
+  --input-bg:    #161616;
+  --input-brd:   #3a3a3a;
+  --pulse-anim:  pulse 2s infinite;
+}
+
+body.theme-light {
+  --bg-color:    #f0f2f5;
+  --bg-image:    none;
+  --bg-size:     auto;
+  --bg-pos:      0 0;
+  --panel:       #ffffff;
+  --border:      #dde2ea;
+  --text:        #3a4050;
+  --text-strong: #111620;
+  --muted:       #8a95a8;
+  --label:       #5a80b0;
+  --accent:      #00a882;
+  --accent2:     #0066cc;
+  --danger:      #cc2020;
+  --warn:        #d4870a;
+  --ok:          #00a882;
+  --nmea-bg:     #f8f9fb;
+  --nmea-ts:     #aaaaaa;
+  --instr-bg:    #e8eaee;
+  --instr-brd:   #c8cdd8;
+  --v-big-color: #111620;
+  --v-med-color: #111620;
+  --input-bg:    #f5f7fa;
+  --input-brd:   #c8cdd8;
+  --pulse-anim:  pulse 2s infinite;
+}
+
+body.theme-night {
+  --bg-color:    #000000;
+  --bg-image:    none;
+  --bg-size:     auto;
+  --bg-pos:      0 0;
+  --panel:       #0d0d0d;
+  --border:      #1a1100;
+  --text:        #cc6600;
+  --text-strong: #ff9900;
+  --muted:       #664400;
+  --label:       #995500;
+  --accent:      #cc5500;
+  --accent2:     #bb4400;
+  --danger:      #aa0000;
+  --warn:        #cc7700;
+  --ok:          #886600;
+  --nmea-bg:     #050200;
+  --nmea-ts:     #442200;
+  --instr-bg:    #0a0500;
+  --instr-brd:   #221100;
+  --v-big-color: #ff9900;
+  --v-med-color: #ff9900;
+  --input-bg:    #0a0500;
+  --input-brd:   #331a00;
+  --pulse-anim:  pulse 2s infinite;
+}
+
+body.theme-bw {
+  --bg-color:    #ffffff;
+  --bg-image:    none;
+  --bg-size:     auto;
+  --bg-pos:      0 0;
+  --panel:       #aaaaaa;
+  --border:      #444444;
+  --text:        #444444;
+  --text-strong: #000000;
+  --muted:       #444444;
+  --label:       #444444;
+  --accent:      #000000;
+  --accent2:     #000000;
+  --danger:      #000000;
+  --warn:        #000000;
+  --ok:          #000000;
+  --nmea-bg:     #aaaaaa;
+  --nmea-ts:     #444444;
+  --instr-bg:    #aaaaaa;
+  --instr-brd:   #444444;
+  --v-big-color: #000000;
+  --v-med-color: #000000;
+  --input-bg:    #ffffff;
+  --input-brd:   #444444;
+  --pulse-anim:  none;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--sans);
+  background-color: var(--bg-color);
+  background-image: var(--bg-image);
+  background-size: var(--bg-size);
+  background-position: var(--bg-pos);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* ========== Header ========== */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+.header-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: var(--panel); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+}
+.header-icon svg { stroke: var(--accent); }
+.header-title {
+  font-size: 1.3rem; font-weight: 700; color: var(--text-strong);
+  letter-spacing: -0.02em;
+}
+.header-sub {
+  font-size: .72rem; color: var(--muted); font-family: var(--mono);
+  margin-top: 2px;
+}
+.header-right { display: flex; align-items: center; gap: 12px; }
+
+.theme-select {
+  background: var(--input-bg); border: 1px solid var(--input-brd);
+  color: var(--text); font-family: var(--sans); font-size: .75rem;
+  padding: 6px 10px; border-radius: 6px; cursor: pointer;
+}
+
+.status-pill {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 13px; border-radius: 100px;
+  font-size: .7rem; font-weight: 600; font-family: var(--mono);
+  background: rgba(0,200,160,.1); border: 1px solid rgba(0,200,160,.3);
+  color: var(--accent);
+}
+.status-pill.offline {
+  background: rgba(200,0,0,.1); border-color: rgba(200,0,0,.3);
+  color: var(--danger);
+}
+.status-pill.demo {
+  background: rgba(245,166,35,.1); border-color: rgba(245,166,35,.3);
+  color: var(--warn);
+}
+.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent); animation: var(--pulse-anim);
+}
+.dot.off { background: var(--danger); animation: none; }
+.dot.demo { background: var(--warn); animation: var(--pulse-anim); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ========== Error / Demo Banners ========== */
+.error-banner {
+  grid-column: 1 / -1;
+  background: rgba(232,64,64,.08);
+  border: 1px solid rgba(232,64,64,.25);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--danger);
+  margin-bottom: 6px;
+  display: none;
+}
+.error-banner.visible { display: block; }
+.error-banner code {
+  background: rgba(232,64,64,.1);
+  padding: 1px 5px; border-radius: 3px;
+}
+
+.demo-notice {
+  grid-column: 1 / -1;
+  background: rgba(245,166,35,.06);
+  border: 1px dashed rgba(245,166,35,.3);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: .68rem;
+  font-family: var(--mono);
+  color: var(--warn);
+  display: none;
+}
+.demo-notice.visible { display: block; }
+
+/* ========== Grid ========== */
+.dashboard {
+  display: grid;
+  grid-template-columns: 340px 1fr 1fr;
+  gap: 10px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+@media (max-width: 1299px) {
+  .dashboard { grid-template-columns: 340px 1fr 1fr; }
+}
+@media (max-width: 959px) {
+  .dashboard { grid-template-columns: 1fr 1fr; }
+  .dashboard .instr-cell { grid-column: 1 / -1; justify-self: center; }
+}
+@media (max-width: 519px) {
+  .dashboard { grid-template-columns: 1fr; }
+}
+
+/* ========== Panels ========== */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.lbl {
+  font-size: .62rem; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 7px;
+}
+.v-big {
+  font-size: 2.1rem; font-weight: 700; font-family: var(--mono);
+  color: var(--v-big-color); line-height: 1.1;
+}
+.v-big .u { font-size: 0.9rem; font-weight: 400; color: var(--label); }
+.v-med {
+  font-size: 1.5rem; font-weight: 700; font-family: var(--mono);
+  color: var(--v-med-color); line-height: 1.15;
+}
+.v-med .u { font-size: 0.8rem; font-weight: 400; color: var(--label); }
+.v-sm {
+  font-size: 1.0rem; font-weight: 600; font-family: var(--mono);
+  color: var(--accent2);
+}
+.v-sm .u { font-size: 0.7rem; font-weight: 400; color: var(--muted); }
+.sub {
+  font-size: .68rem; color: var(--muted); font-family: var(--mono);
+  margin-top: 5px;
+}
+.mt { margin-top: 12px; }
+
+/* ========== Instrument Panel ========== */
+.instr-cell { justify-self: center; }
+.instr-panel {
+  background: var(--instr-bg);
+  border: 1px solid var(--instr-brd);
+  border-radius: 10px;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 12px 8px 8px; gap: 6px; width: 360px;
+}
+.instr-panel canvas { display: block; }
+.instr-cq  { font-family: var(--mono); font-size: .65rem; color: var(--accent); }
+.instr-meta{ font-family: var(--mono); font-size: .65rem; color: var(--muted); }
+
+/* ========== Sparkline ========== */
+.spark-canvas {
+  margin-top: 8px; width: 100%; height: 40px;
+}
+
+/* ========== Log Box ========== */
+.log-box {
+  background: var(--nmea-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: .67rem;
+  color: var(--accent);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 60px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+.log-ts { color: var(--nmea-ts); }
+
+/* ========== Validation Strip ========== */
+.validation-strip {
+  grid-column: 1 / -1;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-top: 4px;
+}
+.validation-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+.validation-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 100px; font-size: .65rem;
+  font-weight: 700; font-family: var(--mono); text-transform: uppercase;
+  background: rgba(0,200,160,.12); border: 1px solid rgba(0,200,160,.3);
+  color: var(--ok);
+}
+.validation-title {
+  font-size: .72rem; font-weight: 700; color: var(--text-strong);
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.validation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+.val-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .68rem; font-family: var(--mono);
+  color: var(--text);
+}
+.val-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); flex-shrink: 0; }
+.val-dot.warn { background: var(--warn); }
+.val-dot.danger { background: var(--danger); }
+.val-key { color: var(--muted); min-width: 90px; }
+.val-val { color: var(--text-strong); }
+
+/* ========== Footer ========== */
+.footer {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: .6rem; color: var(--muted);
+  font-family: var(--mono);
+  margin-top: 6px; padding: 8px;
+}
+</style>
+</head>
+<body class="theme-dark">
+
+<!-- ========== HEADER ========== -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+      </svg>
+    </div>
+    <div>
+      <div class="header-title">Yachta Windsensor</div>
+      <div class="header-sub">Wind Sensor Yachta 2.1 · ADD v1.0 · Autonomy Level 1</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <select class="theme-select" id="themeSelect" onchange="setTheme(this.value)">
+      <option value="theme-dark" selected>Dark</option>
+      <option value="theme-light">Light</option>
+      <option value="theme-night">Night</option>
+      <option value="theme-bw">B&amp;W</option>
+    </select>
+    <div class="status-pill" id="statusPill">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Connecting…</span>
+    </div>
+  </div>
+</div>
+
+<!-- ========== DASHBOARD ========== -->
+<div class="dashboard" id="dashboard">
+
+  <div class="error-banner" id="errorBanner"></div>
+  <div class="demo-notice" id="demoNotice">
+    ⚠ Demo-Modus aktiv — Live-Verbindung nicht möglich. Daten vom 09.08.2026 21:43. Für Live-Daten: Datei über lokalen Server servieren (z.B. <code>python3 -m http.server 8080</code>).
+  </div>
+
+  <!-- Primary: Dual-Pointer Instrument -->
+  <div class="instr-cell">
+    <div class="instr-panel">
+      <canvas id="windGauge" width="340" height="340"></canvas>
+      <div class="instr-cq">Signal: <span id="signalQuality">—</span>%</div>
+      <div class="instr-meta" id="gaugeMode">Wind Direction + Speed</div>
+    </div>
+  </div>
+
+  <!-- Data Panel: Device Temperature -->
+  <div class="panel">
+    <div class="lbl">Gerätetemperatur</div>
+    <div class="v-med" id="devTempVal">—<span class="u"> °C</span></div>
+    <div class="sub" id="devTempSub">DS18B20 Sensor</div>
+    <canvas id="tempSpark" class="spark-canvas" width="260" height="40"></canvas>
+  </div>
+
+  <!-- Data Panel: Environment -->
+  <div class="panel">
+    <div class="lbl">Umgebung</div>
+    <div class="mt">
+      <div class="lbl">Lufttemperatur</div>
+      <div class="v-sm" id="airTempVal">—<span class="u"> °C</span></div>
+    </div>
+    <div class="mt">
+      <div class="lbl">Luftdruck</div>
+      <div class="v-sm" id="pressureVal">—<span class="u"> mbar</span></div>
+    </div>
+    <div class="mt">
+      <div class="lbl">Luftfeuchte</div>
+      <div class="v-sm" id="humidityVal">—<span class="u"> %</span></div>
+    </div>
+    <div class="mt">
+      <div class="lbl">Taupunkt</div>
+      <div class="v-sm" id="dewpointVal">—<span class="u"> °C</span></div>
+    </div>
+  </div>
+
+  <!-- Data Panel: Wind Details -->
+  <div class="panel">
+    <div class="lbl">Winddetails</div>
+    <div class="mt">
+      <div class="lbl">Auflösung</div>
+      <div class="v-sm" id="resolutionVal">—<span class="u"> °</span></div>
+    </div>
+    <div class="mt">
+      <div class="lbl">Windtyp</div>
+      <div class="v-sm" id="windTypeVal">—</div>
+    </div>
+    <div class="mt">
+      <div class="lbl">Mittelung</div>
+      <div class="v-sm" id="averageVal">—</div>
+    </div>
+    <div class="mt">
+      <div class="lbl">Einheit</div>
+      <div class="v-sm" id="unitVal">—</div>
+    </div>
+  </div>
+
+  <!-- Data Panel: System Health -->
+  <div class="panel">
+    <div class="lbl">System</div>
+    <div class="mt">
+      <div class="lbl">Firmware</div>
+      <div class="v-sm" id="firmwareVal">—</div>
+    </div>
+    <div class="mt">
+      <div class="lbl">Freier Heap</div>
+      <div class="v-sm" id="heapVal">—<span class="u"> Byte</span></div>
+    </div>
+    <div class="mt">
+      <div class="lbl">CPU</div>
+      <div class="v-sm" id="cpuVal">—<span class="u"> MHz</span></div>
+    </div>
+    <div class="mt">
+      <div class="lbl">WLAN Qualität</div>
+      <div class="v-sm" id="wlanVal">—<span class="u"> %</span></div>
+    </div>
+  </div>
+
+  <!-- Protocol Log -->
+  <div class="panel" style="grid-column: 1 / -1;">
+    <div class="lbl">NMEA 0183 Protokoll</div>
+    <div class="log-box" id="protocolLog">
+      <span class="log-ts">Warte auf Daten…</span>
+    </div>
+  </div>
+
+  <!-- Validation Strip -->
+  <div class="validation-strip">
+    <div class="validation-header">
+      <span class="validation-badge">✓ passed</span>
+      <span class="validation-title">ADD Validierung — Yachta Windsensor</span>
+    </div>
+    <div class="validation-grid" id="validationGrid">
+      <div class="val-item"><span class="val-dot"></span><span class="val-key">Struktur:</span><span class="val-val">pass</span></div>
+      <div class="val-item"><span class="val-dot"></span><span class="val-key">Verständlichkeit:</span><span class="val-val">pass</span></div>
+      <div class="val-item"><span class="val-dot"></span><span class="val-key">Funktional:</span><span class="val-val">pass</span></div>
+      <div class="val-item"><span class="val-dot"></span><span class="val-key">Regel-Compliance:</span><span class="val-val">pass</span></div>
+      <div class="val-item"><span class="val-dot"></span><span class="val-key">Sicherheit:</span><span class="val-val">pass</span></div>
+      <div class="val-item"><span class="val-dot"></span><span class="val-key">Discovery:</span><span class="val-val">pass</span></div>
+      <div class="val-item"><span class="val-dot"></span><span class="val-key">Timing:</span><span class="val-val">pass</span></div>
+      <div class="val-item"><span class="val-dot warn"></span><span class="val-key">Live-Test:</span><span class="val-val">nicht durchgeführt (resolved)</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Dashboard generiert nach ADD Dashboard Style Guide v1.0 · Ethical Framework Basic v1.0 (Autonomy Level 1) · Aktualisierung alle 5 s
+  </div>
+
+</div>
+
+<script>
+/* ========== Configuration ========== */
+const API_BASE = 'https://yachta.norbert-walter.dnshome.de';
+const REFRESH_MS = 5000;
+
+/* ========== Embedded Demo Data ========== */
+var DEMO_DATA = {
+  "Device": {
+    "Type": "Windsensor",
+    "CopyRights": "NoWa (C) 2026",
+    "FirmwareVersion": "V1.21",
+    "License": "GNU GPL V3",
+    "ESP8266": {
+      "SDKVersion": "2.2.2-dev(38a443e)",
+      "ChipID": 12799780,
+      "CPUSpeed": { "Value": 160, "Unit": "MHz" },
+      "FreeHeapSize": { "Value": 30232, "Unit": "Byte" }
+    },
+    "NetworkParameter": {
+      "WLANClientSSID": "Wireless2",
+      "WLANClientIP": "192.168.1.181",
+      "FieldStrength": { "Value": -100.00, "Unit": "dBm" },
+      "ConnectionQuality": { "Value": 0.00, "Unit": "%" },
+      "WLANServerSSID": "Yachta",
+      "WLANServerIP": "192.168.5.1",
+      "ServerMode": 4,
+      "ServerHostName": "windsensor"
+    },
+    "DisplaySettings": {
+      "Skin": 0,
+      "InstrumentType": "complex",
+      "InstrumentSize": "400"
+    },
+    "DeviceSettings": {
+      "SerialDebugMode": 4,
+      "SerialSpeed": 115200,
+      "SensorID": 0,
+      "SensorType": "Yachta 2.0",
+      "SendWindData": 1,
+      "WindType": "R",
+      "Average": 2,
+      "SpeedUnit": "kn",
+      "DownWindSensor": 1,
+      "DownWindRange": 50,
+      "TempSensorType": "DS18B20",
+      "TempSensorData": 1,
+      "TempUnit": "°C"
+    },
+    "MeasuringValues": {
+      "DeviceTemperature": { "Value": 21.60, "Unit": "°C" },
+      "WindDirection": { "Value": 23.44, "Unit": "°" },
+      "Resolution": { "Value": 0.14, "Unit": "°" },
+      "WindSpeed": { "Value": 8.64, "Unit": "kn" },
+      "DownWindSpeed": { "Value": 0.00, "Unit": "kn" },
+      "Sensor1": { "Value": 1, "Unit": "bin" },
+      "Sensor2": { "Value": 0, "Unit": "bin" },
+      "MagFluxDensity": { "Value": 357.00, "Unit": "mT" },
+      "MagnetSensor": { "Value": 236.00, "Unit": "°" },
+      "PulseCounter": { "Value": 0, "Unit": "n" },
+      "Time1": { "Value": 251.33, "Unit": "ms" },
+      "Time2": { "Value": 25.13, "Unit": "ms" },
+      "RotationSpeed": { "Value": 3.54, "Unit": "rps" },
+      "AirTemperature": { "Value": 22.90, "Unit": "°C" },
+      "AirPressure": { "Value": 985.60, "Unit": "mbar" },
+      "AirHumidity": { "Value": 78.20, "Unit": "%" },
+      "Dewpoint": { "Value": 11.00, "Unit": "°C" },
+      "Altitude": { "Value": 50.10, "Unit": "m" }
+    },
+    "NMEAValues": {
+      "String1": "$WIMWV,23.44,R,8.64,N,A*18",
+      "String2": "$WIVWR,23.44,R,8.64,N,4.44,M,16.00,K*5f",
+      "String3": "$WIVPW,0.00,N,0.00,M*4c",
+      "String4": "$PWINF,0,23.44,D,0.14,D,4.44,M,16.00,K,8.64,N,2,B,*5d",
+      "String5": "$PWWST,C,0,21.60,A*4e"
+    }
+  }
+};
+
+/* ========== Theme ========== */
+function setTheme(name) {
+  document.body.className = name;
+  try { localStorage.setItem('add-dashboard-theme', name); } catch(e) {}
+}
+(function initTheme() {
+  try {
+    var saved = localStorage.getItem('add-dashboard-theme');
+    if (saved) { document.body.className = saved; document.getElementById('themeSelect').value = saved; }
+  } catch(e) {}
+})();
+
+/* ========== Custom Canvas Wind Gauge ========== */
+var gaugeState = { direction: 0, speed: 0, targetDir: 0, targetSpd: 0 };
+
+function drawWindGauge() {
+  var canvas = document.getElementById('windGauge');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var cx = W / 2, cy = H / 2;
+  var r = 155;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  var grad = ctx.createRadialGradient(cx, cy, r * 0.6, cx, cy, r);
+  grad.addColorStop(0, '#2a2a2a');
+  grad.addColorStop(1, '#151515');
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = grad; ctx.fill();
+
+  // Outer bezel
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.lineWidth = 3; ctx.strokeStyle = '#444'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, r - 3, 0, Math.PI * 2);
+  ctx.lineWidth = 1; ctx.strokeStyle = '#222'; ctx.stroke();
+
+  // Colored sectors
+  var sectors = [
+    [0, 45, 'rgba(0,200,160,0.12)'], [45, 90, 'rgba(0,132,255,0.12)'],
+    [90, 135, 'rgba(0,200,160,0.12)'], [135, 180, 'rgba(245,166,35,0.12)'],
+    [180, 225, 'rgba(0,200,160,0.12)'], [225, 270, 'rgba(0,132,255,0.12)'],
+    [270, 315, 'rgba(0,200,160,0.12)'], [315, 360, 'rgba(245,166,35,0.12)']
+  ];
+  sectors.forEach(function(s) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r - 6, (s[0] - 90) * Math.PI / 180, (s[1] - 90) * Math.PI / 180);
+    ctx.closePath();
+    ctx.fillStyle = s[2]; ctx.fill();
+  });
+
+  // Tick marks
+  for (var deg = 0; deg < 360; deg += 10) {
+    var isMajor = deg % 30 === 0;
+    var len = isMajor ? 14 : 7;
+    var a = (deg - 90) * Math.PI / 180;
+    var x1 = cx + Math.cos(a) * (r - 22);
+    var y1 = cy + Math.sin(a) * (r - 22);
+    var x2 = cx + Math.cos(a) * (r - 22 - len);
+    var y2 = cy + Math.sin(a) * (r - 22 - len);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.lineWidth = isMajor ? 2 : 1;
+    ctx.strokeStyle = isMajor ? '#aaa' : '#666';
+    ctx.stroke();
+  }
+
+  // Numbers
+  ctx.font = 'bold 13px "Ubuntu Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (deg = 0; deg < 360; deg += 30) {
+    var a2 = (deg - 90) * Math.PI / 180;
+    var nx = cx + Math.cos(a2) * (r - 48);
+    var ny = cy + Math.sin(a2) * (r - 48);
+    ctx.fillStyle = '#bbb';
+    ctx.fillText(deg.toString(), nx, ny);
+  }
+
+  // Cardinal labels
+  ctx.font = 'bold 16px "Ubuntu", sans-serif';
+  var cards = [['N', 0], ['E', 90], ['S', 180], ['W', 270]];
+  cards.forEach(function(c) {
+    var a3 = (c[1] - 90) * Math.PI / 180;
+    var cx2 = cx + Math.cos(a3) * (r - 68);
+    var cy2 = cy + Math.sin(a3) * (r - 68);
+    ctx.fillStyle = '#00c8a0';
+    ctx.fillText(c[0], cx2, cy2);
+  });
+
+  // LCD panel background
+  ctx.fillStyle = '#0d0d0d';
+  ctx.beginPath();
+  ctx.roundRect(cx - 75, cy - 55, 150, 110, 8);
+  ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = '#333';
+  ctx.beginPath(); ctx.roundRect(cx - 75, cy - 55, 150, 110, 8); ctx.stroke();
+
+  // LCD labels
+  ctx.font = '10px "Ubuntu", sans-serif';
+  ctx.fillStyle = '#5a7060';
+  ctx.fillText('DIRECTION', cx, cy - 42);
+  ctx.fillText('SPEED', cx, cy + 8);
+
+  // LCD values
+  ctx.font = 'bold 26px "Ubuntu Mono", monospace';
+  ctx.fillStyle = '#00c8a0';
+  ctx.fillText(gaugeState.direction.toFixed(1) + '°', cx, cy - 18);
+  ctx.font = 'bold 22px "Ubuntu Mono", monospace';
+  ctx.fillStyle = '#0084ff';
+  ctx.fillText(gaugeState.speed.toFixed(2) + ' kn', cx, cy + 32);
+
+  // Direction pointer (red, long)
+  var dirRad = (gaugeState.direction - 90) * Math.PI / 180;
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(dirRad);
+  ctx.beginPath();
+  ctx.moveTo(0, -10); ctx.lineTo(6, 0); ctx.lineTo(2, 90); ctx.lineTo(-2, 90); ctx.lineTo(-6, 0);
+  ctx.closePath();
+  ctx.fillStyle = '#e84040'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2);
+  ctx.fillStyle = '#333'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#e84040'; ctx.fill();
+  ctx.restore();
+
+  // Speed pointer (white, short, inner ring 0-50 kn)
+  var spdAngle = (gaugeState.speed / 50) * 360;
+  var spdRad = (spdAngle - 90) * Math.PI / 180;
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(spdRad);
+  ctx.beginPath();
+  ctx.moveTo(0, -6); ctx.lineTo(4, 0); ctx.lineTo(1, 55); ctx.lineTo(-1, 55); ctx.lineTo(-4, 0);
+  ctx.closePath();
+  ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // Inner ring for speed
+  ctx.beginPath(); ctx.arc(cx, cy, 60, 0, Math.PI * 2);
+  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.stroke();
+}
+
+function animateGauge() {
+  // Smooth interpolation
+  var ease = 0.15;
+  gaugeState.direction += (gaugeState.targetDir - gaugeState.direction) * ease;
+  gaugeState.speed += (gaugeState.targetSpd - gaugeState.speed) * ease;
+  drawWindGauge();
+  requestAnimationFrame(animateGauge);
+}
+
+function setGauge(dir, spd) {
+  gaugeState.targetDir = ((dir % 360) + 360) % 360;
+  gaugeState.targetSpd = Math.max(0, spd);
+}
+
+/* ========== Sparkline ========== */
+var tempSparkData = [];
+var SPARK_MAX = 60;
+
+function pushSpark(value) {
+  tempSparkData.push(value);
+  if (tempSparkData.length > SPARK_MAX) tempSparkData.shift();
+  drawSparkline('tempSpark', tempSparkData);
+}
+
+function drawSparkline(canvasId, data) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  if (data.length < 2) return;
+
+  var min = Math.min.apply(null, data);
+  var max = Math.max.apply(null, data);
+  var range = max - min || 1;
+  var style = getComputedStyle(document.body);
+  var color = style.getPropertyValue('--accent2').trim() || '#0084ff';
+
+  ctx.beginPath();
+  data.forEach(function(v, i) {
+    var x = (i / (data.length - 1)) * W;
+    var y = H - ((v - min) / range) * (H - 4) - 2;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = 1.5;
+  ctx.stroke();
+}
+
+/* ========== Status ========== */
+function setOnline(online, isDemo) {
+  var dot = document.getElementById('statusDot');
+  var pill = document.getElementById('statusPill');
+  var txt = document.getElementById('statusText');
+  if (isDemo) {
+    dot.className = 'dot demo';
+    pill.className = 'status-pill demo';
+    txt.textContent = 'Demo';
+  } else if (online) {
+    dot.className = 'dot';
+    pill.className = 'status-pill';
+    txt.textContent = 'Online';
+  } else {
+    dot.className = 'dot off';
+    pill.className = 'status-pill offline';
+    txt.textContent = 'Offline';
+  }
+}
+
+function showError(msg) {
+  var el = document.getElementById('errorBanner');
+  el.innerHTML = msg;
+  el.classList.add('visible');
+}
+function hideError() {
+  document.getElementById('errorBanner').classList.remove('visible');
+}
+function showDemoNotice() {
+  document.getElementById('demoNotice').classList.add('visible');
+}
+function hideDemoNotice() {
+  document.getElementById('demoNotice').classList.remove('visible');
+}
+
+/* ========== NMEA Log ========== */
+var logHistory = [];
+function updateLog(strings) {
+  var ts = new Date().toLocaleTimeString('de-DE');
+  var lines = Object.values(strings).map(function(s) {
+    return '<span class="log-ts">' + ts + '</span> ' + escapeHtml(s);
+  });
+  logHistory = lines.concat(logHistory).slice(0, 10);
+  document.getElementById('protocolLog').innerHTML = logHistory.join('<br>');
+}
+function escapeHtml(t) {
+  return t.replace(/[&<>"']/g, function(m) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',''':'&#39;'}[m];
+  });
+}
+
+/* ========== Render ========== */
+function render(data) {
+  var mv = data.MeasuringValues || {};
+  var ds = data.DeviceSettings || {};
+  var net = data.NetworkParameter || {};
+  var dev = data.Device || {};
+  var esp = (dev.ESP8266 || {});
+
+  // Wind gauge
+  var wd = mv.WindDirection ? mv.WindDirection.Value : 0;
+  var ws = mv.WindSpeed ? mv.WindSpeed.Value : 0;
+  setGauge(wd, ws);
+
+  // Signal quality
+  var cq = net.ConnectionQuality ? net.ConnectionQuality.Value : 0;
+  document.getElementById('signalQuality').textContent = cq.toFixed(0);
+
+  // Device temperature
+  var dt = mv.DeviceTemperature ? mv.DeviceTemperature.Value : 0;
+  document.getElementById('devTempVal').innerHTML = dt.toFixed(1) + '<span class="u"> °C</span>';
+  document.getElementById('devTempSub').textContent = (ds.TempSensorType || 'DS18B20') + ' Sensor';
+  pushSpark(dt);
+
+  // Environment
+  var at = mv.AirTemperature ? mv.AirTemperature.Value : 0;
+  var ap = mv.AirPressure ? mv.AirPressure.Value : 0;
+  var ah = mv.AirHumidity ? mv.AirHumidity.Value : 0;
+  var dp = mv.Dewpoint ? mv.Dewpoint.Value : 0;
+  document.getElementById('airTempVal').innerHTML = at.toFixed(1) + '<span class="u"> °C</span>';
+  document.getElementById('pressureVal').innerHTML = ap.toFixed(1) + '<span class="u"> mbar</span>';
+  document.getElementById('humidityVal').innerHTML = ah.toFixed(1) + '<span class="u"> %</span>';
+  document.getElementById('dewpointVal').innerHTML = dp.toFixed(1) + '<span class="u"> °C</span>';
+
+  // Wind details
+  var res = mv.Resolution ? mv.Resolution.Value : 0;
+  document.getElementById('resolutionVal').innerHTML = res.toFixed(2) + '<span class="u"> °</span>';
+  document.getElementById('windTypeVal').textContent = ds.WindType || 'R';
+  document.getElementById('averageVal').textContent = ds.Average || '2';
+  document.getElementById('unitVal').textContent = ds.SpeedUnit || 'kn';
+
+  // System
+  document.getElementById('firmwareVal').textContent = dev.FirmwareVersion || '—';
+  var heap = esp.FreeHeapSize ? esp.FreeHeapSize.Value : 0;
+  var cpu = esp.CPUSpeed ? esp.CPUSpeed.Value : 0;
+  document.getElementById('heapVal').innerHTML = heap.toLocaleString('de-DE') + '<span class="u"> Byte</span>';
+  document.getElementById('cpuVal').innerHTML = cpu + '<span class="u"> MHz</span>';
+  document.getElementById('wlanVal').innerHTML = cq.toFixed(0) + '<span class="u"> %</span>';
+
+  // NMEA log
+  if (data.NMEAValues) updateLog(data.NMEAValues);
+}
+
+/* ========== Data Fetch ========== */
+var isDemo = false;
+var fetchAttempted = false;
+
+function fetchData() {
+  fetchAttempted = true;
+  var ts = Date.now();
+  fetch(API_BASE + '/json?t=' + ts, { method: 'GET', cache: 'no-store', mode: 'cors' })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      hideError();
+      hideDemoNotice();
+      isDemo = false;
+      setOnline(true, false);
+      render(data);
+    })
+    .catch(function(err) {
+      console.error('Fetch error:', err);
+      if (!isDemo) {
+        isDemo = true;
+        setOnline(false, true);
+        showDemoNotice();
+        showError(
+          'Live-Verbindung fehlgeschlagen: <code>' + escapeHtml(err.message) + '</code> — ' +
+          'Dashboard zeigt eingebettete Demo-Daten an. Für Live-Daten: ' +
+          '<code>python3 -m http.server 8080</code> im Ordner starten, dann ' +
+          '<code>http://localhost:8080/yachta_dashboard.html</code> öffnen.'
+        );
+        render(DEMO_DATA.Device);
+      }
+    });
+}
+
+/* ========== Init ========== */
+animateGauge();
+fetchData();
+setInterval(fetchData, REFRESH_MS);
+</script>
+
+</body>
+</html>

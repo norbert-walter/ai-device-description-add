@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yachta Windsensor 2.1 — ADD Dashboard</title>
+<script src="https://yachta.norbert-walter.dnshome.de/tween-min.js"></script>
+<script src="https://yachta.norbert-walter.dnshome.de/steelseries_micro.js"></script>
+<style>
+@import url('https://fonts.bunny.net/css2?family=ubuntu:wght@400;500;700&family=ubuntu-mono:wght@400;700&display=swap');
+
+:root { --sans: 'Ubuntu', sans-serif; --mono: 'Ubuntu Mono', monospace; }
+
+/* ---- ADD Dashboard Style Guide v1.0 — theme definitions (Appendix A) ---- */
+body.theme-dark {
+  --bg-color: rgb(32,32,32);
+  --bg-image: linear-gradient(45deg,black 25%,transparent 25%,transparent 75%,black 75%,black),
+              linear-gradient(45deg,black 25%,transparent 25%,transparent 75%,black 75%,black),
+              linear-gradient(to bottom,rgb(8,8,8),rgb(32,32,32));
+  --bg-size: 10px 10px,10px 10px,10px 5px;
+  --bg-pos: 0px 0px,5px 5px,0px 0px;
+  --panel:#1e1e1e; --border:#2e2e2e; --text:#c8c8c8; --text-strong:#ffffff;
+  --muted:#5a7060; --label:#8ab2d0; --accent:#00c8a0; --accent2:#0084ff;
+  --danger:#e84040; --warn:#f5a623; --ok:#00c8a0;
+  --nmea-bg:#0a0a0a; --nmea-ts:#444444; --instr-bg:#202020; --instr-brd:#333333;
+  --v-big-color:#ffffff; --v-med-color:#ffffff;
+  --input-bg:#161616; --input-brd:#3a3a3a; --pulse-anim: pulse 2s infinite;
+}
+body.theme-light {
+  --bg-color:#f0f2f5; --bg-image:none; --bg-size:auto; --bg-pos:0 0;
+  --panel:#ffffff; --border:#dde2ea; --text:#3a4050; --text-strong:#111620;
+  --muted:#8a95a8; --label:#5a80b0; --accent:#00a882; --accent2:#0066cc;
+  --danger:#cc2020; --warn:#d4870a; --ok:#00a882;
+  --nmea-bg:#f8f9fb; --nmea-ts:#aaaaaa; --instr-bg:#e8eaee; --instr-brd:#c8cdd8;
+  --v-big-color:#111620; --v-med-color:#111620;
+  --input-bg:#f5f7fa; --input-brd:#c8cdd8; --pulse-anim: pulse 2s infinite;
+}
+body.theme-night {
+  --bg-color:#000000; --bg-image:none; --bg-size:auto; --bg-pos:0 0;
+  --panel:#0d0d0d; --border:#1a1100; --text:#cc6600; --text-strong:#ff9900;
+  --muted:#664400; --label:#995500; --accent:#cc5500; --accent2:#bb4400;
+  --danger:#aa0000; --warn:#cc7700; --ok:#886600;
+  --nmea-bg:#050200; --nmea-ts:#442200; --instr-bg:#0a0500; --instr-brd:#221100;
+  --v-big-color:#ff9900; --v-med-color:#ff9900;
+  --input-bg:#0a0500; --input-brd:#331a00; --pulse-anim: pulse 2s infinite;
+}
+body.theme-bw {
+  --bg-color:#ffffff; --bg-image:none; --bg-size:auto; --bg-pos:0 0;
+  --panel:#aaaaaa; --border:#444444; --text:#444444; --text-strong:#000000;
+  --muted:#444444; --label:#444444; --accent:#000000; --accent2:#000000;
+  --danger:#000000; --warn:#000000; --ok:#000000;
+  --nmea-bg:#aaaaaa; --nmea-ts:#444444; --instr-bg:#aaaaaa; --instr-brd:#444444;
+  --v-big-color:#000000; --v-med-color:#000000;
+  --input-bg:#ffffff; --input-brd:#444444; --pulse-anim:none;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; font-family: var(--sans); color: var(--text);
+  background-color: var(--bg-color); background-image: var(--bg-image);
+  background-size: var(--bg-size); background-position: var(--bg-pos);
+  min-height: 100vh;
+}
+.dash { max-width: 900px; margin: 0 auto; padding: 20px 16px 40px; }
+
+/* Header */
+header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+.hdr-id { display:flex; align-items:center; gap:12px; }
+.hdr-id svg { flex-shrink:0; }
+.hdr-title { font-size: 1.15rem; font-weight: 700; color: var(--text-strong); }
+.hdr-sub { font-family: var(--mono); font-size: .68rem; color: var(--muted); margin-top: 2px; }
+
+.status-pill { display:flex; align-items:center; gap:7px; padding:5px 13px; border-radius:100px;
+  font-size:.7rem; font-weight:600; font-family: var(--mono);
+  background: rgba(0,200,160,.1); border: 1px solid rgba(0,200,160,.3); color: var(--accent); }
+.status-pill.offline { background: rgba(200,0,0,.1); border-color: rgba(200,0,0,.3); color: var(--danger); }
+.dot { width:7px; height:7px; border-radius:50%; background: var(--accent); animation: var(--pulse-anim); }
+.dot.off { background: var(--danger); animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* Grid */
+.grid-main { display:grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+.side-col { display:flex; flex-direction:column; gap: 16px; }
+@media (max-width: 760px) { .grid-main { grid-template-columns: 1fr; } }
+
+/* Instrument panel (6.1) */
+.instr-panel { background: var(--instr-bg); border: 1px solid var(--instr-brd); border-radius: 10px;
+  display:flex; flex-direction:column; align-items:center; padding: 12px 8px 8px; gap:6px; }
+.instr-panel canvas { display:block; }
+.instr-cq { font-family: var(--mono); font-size:.65rem; color: var(--accent); }
+.instr-meta { font-family: var(--mono); font-size:.65rem; color: var(--muted); text-align:center; }
+
+/* Data panel (6.5) */
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.lbl { font-size:.62rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color: var(--muted); margin-bottom:7px; }
+.v-big { font-family: var(--mono); font-size: 2.1rem; font-weight:700; color: var(--v-big-color); }
+.v-big .u { font-size:.9rem; font-weight:400; color: var(--label); }
+.v-med { font-family: var(--mono); font-size: 1.5rem; font-weight:700; color: var(--v-med-color); }
+.v-med .u { font-size:.8rem; font-weight:400; color: var(--label); }
+.v-sm { font-family: var(--mono); font-size: 1.0rem; font-weight:600; color: var(--accent2); }
+.v-sm .u { font-size:.7rem; font-weight:400; color: var(--muted); }
+.sub { font-size:.68rem; color: var(--muted); font-family: var(--mono); margin-top:5px; }
+.mt { margin-top: 12px; }
+.picto-panel { display:flex; align-items:center; gap:14px; }
+.picto-icon { flex-shrink:0; color: var(--accent); }
+
+/* Validation strip (6.10) */
+.val-strip { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+  display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top: 20px; }
+.val-lbl { font-family: var(--mono); font-size:.62rem; color: var(--muted); font-weight:700; margin-right:4px; }
+.badge { padding:3px 9px; border-radius:4px; font-size:.62rem; font-family: var(--mono); font-weight:600;
+  background: rgba(0,200,160,.1); border: 1px solid rgba(0,200,160,.25); color: var(--accent); }
+.badge.info { background: rgba(0,132,255,.1); border-color: rgba(0,132,255,.25); color: var(--accent2); }
+
+/* Footer */
+footer { margin-top: 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  font-family: var(--mono); font-size:.65rem; color: var(--muted); }
+.footer-controls { display:flex; align-items:center; gap:14px; }
+.ctrl-select { padding:3px 8px; background: var(--input-bg); border:1px solid var(--input-brd); border-radius:6px;
+  color: var(--accent); font-family: var(--mono); font-size:.65rem; font-weight:600; cursor:pointer; }
+footer a { color: var(--accent2); text-decoration: none; }
+</style>
+</head>
+<body class="theme-dark">
+<div class="dash">
+
+  <header>
+    <div class="hdr-id">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 8h8.5a2.5 2.5 0 1 0 -2.34 -3.24" />
+        <path d="M3 12h15.5a2.5 2.5 0 1 1 -2.34 3.24" />
+        <path d="M4 16h5.5a2.5 2.5 0 1 1 -2.34 3.24" />
+      </svg>
+      <div>
+        <div class="hdr-title">Yachta Windsensor 2.1</div>
+        <div class="hdr-sub">ESP8266 &middot; Masthead &middot; yachta.norbert-walter.dnshome.de</div>
+      </div>
+    </div>
+    <div class="status-pill" id="statusPill">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Connecting…</span>
+    </div>
+  </header>
+
+  <div class="grid-main">
+
+    <!-- Dual-Pointer Instrument — Style Guide 6.1: WindDirection2 -->
+    <div class="instr-panel">
+      <canvas id="windGauge" width="340" height="340"></canvas>
+      <div class="instr-cq">Signal: <span id="signalQuality">—</span>%</div>
+      <div class="instr-meta">Wind Direction (pointer + top LCD) · Wind Speed (bottom LCD)</div>
+    </div>
+
+    <div class="side-col">
+
+      <!-- Data Panel — Style Guide 6.5: Device Temperature -->
+      <div class="panel picto-panel">
+        <svg class="picto-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 5m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" />
+          <path d="M9 9h6v6h-6z" />
+          <path d="M3 10h2" /><path d="M3 14h2" />
+          <path d="M10 3v2" /><path d="M14 3v2" />
+          <path d="M21 10h-2" /><path d="M21 14h-2" />
+          <path d="M14 21v-2" /><path d="M10 21v-2" />
+        </svg>
+        <div>
+          <div class="lbl">Device Temperature</div>
+          <div class="v-med"><span id="tempVal">—</span><span class="u">&nbsp;°C</span></div>
+        </div>
+      </div>
+
+      <!-- Supporting data panel: wind values as text (readable independent of gauge) -->
+      <div class="panel">
+        <div class="lbl">Wind Direction</div>
+        <div class="v-big"><span id="dirVal">—</span><span class="u">°</span></div>
+        <div class="sub">Resolution: <span id="resVal">—</span>°</div>
+        <div class="mt">
+          <div class="lbl">Wind Speed</div>
+          <div class="v-sm"><span id="spdVal">—</span><span class="u"> kn</span></div>
+        </div>
+        <div class="mt">
+          <div class="lbl">Last Update</div>
+          <div class="v-sm" id="lastUpdate" style="font-size:.75rem">—</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Validation Strip — Style Guide 6.10, populated from the ADD document's validation block -->
+  <div class="val-strip">
+    <span class="val-lbl">ADD v1.0:</span>
+    <span class="badge">✓ structure</span>
+    <span class="badge">✓ comprehensibility</span>
+    <span class="badge">✓ functional</span>
+    <span class="badge">✓ rules_compliance</span>
+    <span class="badge">✓ security</span>
+    <span class="badge">✓ discovery</span>
+    <span class="badge">✓ timing_compliance</span>
+    <span class="badge info">PASSED · claude-sonnet-4-6 · 2026-07-04</span>
+  </div>
+
+  <footer>
+    <div>Autonomy Level 1 &middot; CC BY 4.0 &middot; <a href="https://github.com/norbert-walter/Windsensor_Yachta" target="_blank" rel="noopener">Hardware docs</a></div>
+    <div class="footer-controls">
+      <span>🎨 <select class="ctrl-select" id="themeSelect" onchange="setTheme(this.value)">
+        <option value="theme-dark" selected>Dark</option>
+        <option value="theme-light">Light</option>
+        <option value="theme-night">Night</option>
+        <option value="theme-bw">B&amp;W</option>
+      </select></span>
+      <span>🕐 Update: 5s</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+const DEVICE_HOST = 'https://yachta.norbert-walter.dnshome.de';
+const REFRESH_MS = 5000;
+let gauge = null;
+
+function setTheme(name) {
+  document.body.className = name;
+}
+
+function initGauge() {
+  gauge = new steelseries.WindDirection2('windGauge', {
+    size: 340,
+    section: null,
+    pointSymbolsVisible: true,
+    frameDesign: steelseries.FrameDesign.BLACK_METAL,
+    backgroundColor: steelseries.BackgroundColor.ANTHRACITE,
+    lcdVisible: true,
+    lcdColor: steelseries.LcdColor.STANDARD,
+    lcdTitleStrings: ['Direction °', 'Speed kn'],
+    pointerColor: steelseries.ColorDef.RED,
+    pointerColorAverage: steelseries.ColorDef.BLUE,
+    pointerTypeLatest: steelseries.PointerType.TYPE6,
+    pointerTypeAverage: steelseries.PointerType.TYPE1,
+    degreeScaleHalf: false
+  });
+}
+
+function setOnline(ok) {
+  const pill = document.getElementById('statusPill');
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  pill.className = 'status-pill' + (ok ? '' : ' offline');
+  dot.className = 'dot' + (ok ? '' : ' off');
+  text.textContent = ok ? 'Online' : 'Offline';
+}
+
+function applyState(dev) {
+  const mv = dev.MeasuringValues;
+  const net = dev.NetworkParameter;
+
+  const dir = mv.WindDirection.Value;
+  const spd = mv.WindSpeed.Value;
+  const devTemp = mv.DeviceTemperature.Value;
+  const res = mv.Resolution.Value;
+
+  if (gauge) {
+    gauge.setValueAnimatedLatest(dir);   // pointer + top LCD (wind direction)
+    gauge.setValueAverage(spd);          // bottom LCD (wind speed)
+  }
+
+  document.getElementById('dirVal').textContent = dir.toFixed(1);
+  document.getElementById('spdVal').textContent = spd.toFixed(2);
+  document.getElementById('resVal').textContent = res.toFixed(2);
+  document.getElementById('tempVal').textContent = devTemp.toFixed(1);
+  document.getElementById('signalQuality').textContent = net.ConnectionQuality.Value.toFixed(0);
+  document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+}
+
+async function fetchState() {
+  const t = Math.floor(Date.now() / 1000);
+  try {
+    const res = await fetch(DEVICE_HOST + '/json?t=' + t, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    applyState(data.Device);
+    setOnline(true);
+  } catch (err) {
+    console.error('read_state failed:', err);
+    setOnline(false);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', function () {
+  try {
+    initGauge();
+  } catch (err) {
+    console.error('Gauge init failed:', err);
+    document.getElementById('statusText').textContent = 'Gauge error';
+  }
+  fetchState();
+  setInterval(fetchState, REFRESH_MS);
+});
+</script>
+</body>
+</html>

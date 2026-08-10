@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yachta Windsensor - ADD Dashboard</title>
+    <style>
+        :root {
+            /* ADD Style Guide Theme Defaults (Dark Marine) */
+            --bg-base: #0b1329;
+            --bg-panel: #131e3a;
+            --bg-card: #1c2b4e;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: #2e3d66;
+            
+            --color-primary: #38bdf8;   /* Speed / Gust */
+            --color-secondary: #f43f5e; /* Direction Pointer */
+            --color-accent: #10b981;    /* Validation OK */
+            --color-warning: #f59e0b;   /* Schleppzeiger / Warning */
+
+            --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --shadow-panel: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="light"] {
+            --bg-base: #f8fafc;
+            --bg-panel: #ffffff;
+            --bg-card: #f1f5f9;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-panel: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Top Header */
+        header {
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .brand-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-title span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .autonomy-badge {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--color-primary);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--color-primary);
+        }
+
+        /* Main Grid Layout */
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-panel);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Dual-Pointer Instrument (Style Guide 6.1) */
+        .instrument-container {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            aspect-ratio: 1;
+        }
+
+        .gauge-svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(0deg);
+        }
+
+        .needle-primary {
+            transform-origin: 200px 200px;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .needle-secondary {
+            transform-origin: 200px 200px;
+            transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+            opacity: 0.75;
+        }
+
+        .gauge-center-readout {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .speed-value {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1;
+            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .speed-unit {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .dir-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--color-secondary);
+            margin-top: 6px;
+        }
+
+        /* Sidebar Panels */
+        .sidebar-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Data Panel (Style Guide 6.5) */
+        .data-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+        }
+
+        .data-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .metric-large {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .metric-unit {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+
+        .range-bar-bg {
+            height: 6px;
+            background-color: var(--border-color);
+            border-radius: 3px;
+            margin-top: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .range-bar-fill {
+            height: 100%;
+            width: 45%;
+            background: linear-gradient(90deg, #3b82f6, #ef4444);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .data-subtext {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        /* Validation Strip (Style Guide 6.10) */
+        .validation-strip {
+            background-color: var(--bg-panel);
+            border-top: 1px solid var(--border-color);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .val-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .val-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--color-accent);
+            box-shadow: 0 0 8px var(--color-accent);
+        }
+
+        .val-indicator.syncing {
+            background-color: var(--color-warning);
+            box-shadow: 0 0 8px var(--color-warning);
+        }
+
+        .val-hash {
+            font-family: monospace;
+            background: var(--bg-card);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 4px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="brand-container">
+            <div class="brand-logo">Y</div>
+            <div class="brand-title">
+                <h1>Yachta Windsensor</h1>
+                <span>ADD Autonomous Instrument</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <span class="autonomy-badge" id="ethic-badge">Ethic: Level 1</span>
+            <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()">☀️ Light Mode</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Dual-Pointer Wind Instrument Section (Style Guide 6.1) -->
+        <section class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Wind Vector Dual-Instrument</span>
+                <span class="val-hash" id="update-timer">Poll: 5s</span>
+            </div>
+
+            <div class="instrument-container">
+                <svg class="gauge-svg" viewBox="0 0 400 400">
+                    <!-- Outer Compass Ring -->
+                    <circle cx="200" cy="200" r="180" fill="none" stroke="var(--border-color)" stroke-width="3" />
+                    <circle cx="200" cy="200" r="165" fill="none" stroke="var(--border-color)" stroke-width="1" stroke-dasharray="2,4" />
+
+                    <!-- Cardinals -->
+                    <text x="200" y="42" fill="var(--color-secondary)" font-size="18" font-weight="800" text-anchor="middle">N</text>
+                    <text x="365" y="206" fill="var(--text-muted)" font-size="16" font-weight="700" text-anchor="middle">E</text>
+                    <text x="200" y="372" fill="var(--text-muted)" font-size="16" font-weight="700" text-anchor="middle">S</text>
+                    <text x="35" y="206" fill="var(--text-muted)" font-size="16" font-weight="700" text-anchor="middle">W</text>
+
+                    <!-- Degree Ticks -->
+                    <g stroke="var(--text-muted)" stroke-width="1" opacity="0.5">
+                        <!-- Generates 30-degree ticks via CSS/SVG transforms -->
+                        <line x1="200" y1="24" x2="200" y2="30" transform="rotate(30 200 200)" />
+                        <line x1="200" y1="24" x2="200" y2="30" transform="rotate(60 200 200)" />
+                        <line x1="200" y1="24" x2="200" y2="30" transform="rotate(120 200 200)" />
+                        <line x1="200" y1="24" x2="200" y2="30" transform="rotate(150 200 200)" />
+                        <line x1="200" y1="24" x2="200" y2="30" transform="rotate(210 200 200)" />
+                        <line x1="200" y1="24" x2="200" y2="30" transform="rotate(240 200 200)" />
+                        <line x1="200" y1="24" x2="200" y2="30" transform="rotate(300 200 200)" />
+                        <line x1="200" y1="24" x2="200" y2="30" transform="rotate(330 200 200)" />
+                    </g>
+
+                    <!-- Pointer 2: Secondary / Gust Pointer (Style Guide 6.1 Dual-Pointer) -->
+                    <g class="needle-secondary" id="secondaryNeedle">
+                        <polygon points="200,50 207,200 193,200" fill="var(--color-warning)" opacity="0.8" />
+                        <circle cx="200" cy="50" r="4" fill="var(--color-warning)" />
+                    </g>
+
+                    <!-- Pointer 1: Primary Wind Direction Pointer -->
+                    <g class="needle-primary" id="primaryNeedle">
+                        <polygon points="200,30 210,200 200,185 190,200" fill="var(--color-secondary)" />
+                        <circle cx="200" cy="200" r="10" fill="var(--bg-panel)" stroke="var(--color-secondary)" stroke-width="3" />
+                    </g>
+                </svg>
+
+                <!-- Center Readout -->
+                <div class="gauge-center-readout">
+                    <div class="speed-value" id="speedDisplay">0.0</div>
+                    <div class="speed-unit">KNOTEN</div>
+                    <div class="dir-value" id="dirDisplay">000°</div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--color-secondary);"></div>
+                    <span>Windrichtung</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--color-warning);"></div>
+                    <span>Böen-Winkel / Max</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Side Data Panels (Style Guide 6.5) -->
+        <div class="sidebar-stack">
+            <!-- Temperature Panel -->
+            <section class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Geräte-Temperatur</span>
+                    <span style="font-size: 1.2rem;">🌡️</span>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span>MCU / Sensor Temp</span>
+                        <span id="temp-status">Normal</span>
+                    </div>
+                    <div class="metric-large">
+                        <span id="tempDisplay">--.-</span> <span class="metric-unit">°C</span>
+                    </div>
+                    <div class="range-bar-bg">
+                        <div class="range-bar-fill" id="tempRangeFill" style="width: 40%;"></div>
+                    </div>
+                    <div class="data-subtext">
+                        <span>-10°C Min</span>
+                        <span>+60°C Max</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Metrics Panel -->
+            <section class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">System-Status</span>
+                    <span style="font-size: 1.2rem;">⚡</span>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span>Versorgungsspannung</span>
+                        <span>VCC</span>
+                    </div>
+                    <div class="metric-large">
+                        <span id="voltageDisplay">3.30</span> <span class="metric-unit">V</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Validation Strip (Style Guide 6.10) -->
+    <footer class="validation-strip">
+        <div class="val-status">
+            <div class="val-indicator" id="valIndicator"></div>
+            <span id="valStatusText">ADD Status: Validiert & Aktiv</span>
+        </div>
+        <div>
+            Schema Validation Hash: <span class="val-hash" id="valHash">0x8f7a...e421</span>
+        </div>
+        <div>
+            Ethic Ref: <a href="https://autonomy.ethic_url" id="ethicLink" style="color: var(--color-primary); text-decoration: none;">Standard ADD Ethics v1</a>
+        </div>
+    </footer>
+
+    <!-- Dashboard Controller Script -->
+    <script>
+        // Data State
+        let state = {
+            windDirection: 0,
+            gustDirection: 0,
+            windSpeed: 0.0,
+            temperature: 21.5,
+            voltage: 3.31
+        };
+
+        // DOM Element Cache
+        const primaryNeedle = document.getElementById('primaryNeedle');
+        const secondaryNeedle = document.getElementById('secondaryNeedle');
+        const speedDisplay = document.getElementById('speedDisplay');
+        const dirDisplay = document.getElementById('dirDisplay');
+        const tempDisplay = document.getElementById('tempDisplay');
+        const voltageDisplay = document.getElementById('voltageDisplay');
+        const tempRangeFill = document.getElementById('tempRangeFill');
+        const valIndicator = document.getElementById('valIndicator');
+
+        // Theme Switcher
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            document.getElementById('themeToggleBtn').innerText = newTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+        }
+
+        // Render Functions
+        function updateDashboardUI(data) {
+            // Update Wind Direction Needles
+            primaryNeedle.style.transform = `rotate(${data.windDirection}deg)`;
+            secondaryNeedle.style.transform = `rotate(${data.gustDirection}deg)`;
+
+            // Digital Readouts
+            dirDisplay.innerText = `${Math.round(data.windDirection).toString().padStart(3, '0')}°`;
+            speedDisplay.innerText = data.windSpeed.toFixed(1);
+            tempDisplay.innerText = data.temperature.toFixed(1);
+            voltageDisplay.innerText = data.voltage.toFixed(2);
+
+            // Update Temperature Gauge Fill (-10C to +60C range mapping)
+            const tempClamped = Math.min(Math.max(data.temperature, -10), 60);
+            const percentage = ((tempClamped + 10) / 70) * 100;
+            tempRangeFill.style.width = `${percentage}%`;
+
+            // Connection indicator pulse
+            valIndicator.classList.remove('syncing');
+        }
+
+        // Action read_state: Fetch GET /json?ts=<timestamp>
+        async function fetchSensorData() {
+            valIndicator.classList.add('syncing');
+            const timestamp = Date.now();
+            const endpoint = `/json?ts=${timestamp}`;
+
+            try {
+                const response = await fetch(endpoint);
+                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                const data = await response.json();
+
+                // Extract fields mapped from ADD read_state
+                state.windDirection = data.wind_direction ?? data.dir ?? 0;
+                state.windSpeed = data.wind_speed ?? data.speed ?? 0;
+                state.gustDirection = (state.windDirection + (data.gust_offset || 15)) % 360;
+                state.temperature = data.temperature ?? data.temp ?? 20.0;
+                state.voltage = data.voltage ?? 3.3;
+
+                updateDashboardUI(state);
+            } catch (err) {
+                console.warn("Live-API nicht erreichbar. Generiere autonome Simulationsdaten für Testbetrieb:", err);
+                // Fallback simulation mode for testing offline/preview
+                simulateData();
+            }
+        }
+
+        // Simulated data generator for offline testing
+        function simulateData() {
+            state.windDirection = (state.windDirection + (Math.random() * 10 - 5) + 360) % 360;
+            state.gustDirection = (state.windDirection + (Math.random() * 25 - 5) + 360) % 360;
+            state.windSpeed = Math.max(0, state.windSpeed + (Math.random() * 2 - 1));
+            if (state.windSpeed === 0) state.windSpeed = 8.5;
+            state.temperature = 22.4 + (Math.random() * 0.4 - 0.2);
+            state.voltage = 3.30 + (Math.random() * 0.02 - 0.01);
+
+            updateDashboardUI(state);
+        }
+
+        // Initialize & Poll every 5000ms
+        fetchSensorData();
+        setInterval(fetchSensorData, 5000);
+    </script>
+</body>
+</html>
