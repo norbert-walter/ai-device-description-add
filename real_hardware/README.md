@@ -18,6 +18,7 @@ This test device is permanently **publicly accessible on the internet** and is t
 
 can be demonstrated end-to-end with this test device. The result is a visible, working outcome that makes the value of ADD immediately tangible.
 
+---
 ## What Is the Yachta Windsensor?
 
 The Yachta Windsensor is an open-hardware wind sensor for sailboats, whose complete build plans have been published by Open Boat Projects and are continuously developed further by the community. All technical documentation, PCB files, and firmware variants are openly available in the repository.
@@ -39,6 +40,7 @@ This **built-in web frontend** already displays wind direction, wind speed, and 
 
 For this ADD test device, the hardware is identical to a regular Yachta Windsensor. Only the source of the measurement values has been replaced with a simulator, so that behavior can be tested reproducibly (e.g. defined wind shifts, gusts, or lulls) without having to actually mount the device outdoors.
 
+---
 ## Workflow From the ADD Document to the Dashboard
 
 Like any ADD-compatible device, this wind sensor provides its **ADD device description (JSON)** directly via its web interface.
@@ -71,6 +73,7 @@ The complete ADD specification and the style guide are located in the associated
 
 **https://github.com/norbert-walter/ai-device-description-add**
 
+---
 ## Example Prompt to Have the AI Carry Out the Complete Cycle
 
 The following prompt shows the minimal task definition needed for an AI to independently work through the complete cycle and build a new dashboard from it. Thanks to the `ui` block in the ADD document, the device's ADD URL alone is enough.
@@ -105,6 +108,7 @@ Important. Don't recreate a copy of the existing web frontend.
 Build an entirely new, freshly designed dashboard instead.
 ```
 
+---
 ## What Happens When You Use the Prompt?
 
 When an agent (e.g. Claude) works through the prompt above, it reads the ADD document, the Ethical Framework, and the style guide in sequence. It then calls `GET /json?t=<timestamp>` on the device and generates from that **a single, self-contained HTML file**, i.e. a finished dashboard with embedded CSS and JavaScript, exactly as the style guide prescribes as the workflow in Section 10.4 ("Generate self-contained HTML dashboard file").
@@ -137,10 +141,12 @@ This exact variation invites a deeper understanding of ADD. You can see directly
 
 Once a dashboard has been created, you don't have to start from scratch to change it. You can continue making adjustments directly in dialogue with the AI, for example "increase the font size of the display values", "make the refresh rate adjustable", or "add a temperature history as a chart". The agent then adapts the existing dashboard accordingly.
 
+---
 ## Why Simulated Data on Real Hardware?
 
 The purpose of this setup is to test ADD implementations (device description, safety rules, dashboard generation) against a **real, physically existing device**, including real network latency, a real web interface, and real firmware, without depending on actual sailing weather. The simulated values vary slightly and cover the entire typical value range, to test the behavior of AI agents under controlled, reproducible conditions.
 
+---
 ## Model Comparison Between Different AI Models
 
 To examine how well different AI models can implement the task described above, the same prompt was given to several models and each result was rated across several categories. The rating scale runs from 1 to 10. A 10 means all requirements in that category were met, relative to the model with the best result in that category.
