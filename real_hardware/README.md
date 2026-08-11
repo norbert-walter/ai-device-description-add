@@ -1,12 +1,14 @@
 # ADD Test Device Yachta Windsensor (Real Hardware, Simulated Sensor Data)
 
 <img src="../pictures/Yachta_Wind_Sensor.png" alt="ADD Simulator" width="119">
-Pic: Wind Sensor Yachta  
+Pic: Wind Sensor Yachta
+
 
 This document describes a **real test device for AI Device Description (ADD)**. It is a [Yachta Windsensor](https://github.com/norbert-walter/Windsensor_Yachta) for sailboats, a classic IoT device. The electronics run on a genuine ESP8266 on the original Yachta PCB.
 
 <img src="../pictures/Yachta_BCP_V2.1.png" alt="ADD Simulator" width="200">
-Pic: Yachta PCB with ESP8266  
+Pic: Yachta PCB with ESP8266
+
 
 The returned sensor readings (wind direction, wind speed, etc.) are **simulated** for this test setup, however. This makes the device ideal for testing AI agents and dashboards against an ADD-compatible device without depending on real sailing weather.
 
