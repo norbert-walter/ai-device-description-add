@@ -1421,7 +1421,7 @@ The device author bears full responsibility for the final document. The AI produ
 <a id="sec-12-2-authoring-workflow"></a>
 ### 12.2 The Authoring Workflow
 
-<img src="../pictures/Workflow_ADD_Document_EN.png" alt="ADD Workflow" width="800">
+<img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/Workflow_ADD_Document_EN.png" alt="ADD Workflow" width="800">
 
 **Phase 1 — Device Exploration**
 

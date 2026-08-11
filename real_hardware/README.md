@@ -1,10 +1,10 @@
 # ADD Test Device Yachta Windsensor (Real Hardware, Simulated Sensor Data)
 
-<img src="../pictures/Yachta_Wind_Sensor.png" alt="ADD Simulator" width="119">
+<img src="../pictures/Yachta_Wind_Sensor.png" alt="Yachta Wind Sensor" width="119">
 
 This document describes a **real test device for AI Device Description (ADD)**. It is a [Yachta Windsensor](https://github.com/norbert-walter/Windsensor_Yachta) for sailboats, a classic IoT device. The electronics run on a genuine ESP8266 on the original Yachta PCB.
 
-<img src="../pictures/Yachta_BCP_V2.1.png" alt="ADD Simulator" width="200">
+<img src="../pictures/Yachta_BCP_V2.1.png" alt="Yachta PCB" width="200">
 
 The returned sensor readings (wind direction, wind speed, etc.) are **simulated** for this test setup, however. This makes the device ideal for testing AI agents and dashboards against an ADD-compatible device without depending on real sailing weather.
 
@@ -130,7 +130,7 @@ Depending on the environment, the agent either delivers this file as an artifact
 4. **Watch out for CORS**. Since the dashboard runs as a local file (`file://`) and sends requests to an external domain, depending on browser security settings you may run into CORS restrictions. If that happens, it helps to serve the file via a simple local web server instead (e.g. `python3 -m http.server` in the file's folder and then open `http://localhost:8000/yachta_dashboard.html`), or to upload the file directly to your own web space/GitHub Pages.
 5. **Live test**. Once the dashboard loads, a new measurement should appear from the device every 5 seconds. The validation strip shows the most recently known ADD validation status from the `validation` block.
 
-<img src="../pictures/Dashboard_Claude_Sonnet4.png" alt="ADD Simulator" width="800">
+<img src="../pictures/Dashboard_Claude_Sonnet4.png" alt="Dashboard Claude Sonnet4" width="800">
 Pic: Dashboard created with Claude Sonnet4
 
 ### An Invitation to Experiment
