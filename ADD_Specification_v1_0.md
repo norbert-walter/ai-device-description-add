@@ -1421,6 +1421,8 @@ The device author bears full responsibility for the final document. The AI produ
 <a id="sec-12-2-authoring-workflow"></a>
 ### 12.2 The Authoring Workflow
 
+<img src="../pictures/Workflow_ADD_Document_EN.png" alt="ADD Simulator" width="800">
+
 **Phase 1 — Device Exploration**
 
 The AI reads the ADD specification, then systematically explores the device: it retrieves the HTML source of the web interface, identifies visible controls and input fields, discovers API endpoints by examining links and JavaScript, makes HTTP GET requests to discovered endpoints, and analyzes the responses. It maps everything it finds to the seven ADD blocks.
