@@ -43,8 +43,6 @@ For this ADD test device, the hardware is identical to a regular Yachta Windsens
 ---
 ## Workflow From the ADD Document to the Dashboard
 
-<img src="../pictures/Workflow_Dashboard_Windsensor_EN.png" alt="ADD Simulator" width="800">
-
 Like any ADD-compatible device, this wind sensor provides its **ADD device description (JSON)** directly via its web interface.
 
 **https://yachta.norbert-walter.dnshome.de/add**
@@ -60,6 +58,8 @@ Besides `device`, `security`, `interfaces`, `actions`, `rules`, and `validation`
 ```
 
 This means the complete cycle can be derived **from that single ADD URL alone**. An agent no longer needs to be given the style guide separately; it finds it right there in the device document. That is precisely the point of a self-describing device. An AI agent goes through the full cycle
+
+<img src="../pictures/Workflow_Dashboard_Windsensor_EN.png" alt="ADD Simulator" width="800">
 
 > **Task definition → Read ADD → Understand the device → Plan the task → Implement the task**
 
