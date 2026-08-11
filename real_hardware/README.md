@@ -43,6 +43,8 @@ For this ADD test device, the hardware is identical to a regular Yachta Windsens
 ---
 ## Workflow From the ADD Document to the Dashboard
 
+<img src="../pictures/Workflow_Dashboard_Windsensor_EN.png" alt="ADD Simulator" width="800">
+
 Like any ADD-compatible device, this wind sensor provides its **ADD device description (JSON)** directly via its web interface.
 
 **https://yachta.norbert-walter.dnshome.de/add**
