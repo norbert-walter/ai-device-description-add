@@ -10,7 +10,14 @@ The returned sensor readings (wind direction, wind speed, etc.) are **simulated*
 
 This test device is permanently **publicly accessible on the internet** and is thus **freely available to anyone** who wants to try out ADD functionality for themselves. It is reachable at [https://yachta.norbert-walter.dnshome.de](https://yachta.norbert-walter.dnshome.de). No device of your own, no access credentials, and no registration are required. Any AI agent can fetch the ADD device description directly and experiment with it.
 
-**What does this example actually demonstrate?** The Yachta Windsensor already ships with its own, hard-coded web frontend (see below). But the real point of this test setup is something else. An AI that knows *nothing* about this specific device beyond its ADD description reads it independently, understands the measurements and actions, and plans a suitable dashboard from that. It then **builds an entirely new, standalone web dashboard** that has nothing to do with the built-in frontend. The device itself required neither modification nor reflashing. This exact full cycle
+---
+## What does this example actually demonstrate?
+
+The Yachta Windsensor already ships with its own, hard-coded web frontend (see below).
+
+<img src="../pictures/Yachta_Instrument.png" alt="Dashboard Claude Sonnet4" width="200">
+
+But the real point of this test setup is something else. An AI that knows *nothing* about this specific device beyond its ADD description reads it independently, understands the measurements and actions, and plans a suitable dashboard from that. It then **builds an entirely new, standalone web dashboard** that has nothing to do with the built-in frontend. The device itself required neither modification nor reflashing. This exact full cycle
 
 > **Task definition → Read ADD → Understand the device → Plan the task → Implement the task**
 
@@ -130,7 +137,7 @@ Depending on the environment, the agent either delivers this file as an artifact
 4. **Watch out for CORS**. Since the dashboard runs as a local file (`file://`) and sends requests to an external domain, depending on browser security settings you may run into CORS restrictions. If that happens, it helps to serve the file via a simple local web server instead (e.g. `python3 -m http.server` in the file's folder and then open `http://localhost:8000/yachta_dashboard.html`), or to upload the file directly to your own web space/GitHub Pages.
 5. **Live test**. Once the dashboard loads, a new measurement should appear from the device every 5 seconds. The validation strip shows the most recently known ADD validation status from the `validation` block.
 
-<img src="../pictures/Dashboard_Claude_Sonnet4.png" alt="Dashboard Claude Sonnet4" width="800">
+<img src="../pictures/Dashboard_Claude_Sonnet4.png" alt="Dashboard Claude Sonnet4" width="600">
 Pic: Dashboard created with Claude Sonnet4
 
 ### An Invitation to Experiment
