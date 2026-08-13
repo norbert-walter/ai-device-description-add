@@ -186,11 +186,24 @@ An AI reading this document immediately knows what the device is, how to control
 
 ---
 
+## Equipment
+
+The hardware used for developing and testing ADD-compatible devices and AI models.
+
+| Equipment | Specification |
+|---|---|
+| **Dell Micro PC** | i5-14500T, 64GB RAM — runs Local AI with 50 different AI models for offline/on-premise testing |
+| **Dell Precision 5820** | RX 6700 XT (12GB VRAM), 128GB RAM, 1 GB SSD, 8TB HDD — used for fast small LLM inference (Vulkan/llama.cpp) |
+| **KI Server (Planning)** | 6x NVIDIA P100 16 GB, 96GB VRAM, 1TB SSD — used for fast biger LLM inference and multi agent systems |
+| **IoT test devices** | Various Sonoff devices (Tasmota), Yachta Windsensor, OBP60/OBP40 multifunction display |
+
+---
+
 ## Next Steps
 
 ADD is not only a device description format — it is the technical substrate for a broader research agenda on the safe operation of LLM-controlled physical systems. The following items outline planned next steps, grouped into open research questions, hardware needs, and concrete implementation work.
 
-This work is currently pursued in spare time, alongside a full-time job, which means progress is only possible in small steps. A funded research fellowship would allow it to move significantly faster. An application to **Anthropic's Fellows Program** has been submitted and is currently in the selection process.
+This work is currently pursued in spare time, alongside a full-time job, which means progress is only possible in small steps. A funded research fellowship would allow it to move significantly faster. An application to Anthropic's Fellows Program has been submitted and is currently in the selection process.
 
 ### Research Agenda
 
