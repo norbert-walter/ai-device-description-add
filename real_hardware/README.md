@@ -120,6 +120,7 @@ https://github.com/norbert-walter/Windsensor_Yachta
 Important. Don't recreate a copy of the existing web frontend.
 Build an entirely new, freshly designed dashboard instead.
 ```
+> **Tip:** If the AI ​​refuses to read the endpoint https://yachta.norbert-walter.dnshome.de/add because it is not an HTML page, use the following endpoint: https://yachta.norbert-walter.dnshome.de/add
 
 ---
 ## What Happens When You Use the Prompt?
