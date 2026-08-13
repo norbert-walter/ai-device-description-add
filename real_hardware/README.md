@@ -11,7 +11,7 @@ The returned sensor readings (wind direction, wind speed and temperature) are **
 This test device is permanently **publicly accessible on the internet** and is thus **freely available to anyone** who wants to try out ADD functionality for themselves. It is reachable at [https://yachta.norbert-walter.dnshome.de](https://yachta.norbert-walter.dnshome.de). No device of your own, no access credentials, and no registration are required. Any AI agent can fetch the ADD device description directly and experiment with it.
 
 > **Usage notes:** Due to limited shared resources, the Yachta wind sensor can support only 5 display devices or dashboards simultaneously.
-> If the Yachta becomes sluggish, close all display devices accessing it and try again later.
+> If the Yachta wind sensor becomes sluggish, close all display devices accessing it and try again later.
 > The Yachta wind sensor is reset at regular intervals to terminate any remaining open connections.
 
 ---
