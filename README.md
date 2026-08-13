@@ -192,6 +192,7 @@ The hardware used for developing and testing ADD-compatible devices and AI model
 
 | Equipment | Specification |
 |---|---|
+| **Docker Desktop** | Universal, flexible, and portable [Docker-based system for testing AI models](https://github.com/norbert-walter/localai) based on LocalAI. |
 | **Dell Optiplex Micro 7020** | i5-14500T, 64GB RAM — runs local AI with 50 different AI models for offline/on-premise testing |
 | **Dell Precision 5820** (Planning) | RX 6700 XT (12GB VRAM), 128GB RAM, 8TB HDD — used for LLM inference (Vulkan/llama.cpp) |
 | **IoT test devices** | Various Sonoff devices, Yachta Windsensor, OBP60/OBP40 multifunction display |
