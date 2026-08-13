@@ -21,7 +21,7 @@ The Yachta Windsensor already ships with its own, hard-coded web frontend (see b
 
 <img src="../pictures/Yachta_Instrument.png" alt="Dashboard Claude Sonnet4" width="200">
 
-But the real point of this test setup is something else. An AI that knows *nothing* about this specific device beyond its ADD description reads it independently, understands the measurements and actions, and plans a suitable dashboard from that. It then **builds an entirely new, standalone web dashboard** that has nothing to do with the built-in frontend. The device itself required neither modification nor reflashing. This exact full cycle
+But the real point of this test setup is something else. **An AI that knows nothing about this specific device beyond its ADD description** reads it independently, understands the measurements and actions, and plans a suitable dashboard from that. It then **builds an entirely new, standalone web dashboard** that has nothing to do with the built-in frontend. The device itself required neither modification nor reflashing. This exact full cycle
 
 > **Task definition → Read ADD → Understand the device → Plan the task → Implement the task**
 
