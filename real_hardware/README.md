@@ -175,24 +175,26 @@ Rated categories:
 
 An overall score was calculated across all categories. Additionally, the number of corrections needed until the dashboard was functional and displayed changing content was recorded. Some models (Gemini, Qwen) only simulated the functionality; no corrections were made for these models. Mistral was able to display neither simulated nor live data.
 
-| Rating 1...10 | Claude Sonnet 5 | ChatGPT 5.6 sol | Gemini 3.6 | Mistral Vibe | Kimi K3 flash | Qwen3.5 4B |
+| Rating 1...10 | Claude Sonnet 5 | ChatGPT 5.6 sol | Gemini 3.6 flash| Mistral Vibe | Kimi K3 flash | Qwen3.5 4B |
 |---|---|---|---|---|---|---|
 | Dashboard Look | 9 | 10 | 3 | 1 | 8 | 2 |
 | Layout Accuracy | 10 | 8 | 2 | 1 | 9 | 2 |
 | Instrument | 10 | 10 | 2 | 1 | 9 | 2 |
-| Theme | 4 | 4 | 2 | 0 | 4 | 0 |
+| Theme | 4 | 0 | 2 | 0 | 4 | 0 |
 | Feature Scope | 8 | 9 | 1 | 1 | 10 | 1 |
 | Functionality | 10 | 10 | 1 | 1 | 10 | 1 |
-| **Score** | **51** | **51** | **11** | **5** | **50** | **8** |
+| **Score** | **51** | **47** | **11** | **5** | **50** | **8** |
 | Number of Corrections | 1 | 0 | 0 | 0 | 5 | 0 |
 
 For all dashboards as HTML file refer this folder (see top).
 
 ### Assessment
 
-**Claude Sonnet 5 and ChatGPT 5.6 sol** are tied at the top with 51 points each. Both implement layout, the specified instrument, and live functionality almost completely. ChatGPT scores marginally higher on the visual look, Claude on layout accuracy; overall, their respective strengths balance out.
+**Claude Sonnet 5** leads the comparison with 51 points, the highest overall score. It implements layout, the specified instrument, and live functionality almost completely, and achieves the best result of all models for layout accuracy.
 
-**Kimi K3 flash** follows closely with 50 points, and even achieves the best score for feature scope. However, that came at the cost of 5 corrections, noticeably more than any other model. This reflects a common pattern. A richer, more ambitious feature set also increases the risk of implementation bugs before the dashboard is actually functional.
+**Kimi K3 flash** follows closely with 50 points, just one point behind, and even achieves the best score for feature scope. However, that came at the cost of 5 corrections, noticeably more than any other model. This reflects a common pattern. A richer, more ambitious feature set also increases the risk of implementation bugs before the dashboard is actually functional.
+
+**ChatGPT 5.6 sol** takes third place with 47 points, still close behind the top two. It scores highest of all models on Dashboard Look and needed no corrections to reach a working result, but loses ground with a Theme score of 0 and lower layout accuracy.
 
 **Gemini 3.6 and Qwen3.5 4B** fall well behind with 11 and 8 points respectively. Both models only simulated the live data connection instead of actually implementing it, which is directly reflected in low scores for feature scope and functionality. They also largely missed the style guide's requirements for the instrument and theme, suggesting these models were not able to reliably implement the style guide's structural requirements.
 
@@ -204,10 +206,10 @@ As the underlying methodology, the test was run only once per AI model, to deter
 
 ### Conclusion
 
-Which model is best suited? For this kind of task, i.e. independently reading an ADD device description, understanding a style guide, and directly implementing it as a working dashboard that operates on live device data, **Claude Sonnet 5 and ChatGPT 5.6 sol** are clearly in the lead. Both achieve the highest overall score and implement both the specified instrument and the live data connection nearly flawlessly.
+Which model is best suited? For this kind of task, i.e. independently reading an ADD device description, understanding a style guide, and directly implementing it as a working dashboard that operates on live device data, **Claude Sonnet 5** is clearly in the lead with the highest overall score. It achieves the best result for layout accuracy, implements the specified instrument and the live data connection nearly flawlessly, and needed only one small correction to reach a fully functional result.
 
-Between the two, in practice I'd lean toward **Claude Sonnet 5**. It achieves the best score for layout accuracy, needed only one small correction, and delivers the most balanced result across all categories. ChatGPT is an equally strong alternative for this task and scores marginally higher on pure visual appearance.
+**Kimi K3 flash** and **ChatGPT 5.6 sol** follow closely behind as strong alternatives. Kimi K3 flash trails by just a single point and delivers the richest feature set of all models tested, though at the cost of five correction cycles before the dashboard worked reliably. ChatGPT 5.6 sol needed no corrections at all and scores marginally higher on pure visual appearance, but falls behind on layout accuracy and theme implementation.
 
-Anyone who values a particularly rich feature set and is willing to plan for more correction cycles could also consider **Kimi K3 flash**. It trails the top models only narrowly but required significantly more rework before the dashboard was actually functional. For production use without much follow-up correction, Gemini 3.6, Qwen3.5 4B, and especially Mistral Vibe are not currently recommended based on this test, since they don't reliably meet the core requirement, correctly reading and displaying live data according to ADD.
+For production use without much follow-up correction, Gemini 3.6, Qwen3.5 4B, and especially Mistral Vibe are not currently recommended based on this test, since they don't reliably meet the core requirement, correctly reading and displaying live data according to ADD.
 
 It's worth noting that Qwen3.5-4B was included somewhat outside the regular field. It's a very small AI model, and its main appeal is that it can run on consumer hardware such as an ordinary PC rather than requiring cloud infrastructure. Given that, it's a notable result that it performed clearly better than Mistral Vibe.
