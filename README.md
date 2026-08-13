@@ -232,7 +232,7 @@ This work is currently pursued in spare time, alongside a full-time job, which m
 | Status | Topic | Description |
 |---|---|---|
 | ✅ | **Yachta Windsensor ADD rollout** | Ship ADD-enabled firmware to all ~250 delivered Yachta Windsensor boards, so existing users can live-test ADD on real, already-deployed hardware |
-| 📋 | **Tasmota firmware integration** | Integrate ADD directly into Tasmota firmware to enable broad, low-friction real-world application testing across the large installed base of Tasmota-flashed devices — pending discussion with the Tasmota maintainer on feasibility |
+| 📋 | **Tasmota firmware integration** | Integrate ADD directly into [Tasmota firmware](https://tasmota.github.io/docs/) to enable broad, low-friction real-world application testing across the large installed base of Tasmota-flashed devices — pending discussion with the Tasmota maintainer on feasibility |
 | 📋 | **Industrial plant component model — ADD implementation** | Equip the plant component model with ADD and run simulations on it, extending validation from single devices to the full multi-component system |
 
 ---
