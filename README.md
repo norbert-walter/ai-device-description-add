@@ -192,10 +192,9 @@ The hardware used for developing and testing ADD-compatible devices and AI model
 
 | Equipment | Specification |
 |---|---|
-| **Dell Micro PC** | i5-14500T, 64GB RAM — runs Local AI with 50 different AI models for offline/on-premise testing |
-| **Dell Precision 5820** | RX 6700 XT (12GB VRAM), 128GB RAM, 1 GB SSD, 8TB HDD — used for fast small LLM inference (Vulkan/llama.cpp) |
-| **KI Server (Planning)** | 6x NVIDIA P100 16 GB, 96GB VRAM, 1TB SSD — used for fast biger LLM inference and multi agent systems |
-| **IoT test devices** | Various Sonoff devices (Tasmota), Yachta Windsensor, OBP60/OBP40 multifunction display |
+| **Dell Micro PC** | i5-14500T, 64GB RAM — runs local AI with 50 different AI models for offline/on-premise testing |
+| **Dell Precision 5820** | RX 6700 XT (12GB VRAM), 128GB RAM, 8TB HDD — used for LLM inference (Vulkan/llama.cpp) |
+| **IoT test devices** | Various Sonoff devices, Yachta Windsensor, OBP60/OBP40 multifunction display |
 
 ---
 
@@ -205,34 +204,36 @@ ADD is not only a device description format — it is the technical substrate fo
 
 This work is currently pursued in spare time, alongside a full-time job, which means progress is only possible in small steps. A funded research fellowship would allow it to move significantly faster. An application to **Anthropic's Fellows Program** has been submitted and is currently in the selection process.
 
+**Status:** 📋 Planning · 🔧 In progress · ✅ Done · ❓ Open questions
+
 ### Research Agenda
 
-| Topic | Description |
-|---|---|
-| **Systematic multi-model testing** | Extend cross-model testing (simulator and real hardware) beyond the models already compared, covering a wider range of frontier and local/open-weight models under identical structured task protocols |
-| **Systematic evaluation methodology** | Formalize the evaluation process itself — reproducible test protocols, metrics for rule adherence and rule dilution, regression testing across model versions, and a documented benchmark suite others can run against their own ADD devices |
-| **Secured framework concept** | Develop a concept for a hardened ADD deployment framework that integrates all required security components (authentication, tool fingerprinting, model identity verification, hardware-enforced session limits) into a coherent, deployable architecture rather than isolated mechanisms |
-| **Adversarial / red-team evaluation** | Systematically probe rule robustness with adversarial and open-ended task framings (as surfaced by the Gemini/Antigravity test) rather than only structured, ADD-first workflows — to map which framings cause models to self-interpret around stated constraints |
-| **Rule-interpretation auditing** | Build on the "Regelverständnis bestätigen" finding: develop a general method for making a model's interpretation of binding rules explicit and checkable *before* it acts, and measure how well this predicts safe behavior across models and tasks |
-| **Human-in-the-loop expert system study** | Pilot the pre/post-rating recommendation architecture for industrial fault diagnosis on a real or realistic case set, measuring both diagnostic quality and knowledge-transfer value against the Fachkräftemangel use case |
-| **Long-run autonomy drift study** | Quantify rule dilution and context-length effects over long-running autonomous sessions (checkpointing, ethic_core renewal) systematically, rather than case-by-case, to derive general renewal-interval guidance |
-| **Comparison to established safety standards** | Relate ADD's autonomy levels and layered-safety approach to existing functional-safety frameworks (e.g. IEC 61508, ISO 12100) to clarify where ADD complements vs. departs from established industrial safety practice |
-| **Public writeup / publication** | Consolidate the accumulated findings (entry-point framing, rule dilution, tool-fingerprinting, multi-model comparisons) into a citable writeup or paper suitable for external review and community feedback |
+| Status | Topic | Description |
+|---|---|---|
+| 🔧 | **Systematic multi-model testing** | Extend cross-model testing (simulator and real hardware) beyond the models already compared, covering a wider range of frontier and local/open-weight models under identical structured task protocols |
+| 🔧 | **Systematic evaluation methodology** | Formalize the evaluation process itself — reproducible test protocols, metrics for rule adherence and rule dilution, regression testing across model versions, and a documented benchmark suite others can run against their own ADD devices |
+| ❓ | **Secured framework concept** | Develop a concept for a hardened ADD deployment framework that integrates all required security components (authentication, tool fingerprinting, model identity verification, hardware-enforced session limits) into a coherent, deployable architecture rather than isolated mechanisms |
+| 🔧 | **Adversarial / red-team evaluation** | Systematically probe rule robustness with adversarial and open-ended task framings (as surfaced by the Gemini/Antigravity test) rather than only structured, ADD-first workflows — to map which framings cause models to self-interpret around stated constraints |
+| 🔧 | **Rule-interpretation auditing** | Build on the "Regelverständnis bestätigen" finding: develop a general method for making a model's interpretation of binding rules explicit and checkable *before* it acts, and measure how well this predicts safe behavior across models and tasks |
+| 📋 | **Human-in-the-loop expert system study** | Pilot the pre/post-rating recommendation architecture for industrial fault diagnosis on a real or realistic case set, measuring both diagnostic quality and knowledge-transfer value against the Fachkräftemangel use case |
+| 🔧 | **Long-run autonomy drift study** | Quantify rule dilution and context-length effects over long-running autonomous sessions (checkpointing, ethic_core renewal) systematically, rather than case-by-case, to derive general renewal-interval guidance |
+| 📋 | **Comparison to established safety standards** | Relate ADD's autonomy levels and layered-safety approach to existing functional-safety frameworks (e.g. IEC 61508, ISO 12100) to clarify where ADD complements vs. departs from established industrial safety practice |
+| 📋 | **Public writeup / publication** | Consolidate the accumulated findings (entry-point framing, rule dilution, tool-fingerprinting, multi-model comparisons) into a citable writeup or paper suitable for external review and community feedback |
 
 ### Hardware
 
-| Topic | Description |
-|---|---|
-| **Multi-agent AI hardware acquisition** | Procure flexible, adaptable AI hardware capable of running multi-agent systems, to enable automated, repeatable test runs (e.g. Captain Principle setups, concurrent Actor/Observer agents) beyond what current single-node local inference hardware supports |
-| **Industrial plant component model — build/acquire** | Build or acquire a real functional model of an industrial plant component, to serve as a representative multi-component test platform beyond single devices (sensors, cooling valve) |
+| Status | Topic | Description |
+|---|---|---|
+| 🔧 | **Multi-agent AI hardware acquisition** | Procure flexible, adaptable AI hardware capable of running multi-agent systems, to enable automated, repeatable test runs (e.g. Captain Principle setups, concurrent Actor/Observer agents) beyond what current single-node local inference hardware supports |
+| 🔧 | **Industrial plant component model — build/acquire** | Build or acquire a real functional model of an industrial plant component, to serve as a representative multi-component test platform beyond single devices (sensors, cooling valve) |
 
 ### Implementation
 
-| Topic | Description |
-|---|---|
-| **Yachta Windsensor ADD rollout** | Ship ADD-enabled firmware to all ~250 delivered Yachta Windsensor boards, so existing users can live-test ADD on real, already-deployed hardware |
-| **Tasmota firmware integration** | Integrate ADD directly into Tasmota firmware to enable broad, low-friction real-world application testing across the large installed base of Tasmota-flashed devices — pending discussion with the Tasmota maintainer on feasibility |
-| **Industrial plant component model — ADD implementation** | Equip the plant component model with ADD and run simulations on it, extending validation from single devices to the full multi-component system |
+| Status | Topic | Description |
+|---|---|---|
+| 🔧 | **Yachta Windsensor ADD rollout** | Ship ADD-enabled firmware to all ~250 delivered Yachta Windsensor boards, so existing users can live-test ADD on real, already-deployed hardware |
+| 📋 | **Tasmota firmware integration** | Integrate ADD directly into Tasmota firmware to enable broad, low-friction real-world application testing across the large installed base of Tasmota-flashed devices — pending discussion with the Tasmota maintainer on feasibility |
+| 📋 | **Industrial plant component model — ADD implementation** | Equip the plant component model with ADD and run simulations on it, extending validation from single devices to the full multi-component system |
 
 ---
 
