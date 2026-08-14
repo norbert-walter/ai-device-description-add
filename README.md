@@ -186,6 +186,8 @@ An AI reading this document immediately knows what the device is, how to control
 
 ---
 
+**Status:** 📋 Planning · 🔧 In progress · ✅ Done · ❓ Open questions
+
 ## Equipment
 
 The hardware used for developing and testing ADD-compatible devices and AI models.
@@ -205,8 +207,6 @@ The hardware used for developing and testing ADD-compatible devices and AI model
 ADD is not only a device description format — it is the technical substrate for a broader research agenda on the safe operation of LLM-controlled physical systems. The following items outline planned next steps, grouped into open research questions, hardware needs, and concrete implementation work.
 
 This work is currently pursued in spare time, alongside a full-time job, which means progress is only possible in small steps. A funded research fellowship would allow it to move significantly faster. An application to **Anthropic's Fellows Program** has been submitted and is currently in the selection process.
-
-**Status:** 📋 Planning · 🔧 In progress · ✅ Done · ❓ Open questions
 
 ### Research Agenda
 
