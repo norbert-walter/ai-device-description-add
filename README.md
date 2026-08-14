@@ -222,6 +222,17 @@ This work is currently pursued in spare time, alongside a full-time job, which m
 | 📋 | **Comparison to established safety standards** | Relate ADD's autonomy levels and layered-safety approach to existing functional-safety frameworks (e.g. IEC 61508, ISO 12100) to clarify where ADD complements vs. departs from established industrial safety practice |
 | 📋 | **Public writeup / publication** | Consolidate the accumulated findings (entry-point framing, rule dilution, tool-fingerprinting, multi-model comparisons) into a citable writeup or paper suitable for external review and community feedback |
 
+### Software
+
+| Status | Topic | Description |
+|---|---|---|
+| ✅ | **Docker LocalAI** | Universal, flexible, and portable [Docker-based system for testing AI models](https://github.com/norbert-walter/localai) based on LocalAI. |
+| ✅ | **MCP Server** | MCP server for server-side services (fetch, time, search, wait, tasmota), docker based container, hostet on [Docker Hub](https://hub.docker.com/u/openboatprojects) |
+| ✅ | **MCP Server** | MCP server for client-side services (fetch, time, search, file, github), docker based container, hostet on [Docker Hub](https://hub.docker.com/r/openboatprojects/mcp-proxy-llama-ui) |
+| ✅ | **Test Scripts** | Test routine for an automated test workflow spanning multiple cycles, including logging |
+| ✅ | **ADD Simulator** | Simulates a Tasmota device (valve) with ADD, including logging, Docker-based container hosted on [Docker Hub](https://hub.docker.com/r/openboatprojects/add-simulator). |
+| 📋 | **Test Bench** | Comprehensive test bench for the systematic qualification of AI systems for ADD |
+
 ### Hardware
 
 | Status | Topic | Description |
