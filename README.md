@@ -190,13 +190,13 @@ An AI reading this document immediately knows what the device is, how to control
 
 The hardware used for developing and testing ADD-compatible devices and AI models.
 
-| Equipment | Specification |
-|---|---|
-| **Docker Desktop** | Universal, flexible, and portable [Docker-based system for testing AI models](https://github.com/norbert-walter/localai) based on LocalAI. |
-| **Dell Optiplex Micro 7020** | i5-14500T, 64GB RAM — runs local AI with 50 different AI models for offline/on-premise testing |
-| **Dell Precision 5820** | RX 6700 XT (12GB VRAM), 128GB RAM, 8TB HDD — used for small LLM inference (Vulkan/llama.cpp) |
-| **KI Server (Planning)** | 6x NVIDIA P100 16 GB, 96GB VRAMm 1TB SSD — used for bigger LLM inference (CUDA/llama.cpp) and multi agent systems |
-| **IoT test devices** | Various Sonoff devices, Yachta Windsensor, OBP60/OBP40 multifunction display |
+| Status | Equipment | Specification |
+|---|---|---|
+| ✅ | **Docker Desktop** | Universal, flexible, and portable [Docker-based system for testing AI models](https://github.com/norbert-walter/localai) based on LocalAI. |
+| ✅ | **Dell Optiplex Micro 7020** | i5-14500T, 64GB RAM — runs local AI with 50 different AI models for offline/on-premise testing |
+| ✅ | **Dell Precision 5820** | RX 6700 XT (12GB VRAM), 128GB RAM, 8TB HDD — used for small LLM inference (Vulkan/llama.cpp) |
+| 🔧 | **KI Server** | 6x NVIDIA P100 16 GB, 96GB VRAMm 1TB SSD — used for bigger LLM inference (CUDA/llama.cpp) and multi agent systems |
+| ✅ | **IoT test devices** | Various Sonoff devices, Yachta Windsensor, OBP60/OBP40 multifunction display |
 
 ---
 
