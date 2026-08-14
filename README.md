@@ -221,7 +221,7 @@ This work is currently pursued in spare time, alongside a full-time job, which m
 | 📋 | **Human-in-the-loop expert system study** | Pilot the pre/post-rating recommendation architecture for industrial fault diagnosis on a real or realistic case set, measuring both diagnostic quality and knowledge-transfer value against the Fachkräftemangel use case |
 | 🔧 | **Long-run autonomy drift study** | Quantify rule dilution and context-length effects over long-running autonomous sessions (checkpointing, ethic_core renewal) systematically, rather than case-by-case, to derive general renewal-interval guidance |
 | 📋 | **Comparison to established safety standards** | Relate ADD's autonomy levels and layered-safety approach to existing functional-safety frameworks (e.g. IEC 61508, ISO 12100) to clarify where ADD complements vs. departs from established industrial safety practice |
-| 📋 | **Public writeup / publication** | Consolidate the accumulated findings (entry-point framing, rule dilution, tool-fingerprinting, multi-model comparisons) into a citable writeup or paper suitable for external review and community feedback |
+| 🔧 | **Public writeup / publication** | Consolidate the accumulated findings (entry-point framing, rule dilution, tool-fingerprinting, multi-model comparisons) into a citable writeup or paper suitable for external review and community feedback |
 
 ### Software
 
