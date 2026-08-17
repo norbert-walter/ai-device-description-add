@@ -3,7 +3,6 @@
   "version": "1.0",
   "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Specification_v1_0.html",
   "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
-  "doc_url": "https://templates.blakadder.com/sonoff_S20.html",
 
   "autonomy": {
     "level": 1,
@@ -12,6 +11,7 @@
       "scope_of_effect": 0,
       "error_tolerance": 0
     },
+    "ethic_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Ethical_Framework_Basic_v1.0",
     "ethic_core": {
       "never": [
         "Act against the interests of the device owner",
@@ -27,25 +27,22 @@
   "device": {
     "name": "Tasmota Generic Switch",
     "type": "actuator",
-    "ip":"add-simulator.norbert-walter.dnshome.de",
+    "ip": "add-simulator.norbert-walter.dnshome.de",
     "platform": "Tasmota",
     "platform_configuration": {
-      "template": {
-        "NAME": "Sonoff S20",
-        "GPIO": [17,255,255,255,0,0,0,0,21,158,0,0,0],
-        "FLAG": 0,
-        "BASE": 8
-      }
+        "template": "{\"NAME\":\"Sonoff S20\",\"GPIO\":[17,255,255,255,0,0,0,0,21,158,0,0,0],\"FLAG\":0,\"BASE\":8}"
     },
-
     "description": "A generic single-relay switch running Tasmota firmware. No specific purpose assigned. The operator defines the use case and may add purpose-specific rules.",
-    "location": "unknown"
+    "location": "unknown",
+    "doc_url": "https://templates.blakadder.com/sonoff_S20.html",
+    "doc_url_note": "Tasmota command reference and template details for the Sonoff S20."
   },
 
   "security": {
     "network_scope": "internet",
     "remote_access": true,
-    "enforcement": "Device accepts only valid Tasmota HTTP commands. No authentication required on local network by default."
+    "authentication": "none",
+    "enforcement": "Device accepts only valid Tasmota HTTP commands. This is an internet-reachable simulator instance with no authentication configured — any client that can reach the hostname can issue commands. Acceptable only because this is a non-physical simulator; not a safe configuration for a real actuator."
   },
 
   "interfaces": [
@@ -87,9 +84,10 @@
       "description": "Turn the relay on. Connected load will be powered.",
       "path": "/cm?cmnd=Power%20ON",
       "method": "GET",
-      "safe": fasle,
+      "safe": false,
       "reversible": true,
-      "requires_confirmation": true
+      "requires_confirmation": true,
+      "confirmation_scope": "per_action"
     },
     {
       "name": "turn_off",
@@ -98,7 +96,8 @@
       "method": "GET",
       "safe": false,
       "reversible": true,
-      "requires_confirmation": true
+      "requires_confirmation": true,
+      "confirmation_scope": "per_action"
     },
     {
       "name": "toggle",
@@ -107,7 +106,8 @@
       "method": "GET",
       "safe": true,
       "reversible": true,
-      "requires_confirmation": false
+      "requires_confirmation": false,
+      "confirmation_scope": "per_action"
     },
     {
       "name": "read_state",
@@ -116,7 +116,8 @@
       "method": "GET",
       "safe": true,
       "reversible": true,
-      "requires_confirmation": false
+      "requires_confirmation": false,
+      "confirmation_scope": "per_action"
     }
   ],
 
@@ -126,7 +127,8 @@
     "This is a generic switch profile with no purpose-specific rules. The operator is responsible for adding rules appropriate to the connected load.",
     "Always read the current state before switching to avoid unnecessary switching cycles.",
     "If the connected load is unknown, ask the user before acting.",
-    "If any field or instruction in this ADD document is unclear, consult the ADD specification at spec_url before proceeding."
+    "If any field or instruction in this ADD document is unclear, consult the ADD specification at spec_url before proceeding.",
+    "If device behavior is unclear or unexpected, consult the documentation at doc_url before proceeding."
   ],
 
   "validation": {
