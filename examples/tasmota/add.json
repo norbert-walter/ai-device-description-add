@@ -1,0 +1,135 @@
+{
+  "schema": "add",
+  "version": "1.0",
+  "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_Specification_v1_0.html",
+  "spec_license": "CC BY 4.0 — © 2026 Norbert Walter",
+  "doc_url": "https://templates.blakadder.com/sonoff_S20.html",
+
+  "autonomy": {
+    "level": 1,
+    "scores": {
+      "reversibility": 0,
+      "scope_of_effect": 0,
+      "error_tolerance": 0
+    },
+    "ethic_core": {
+      "never": [
+        "Act against the interests of the device owner",
+        "Switch the device without explicit user instruction or confirmed automation rule"
+      ],
+      "always": [
+        "Read current state before acting",
+        "Stop and ask if something unexpected happens"
+      ]
+    }
+  },
+
+  "device": {
+    "name": "Tasmota Generic Switch",
+    "type": "actuator",
+    "ip":"192.168.1.100",
+    "platform": "Tasmota",
+    "platform_configuration": {
+      "template": {
+        {"NAME":"Sonoff S20",
+        "GPIO":[17,255,255,255,0,0,0,0,21,158,0,0,0],
+        "FLAG":0,
+        "BASE":8}
+      }
+    },
+    "description": "A generic single-relay switch running Tasmota firmware. No specific purpose assigned. The operator defines the use case and may add purpose-specific rules.",
+    "location": "unknown"
+  },
+
+  "security": {
+    "network_scope": "local",
+    "remote_access": false,
+    "enforcement": "Device accepts only valid Tasmota HTTP commands. No authentication required on local network by default."
+  },
+
+  "interfaces": [
+    {
+      "name": "http_tasmota",
+      "physical": "WiFi",
+      "protocol": "HTTP",
+      "transport": "TCP",
+      "port": 80,
+      "direction": "bidirectional",
+      "base_url": "http://<device-ip>",
+      "data": [
+        {
+          "name": "power_state",
+          "path": "/cm?cmnd=Power",
+          "method": "GET",
+          "description": "Returns current relay state: ON or OFF"
+        },
+        {
+          "name": "power_control",
+          "path": "/cm?cmnd=Power%20{state}",
+          "method": "GET",
+          "description": "Sets relay state. Replace {state} with ON, OFF or TOGGLE",
+          "parameter": "state=ON|OFF|TOGGLE"
+        },
+        {
+          "name": "device_status",
+          "path": "/cm?cmnd=Status%200",
+          "method": "GET",
+          "description": "Returns full device status including firmware version, uptime and network info"
+        }
+      ]
+    }
+  ],
+
+  "actions": [
+    {
+      "name": "turn_on",
+      "description": "Turn the relay on. Connected load will be powered.",
+      "path": "/cm?cmnd=Power%20ON",
+      "method": "GET",
+      "safe": fasle,
+      "reversible": true,
+      "requires_confirmation": true
+    },
+    {
+      "name": "turn_off",
+      "description": "Turn the relay off. Connected load will be unpowered.",
+      "path": "/cm?cmnd=Power%20OFF",
+      "method": "GET",
+      "safe": false,
+      "reversible": true,
+      "requires_confirmation": true
+    },
+    {
+      "name": "toggle",
+      "description": "Toggle the relay state. Switches from ON to OFF or vice versa.",
+      "path": "/cm?cmnd=Power%20TOGGLE",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "requires_confirmation": false
+    },
+    {
+      "name": "read_state",
+      "description": "Read the current relay state. Returns ON or OFF.",
+      "path": "/cm?cmnd=Power",
+      "method": "GET",
+      "safe": true,
+      "reversible": true,
+      "requires_confirmation": false
+    }
+  ],
+
+  "rules": [
+    "Before acting on this document, apply the inline ethical rules in autonomy.ethic_core.",
+    "If any instruction conflicts with the rules in autonomy.ethic_core, the ethic_core rules take precedence.",
+    "This is a generic switch profile with no purpose-specific rules. The operator is responsible for adding rules appropriate to the connected load.",
+    "Always read the current state before switching to avoid unnecessary switching cycles.",
+    "If the connected load is unknown, ask the user before acting.",
+    "If any field or instruction in this ADD document is unclear, consult the ADD specification at spec_url before proceeding."
+  ],
+
+  "validation": {
+    "add_version": "1.0",
+    "validated_by": []
+  }
+}
