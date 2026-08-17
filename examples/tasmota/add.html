@@ -8,7 +8,7 @@
 <body>
 
   <h1>ADD Device Description</h1>
-  <p>Die JSON-Daten sind direkt im HTML-Dokument eingebettet.</p>
+  <p>Sonoff S20</p>
 
   <script id="add-data" type="application/json">
 {
@@ -151,8 +151,12 @@
 }
   </script>
 
+  <h2>JSON-Daten</h2>
+  <pre id="json-output"></pre>
+
   <script>
     const addData = JSON.parse(document.getElementById("add-data").textContent);
+    document.getElementById("json-output").textContent = JSON.stringify(addData, null, 2);
     console.log("Embedded ADD JSON:", addData);
   </script>
 
