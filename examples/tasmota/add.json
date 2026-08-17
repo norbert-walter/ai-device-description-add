@@ -27,23 +27,24 @@
   "device": {
     "name": "Tasmota Generic Switch",
     "type": "actuator",
-    "ip":"192.168.1.100",
+    "ip":"add-simulator.norbert-walter.dnshome.de",
     "platform": "Tasmota",
     "platform_configuration": {
       "template": {
-        {"NAME":"Sonoff S20",
-        "GPIO":[17,255,255,255,0,0,0,0,21,158,0,0,0],
-        "FLAG":0,
-        "BASE":8}
+        "NAME": "Sonoff S20",
+        "GPIO": [17,255,255,255,0,0,0,0,21,158,0,0,0],
+        "FLAG": 0,
+        "BASE": 8
       }
     },
+
     "description": "A generic single-relay switch running Tasmota firmware. No specific purpose assigned. The operator defines the use case and may add purpose-specific rules.",
     "location": "unknown"
   },
 
   "security": {
-    "network_scope": "local",
-    "remote_access": false,
+    "network_scope": "internet",
+    "remote_access": true,
     "enforcement": "Device accepts only valid Tasmota HTTP commands. No authentication required on local network by default."
   },
 
