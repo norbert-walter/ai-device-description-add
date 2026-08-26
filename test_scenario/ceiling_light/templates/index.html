@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Power Switch 1</title>
+  <!-- CodeMirror 5 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsonlint/1.6.0/jsonlint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/json-lint.min.js"></script>
+  <style>
+    /* ------------------------------------------------------------------ */
+    /* Base                                                                  */
+    /* ------------------------------------------------------------------ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #c9d1d9;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Header                                                                */
+    /* ------------------------------------------------------------------ */
+    header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+    header h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e6edf3;
+      letter-spacing: 0.02em;
+    }
+    header .badge {
+      font-size: 0.7rem;
+      background: #1f6feb;
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    header .hint {
+      margin-left: auto;
+      font-size: 0.78rem;
+      color: #8b949e;
+    }
+    header .hint code {
+      background: #21262d;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #79c0ff;
+      font-size: 0.76rem;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Main layout                                                           */
+    /* ------------------------------------------------------------------ */
+    main {
+      display: flex;
+      flex-direction: row;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Divider (drag handle between panels)                                  */
+    /* ------------------------------------------------------------------ */
+    .divider {
+      width: 5px;
+      background: #30363d;
+      cursor: col-resize;
+      flex-shrink: 0;
+      position: relative;
+      transition: background 0.15s;
+      z-index: 10;
+    }
+    .divider:hover,
+    .divider.dragging { background: #1f6feb; }
+    .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 1px;
+      height: 32px;
+      background: #8b949e;
+      border-radius: 1px;
+      opacity: 0.4;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Panel shared styles                                                   */
+    /* ------------------------------------------------------------------ */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .panel-header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .panel-header h2 {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .panel-header .actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+
+    /* ------------------------------------------------------------------ */
+    /* Buttons                                                               */
+    /* ------------------------------------------------------------------ */
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 5px 12px;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    button:disabled { cursor: not-allowed; }
+
+    .btn-save   { background: #238636; color: #fff; }
+    .btn-reset  { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+    .btn-clear  { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+
+    .preset-select {
+      background: #21262d;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      padding: 5px 8px;
+      cursor: pointer;
+      outline: none;
+      max-width: 260px;
+    }
+    .preset-select:hover { border-color: #8b949e; }
+
+    /* Read-only badge */
+    .readonly-badge {
+      display: none;
+      font-size: 0.68rem;
+      background: #b45309;
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Editor panel                                                          */
+    /* ------------------------------------------------------------------ */
+    #editor-panel .panel-body {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      min-height: 0;
+    }
+    #add-editor {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+    }
+
+    /* Read-only editor state */
+    .editor-readonly .CodeMirror { opacity: 0.75; }
+    .editor-readonly .CodeMirror-cursor { display: none !important; }
+
+    /* ------------------------------------------------------------------ */
+    /* CodeMirror — VSCode Dark+ Theme (inline)                             */
+    /* ------------------------------------------------------------------ */
+    .CodeMirror {
+      height: 100%;
+      width: 100%;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      background: #1e1e1e;
+      color: #d4d4d4;
+    }
+    .CodeMirror-scroll   { background: #1e1e1e; }
+    .CodeMirror-gutters  { background: #1e1e1e; border-right: 1px solid #333; }
+    .CodeMirror-linenumber { color: #858585; padding: 0 10px; }
+    .CodeMirror-cursor   { border-left: 2px solid #aeafad; }
+    .CodeMirror-selected { background: #264f78 !important; }
+    .CodeMirror-lint-marker-error { color: #f48771; }
+    .CodeMirror-matchingbracket { color: #ffd700 !important; outline: 1px solid #ffd700; }
+
+    /* Scrollbar — always visible */
+    .CodeMirror-scroll::-webkit-scrollbar       { width: 10px; height: 10px; }
+    .CodeMirror-scroll::-webkit-scrollbar-track { background: #1e1e1e; }
+    .CodeMirror-scroll::-webkit-scrollbar-thumb { background: #424242; border-radius: 5px; border: 2px solid #1e1e1e; }
+    .CodeMirror-scroll::-webkit-scrollbar-thumb:hover { background: #686868; }
+    .CodeMirror-scroll { scrollbar-width: thin; scrollbar-color: #424242 #1e1e1e; }
+
+    #editor-status {
+      font-size: 0.7rem;
+      padding: 4px 14px;
+      background: #161b22;
+      border-top: 1px solid #30363d;
+      color: #8b949e;
+      flex-shrink: 0;
+      min-height: 22px;
+    }
+    #editor-status.ok    { color: #3fb950; }
+    #editor-status.error { color: #f85149; }
+
+    /* ------------------------------------------------------------------ */
+    /* Device panel                                                          */
+    /* ------------------------------------------------------------------ */
+    #device-panel .panel-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .light-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .light-label {
+      font-size: 0.72rem;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    #light-svg { width: 180px; height: 180px; }
+
+    .power-toggle-btn {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 10px 32px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      width: 100%;
+      max-width: 220px;
+    }
+    .power-toggle-btn:hover { filter: brightness(1.15); }
+    .power-toggle-btn:active { transform: scale(0.97); }
+    .state-on  { background: #1a7a1a; color: #ffffff; }
+    .state-off { background: #8b1a1a; color: #ffffff; }
+
+    .endpoints {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .endpoint {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-family: monospace;
+      font-size: 0.7rem;
+      color: #79c0ff;
+      word-break: break-all;
+    }
+    .endpoint .method { color: #3fb950; font-weight: 700; margin-right: 6px; }
+    .endpoint .path   { color: #e6edf3; }
+
+    /* ------------------------------------------------------------------ */
+    /* Log panel                                                             */
+    /* ------------------------------------------------------------------ */
+    #log-panel .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+      min-height: 0;
+    }
+
+    .log-entry {
+      display: grid;
+      grid-template-columns: 165px minmax(0, 1fr);
+      gap: 0;
+      border-bottom: 1px solid #21262d;
+      font-size: 0.72rem;
+      line-height: 1.5;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+
+    .log-meta {
+      padding: 7px 9px;
+      font-family: monospace;
+      border-right: 1px solid #21262d;
+      background: #0d1117;
+      min-width: 0;
+    }
+    .log-ts {
+      color: #6e7681;
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+    .log-ip {
+      color: #8b949e;
+      font-size: 0.68rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+    .log-content { padding: 6px 10px; overflow: hidden; }
+    .log-action {
+      color: #79c0ff;
+      font-family: monospace;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .log-detail { color: #6e7681; font-size: 0.68rem; margin-top: 1px; }
+
+    .log-entry.on   .log-action { color: #3fb950; }
+    .log-entry.off  .log-action { color: #f85149; }
+    .log-entry.add  .log-action { color: #d2a8ff; }
+    .log-entry.read .log-action { color: #ffa657; }
+
+    .log-empty {
+      padding: 20px;
+      color: #484f58;
+      font-size: 0.75rem;
+      text-align: center;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+    /* Collapsible side panels */
+    .panel-collapse-btn {
+      background:#21262d; color:#8b949e; border:1px solid #30363d;
+      width:28px; height:28px; padding:0; font-size:0.9rem; border-radius:6px;
+    }
+    .panel.collapsed { width:44px !important; min-width:44px !important; flex:0 0 44px !important; }
+    .panel.collapsed .panel-body, .panel.collapsed #editor-status,
+    .panel.collapsed .panel-header .actions, .panel.collapsed .readonly-badge { display:none !important; }
+    .panel.collapsed .panel-header { height:100%; padding:8px 7px; flex-direction:column; justify-content:flex-start; }
+    .panel.collapsed .panel-header h2 { writing-mode:vertical-rl; transform:rotate(180deg); margin-top:8px; }
+    .panel.collapsed .panel-collapse-btn { transform:rotate(180deg); }
+    .divider.hidden-by-collapse { display:none; }
+
+    /* Ceiling light visual */
+    #light-glow { transition: opacity .25s ease; }
+    #light-bulb, #light-rays { transition: fill .25s ease, stroke .25s ease, opacity .25s ease; }
+  </style>
+</head>
+<body>
+
+<!-- ====================================================================== -->
+<!-- Header                                                                   -->
+<!-- ====================================================================== -->
+<header>
+  <h1>Power Switch 1</h1>
+  <span class="badge">AI Device Description</span>
+  <span class="hint">
+    Point any AI client to <code id="add-url-hint">http://&lt;this-host&gt;/add</code>
+    and ask it to control Power Switch 1
+  </span>
+</header>
+
+<!-- ====================================================================== -->
+<!-- Main                                                                     -->
+<!-- ====================================================================== -->
+<main>
+
+  <!-- -------------------------------------------------------------------- -->
+  <!-- Left: ADD Editor                                                       -->
+  <!-- -------------------------------------------------------------------- -->
+  <div class="panel" id="editor-panel" style="width:45%">
+    <div class="panel-header">
+      <button class="panel-collapse-btn" id="collapse-editor" onclick="togglePanel('editor-panel')" title="Collapse ADD panel">◀</button>
+      <h2>ADD Document</h2>
+      <span class="readonly-badge" id="readonly-badge">READ ONLY</span>
+      <div class="actions">
+        <span style="font-size:0.75rem; color:#8b949e; font-weight:600; letter-spacing:0.06em; white-space:nowrap; display:flex; align-items:center;">EXAMPLES</span>
+        <select class="preset-select" id="preset-select" onchange="loadPreset(this.value)">
+          <option value="switch_only">Power Switch — Direct Control</option>
+          <option value="ceiling_light_context">Power Switch — Ceiling Light Context</option>
+        </select>
+        <button class="btn-reset" id="btn-reset" onclick="resetADD()">Reset</button>
+        <button class="btn-save"  id="btn-save"  onclick="saveADD()">Save</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div id="add-editor"></div>
+    </div>
+    <div id="editor-status">Ready — edit the ADD document and press Save</div>
+  </div>
+
+  <div class="divider" id="divider-1"></div>
+
+  <!-- -------------------------------------------------------------------- -->
+  <!-- Middle: Device Visualisation                                           -->
+  <!-- -------------------------------------------------------------------- -->
+  <div class="panel" id="device-panel" style="width:25%">
+    <div class="panel-header">
+      <h2>Device State</h2>
+    </div>
+    <div class="panel-body">
+
+      <div class="light-container">
+        <span class="light-label">Power Switch 1</span>
+
+        <svg id="light-svg" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" aria-label="Ceiling light">
+          <defs>
+            <radialGradient id="glowGradient" cx="50%" cy="48%" r="50%">
+              <stop offset="0%" stop-color="#f2cc60" stop-opacity="0.55"/>
+              <stop offset="100%" stop-color="#f2cc60" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle id="light-glow" cx="90" cy="92" r="72" fill="url(#glowGradient)" opacity="0"/>
+          <path d="M58 48 H122 L115 78 H65 Z" fill="#30363d" stroke="#484f58" stroke-width="2"/>
+          <rect x="84" y="25" width="12" height="24" rx="4" fill="#484f58"/>
+          <path id="light-bulb" d="M67 78 H113 C112 105 103 121 90 121 C77 121 68 105 67 78 Z" fill="#21262d" stroke="#484f58" stroke-width="2"/>
+          <g id="light-rays" stroke="#f2cc60" stroke-width="4" stroke-linecap="round" opacity="0">
+            <path d="M55 112 L42 126"/><path d="M125 112 L138 126"/>
+            <path d="M72 128 L66 146"/><path d="M108 128 L114 146"/>
+            <path d="M90 132 L90 153"/>
+          </g>
+          <circle id="status-ring" cx="90" cy="95" r="47" fill="none" stroke="#30363d" stroke-width="2" opacity="0.5"/>
+        </svg>
+
+        <button class="power-toggle-btn state-off" id="state-badge" onclick="togglePower()">OFF</button>
+      </div>
+
+      <div class="endpoints">
+        <div style="font-size:0.68rem; color:#484f58; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px;">Available Endpoints</div>
+        <div class="endpoint"><span class="method">GET</span><span class="path">/add</span></div>
+        <div class="endpoint"><span class="method">GET</span><span class="path">/add.html</span></div>
+        <div class="endpoint"><span class="method">GET</span><span class="path">/cm?cmnd=Power</span></div>
+        <div class="endpoint"><span class="method">GET</span><span class="path">/cm?cmnd=Power%20On</span></div>
+        <div class="endpoint"><span class="method">GET</span><span class="path">/cm?cmnd=Power%20Off</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="divider" id="divider-2"></div>
+
+  <!-- -------------------------------------------------------------------- -->
+  <!-- Right: Live Log                                                        -->
+  <!-- -------------------------------------------------------------------- -->
+  <div class="panel" id="log-panel" style="flex:1; min-width:150px">
+    <div class="panel-header">
+      <button class="panel-collapse-btn" id="collapse-log" onclick="togglePanel('log-panel')" title="Collapse log panel">▶</button>
+      <h2>Live Log</h2>
+      <div class="actions">
+        <button class="btn-save" onclick="downloadLog()">Download</button>
+        <button class="btn-clear" onclick="clearLog()">Clear</button>
+      </div>
+    </div>
+    <div class="panel-body" id="log-body">
+      <div class="log-empty" id="log-empty">Waiting for activity…</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ====================================================================== -->
+<!-- JavaScript                                                               -->
+<!-- ====================================================================== -->
+<script>
+  // ---- State ----
+  let lastLogCount = 0;
+  let lastPowerState = null;
+
+  // ---- Register inline VSCode Dark+ theme ----
+  CodeMirror.defineSimpleMode && void 0;
+  (function() {
+    const style = document.createElement('style');
+    style.textContent = `
+      .cm-s-vscode-dark.CodeMirror { background: #1e1e1e; color: #d4d4d4; }
+      .cm-s-vscode-dark .CodeMirror-gutters { background: #1e1e1e; border-right: 1px solid #333; }
+      .cm-s-vscode-dark .CodeMirror-linenumber { color: #858585; }
+      .cm-s-vscode-dark .CodeMirror-cursor { border-left: 2px solid #aeafad; }
+      .cm-s-vscode-dark .CodeMirror-selected { background: #264f78; }
+      .cm-s-vscode-dark .CodeMirror-matchingbracket { color: #ffd700 !important; outline: 1px solid #ffd700; }
+      .cm-s-vscode-dark .cm-property   { color: #9cdcfe; }
+      .cm-s-vscode-dark .cm-string     { color: #ce9178; }
+      .cm-s-vscode-dark .cm-number     { color: #b5cea8; }
+      .cm-s-vscode-dark .cm-atom       { color: #569cd6; }
+      .cm-s-vscode-dark .cm-bracket    { color: #ffd700; }
+      .cm-s-vscode-dark .cm-punctuation { color: #d4d4d4; }
+      .cm-s-vscode-dark .cm-keyword    { color: #569cd6; }
+      .cm-s-vscode-dark .CodeMirror-vscrollbar { visibility: visible !important; }
+      .cm-s-vscode-dark .CodeMirror-scroll::-webkit-scrollbar { width: 10px; }
+      .cm-s-vscode-dark .CodeMirror-scroll::-webkit-scrollbar-track { background: #1e1e1e; }
+      .cm-s-vscode-dark .CodeMirror-scroll::-webkit-scrollbar-thumb { background: #424242; border-radius: 5px; border: 2px solid #1e1e1e; }
+      .cm-s-vscode-dark .CodeMirror-scroll::-webkit-scrollbar-thumb:hover { background: #686868; }
+      .cm-s-vscode-dark .CodeMirror-scroll { scrollbar-width: thin; scrollbar-color: #424242 #1e1e1e; }
+    `;
+    document.head.appendChild(style);
+  })();
+
+  // ---- CodeMirror editor instance ----
+  let editor;
+
+  // ---- On load: fetch ADD document into editor ----
+  async function loadADD() {
+    try {
+      const r = await fetch('/add');
+      const data = await r.json();
+      const json = JSON.stringify(data, null, 2);
+      if (editor) {
+        editor.setValue(json);
+      } else {
+        editor = CodeMirror(document.getElementById('add-editor'), {
+          value: json,
+          mode: { name: 'javascript', json: true },
+          theme: 'vscode-dark',
+          lineNumbers: true,
+          matchBrackets: true,
+          autoCloseBrackets: true,
+          gutters: ['CodeMirror-lint-markers'],
+          lint: true,
+          indentUnit: 2,
+          tabSize: 2,
+          lineWrapping: false,
+          extraKeys: { 'Ctrl-S': saveADD }
+        });
+
+        // Mausrad-Scroll auch ohne aktiven Cursor
+        const editorWrap = document.getElementById('add-editor');
+        editorWrap.addEventListener('wheel', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          const info = editor.getScrollInfo();
+          editor.scrollTo(null, info.top + e.deltaY * 0.8);
+        }, { passive: false });
+
+        const cmScroll = editorWrap.querySelector('.CodeMirror-scroll');
+        if (cmScroll) {
+          cmScroll.addEventListener('wheel', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            const info = editor.getScrollInfo();
+            editor.scrollTo(null, info.top + e.deltaY * 0.8);
+          }, { passive: false });
+        }
+      }
+
+      // Keep device.ip aligned with current host on every load, including first page load.
+      updateLoadedDeviceIpToCurrentOrigin();
+    } catch(e) {
+      setStatus('Could not load ADD document: ' + e, 'error');
+    }
+  }
+
+  // ---- Set loaded device IP to current origin ----
+  function updateLoadedDeviceIpToCurrentOrigin() {
+    if (!editor) return false;
+    try {
+      const doc = JSON.parse(editor.getValue());
+      if (!doc || typeof doc !== 'object' || !doc.device || typeof doc.device !== 'object') {
+        return false;
+      }
+      doc.device.ip = window.location.hostname;
+      editor.setValue(JSON.stringify(doc, null, 2));
+      return true;
+    } catch (e) {
+      console.error('Could not update device.ip to current origin:', e);
+      return false;
+    }
+  }
+
+  // ---- Load preset ----
+  async function loadPreset(name) {
+    if (!name) return;
+    try {
+      const r = await fetch('/api/add/preset/' + name, { method: 'POST' });
+      const data = await r.json();
+      if (data.status === 'ok') {
+        await loadADD();
+        const label = document.getElementById('preset-select').options[document.getElementById('preset-select').selectedIndex].text;
+        setStatus('Preset loaded: ' + label, 'ok');
+        setReadonly(data.readonly === true);
+      } else {
+        setStatus('Preset error: ' + data.message, 'error');
+      }
+    } catch(e) {
+      setStatus('Preset load error: ' + e, 'error');
+    }
+  }
+
+  // ---- Read-only mode ----
+  function setReadonly(ro) {
+    const panel    = document.getElementById('editor-panel');
+    const badge    = document.getElementById('readonly-badge');
+    const btnSave  = document.getElementById('btn-save');
+    const btnReset = document.getElementById('btn-reset');
+    if (ro) {
+      panel.classList.add('editor-readonly');
+      badge.style.display = 'inline-block';
+      btnSave.disabled  = true;
+      btnReset.disabled = true;
+      btnSave.style.opacity  = '0.4';
+      btnReset.style.opacity = '0.4';
+      if (editor) editor.setOption('readOnly', true);
+    } else {
+      panel.classList.remove('editor-readonly');
+      badge.style.display = 'none';
+      btnSave.disabled  = false;
+      btnReset.disabled = false;
+      btnSave.style.opacity  = '';
+      btnReset.style.opacity = '';
+      if (editor) editor.setOption('readOnly', false);
+    }
+  }
+
+  // ---- Save ADD document ----
+  async function saveADD() {
+    const text = editor ? editor.getValue() : '';
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch(e) {
+      setStatus('JSON syntax error: ' + e.message, 'error');
+      return;
+    }
+    try {
+      const r = await fetch('/api/add/update', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(parsed)
+      });
+      const data = await r.json();
+      if (data.status === 'ok') {
+        setStatus('ADD document saved successfully', 'ok');
+      } else {
+        setStatus('Save failed: ' + data.message, 'error');
+      }
+    } catch(e) {
+      setStatus('Save error: ' + e, 'error');
+    }
+  }
+
+  // ---- Reset ADD document ----
+  async function resetADD() {
+    try {
+      await fetch('/api/add/reset', { method: 'POST' });
+      await loadADD();
+      setReadonly(false);
+      document.getElementById('preset-select').value = 'switch_only';
+      setStatus('ADD document reset to default', 'ok');
+    } catch(e) {
+      setStatus('Reset error: ' + e, 'error');
+    }
+  }
+
+  // ---- Status bar ----
+  function setStatus(msg, type) {
+    const el = document.getElementById('editor-status');
+    el.textContent = msg;
+    el.className = type || '';
+  }
+
+  // ---- Classify log entry for color coding ----
+  function logClass(action) {
+    const a = action.toLowerCase();
+    if (a.includes('power on'))  return 'on';
+    if (a.includes('power off')) return 'off';
+    if (a.includes('/add'))      return 'add';
+    if (a.includes('cmnd=power') && !a.includes('on') && !a.includes('off')) return 'read';
+    if (a.includes('editor'))    return 'add';
+    return '';
+  }
+
+  // ---- Toggle power via button ----
+  async function togglePower() {
+    const btn = document.getElementById('state-badge');
+    const isOn = btn.classList.contains('state-on');
+    const cmd = isOn ? 'Power%20Off' : 'Power%20On';
+    try {
+      await fetch('/cm?cmnd=' + cmd);
+      await pollState();
+    } catch(e) {
+      console.error('Toggle error:', e);
+    }
+  }
+
+  // ---- Poll log ----
+  async function pollLog() {
+    try {
+      const r = await fetch('/api/log');
+      const entries = await r.json();
+      if (entries.length !== lastLogCount) {
+        lastLogCount = entries.length;
+        const body = document.getElementById('log-body');
+        if (entries.length === 0) {
+          body.innerHTML = '<div class="log-empty" id="log-empty">Waiting for activity…</div>';
+        } else {
+          body.innerHTML = entries.map(e => `
+            <div class="log-entry ${logClass(e.action)}">
+              <div class="log-meta">
+                <div class="log-ts">${escHtml(e.ts)}</div>
+                <div class="log-ip" title="${escHtml(e.ip || "-")}">${escHtml(e.ip || "-")}</div>
+              </div>
+              <div class="log-content">
+                <div class="log-action">${escHtml(e.action)}</div>
+                ${e.detail ? `<div class="log-detail">${escHtml(e.detail)}</div>` : ''}
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+    } catch(_) {}
+  }
+
+  // ---- Poll power state ----
+  async function pollState() {
+    try {
+      const r = await fetch('/api/state');
+      const data = await r.json();
+      if (data.power !== lastPowerState) {
+        lastPowerState = data.power;
+        updatePowerUI(data.power);
+      }
+    } catch(_) {}
+  }
+
+  // ---- Update ceiling light visual and badge ----
+  function updatePowerUI(state) {
+    const isOn = state === 'ON';
+    const glow = document.getElementById('light-glow');
+    const bulb = document.getElementById('light-bulb');
+    const rays = document.getElementById('light-rays');
+    const ring = document.getElementById('status-ring');
+    const badge = document.getElementById('state-badge');
+    if (isOn) {
+      glow.setAttribute('opacity', '1');
+      bulb.setAttribute('fill', '#f2cc60');
+      bulb.setAttribute('stroke', '#e3b341');
+      rays.setAttribute('opacity', '1');
+      ring.setAttribute('stroke', '#f2cc60');
+      ring.setAttribute('opacity', '0.65');
+      badge.textContent = 'ON';
+      badge.className = 'power-toggle-btn state-on';
+    } else {
+      glow.setAttribute('opacity', '0');
+      bulb.setAttribute('fill', '#21262d');
+      bulb.setAttribute('stroke', '#484f58');
+      rays.setAttribute('opacity', '0');
+      ring.setAttribute('stroke', '#30363d');
+      ring.setAttribute('opacity', '0.5');
+      badge.textContent = 'OFF';
+      badge.className = 'power-toggle-btn state-off';
+    }
+  }
+
+  // ---- Download log as JSON ----
+  function downloadLog() {
+    const a = document.createElement('a');
+    a.href = '/api/log/download';
+    a.download = 'log.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  // ---- Clear log ----
+  async function clearLog() {
+    await fetch('/api/log/clear', { method: 'POST' });
+    document.getElementById('log-body').innerHTML =
+      '<div class="log-empty" id="log-empty">Waiting for activity…</div>';
+    lastLogCount = 0;
+  }
+
+  // ---- Escape HTML ----
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ---- Collapsible ADD and log panels ----
+  const panelWidths = { 'editor-panel': '45%', 'log-panel': '30%' };
+  function togglePanel(panelId) {
+    const panel = document.getElementById(panelId);
+    const collapsing = !panel.classList.contains('collapsed');
+    if (collapsing) {
+      const width = panel.getBoundingClientRect().width;
+      const total = document.querySelector('main').getBoundingClientRect().width;
+      panelWidths[panelId] = (width / total * 100) + '%';
+      panel.classList.add('collapsed');
+    } else {
+      panel.classList.remove('collapsed');
+      panel.style.width = panelWidths[panelId] || (panelId === 'editor-panel' ? '45%' : '30%');
+      if (panelId === 'log-panel') panel.style.flex = '0 0 auto';
+      if (panelId === 'editor-panel' && editor) setTimeout(() => editor.refresh(), 50);
+    }
+    updateDividerVisibility();
+  }
+
+  function updateDividerVisibility() {
+    document.getElementById('divider-1').classList.toggle('hidden-by-collapse', document.getElementById('editor-panel').classList.contains('collapsed'));
+    document.getElementById('divider-2').classList.toggle('hidden-by-collapse', document.getElementById('log-panel').classList.contains('collapsed'));
+  }
+
+  // ---- Resizable panels ----
+  function makeDivider(dividerId, leftPanelId, rightPanelId) {
+    const divider    = document.getElementById(dividerId);
+    const leftPanel  = document.getElementById(leftPanelId);
+    const rightPanel = document.getElementById(rightPanelId);
+    const container  = document.querySelector('main');
+    let dragging = false, startX = 0, startLeft = 0, startRight = 0;
+
+    divider.addEventListener('mousedown', e => {
+      if (leftPanel.classList.contains('collapsed') || rightPanel.classList.contains('collapsed')) return;
+      dragging   = true;
+      startX     = e.clientX;
+      startLeft  = leftPanel.getBoundingClientRect().width;
+      startRight = rightPanel.getBoundingClientRect().width;
+      divider.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const totalW = container.getBoundingClientRect().width;
+      const delta  = e.clientX - startX;
+      const newLeft  = Math.max(150, startLeft  + delta);
+      const newRight = Math.max(150, startRight - delta);
+      if (newLeft >= 150 && newRight >= 150) {
+        leftPanel.style.width  = (newLeft  / totalW * 100) + '%';
+        rightPanel.style.width = (newRight / totalW * 100) + '%';
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      divider.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+  }
+
+  makeDivider('divider-1', 'editor-panel', 'device-panel');
+  makeDivider('divider-2', 'device-panel', 'log-panel');
+
+  document.getElementById('add-url-hint').textContent =
+    window.location.origin + '/add';
+
+  // ---- Init ----
+  document.getElementById('preset-select').value = 'switch_only';
+  loadADD();
+  pollLog();
+  pollState();
+  setInterval(pollLog,   2500);
+  setInterval(pollState, 2000);
+</script>
+
+</body>
+</html>
