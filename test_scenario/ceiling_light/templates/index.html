@@ -49,6 +49,33 @@
       color: #e6edf3;
       letter-spacing: 0.02em;
     }
+
+    .device-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .connection-led {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #f85149;
+      box-shadow: 0 0 6px rgba(248,81,73,0.65);
+      flex: 0 0 auto;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .connection-led.connected {
+      background: #3fb950;
+      box-shadow: 0 0 7px rgba(63,185,80,0.75);
+    }
+
+    .connection-led.disconnected {
+      background: #f85149;
+      box-shadow: 0 0 7px rgba(248,81,73,0.75);
+    }
     header .badge {
       font-size: 0.7rem;
       background: #1f6feb;
@@ -153,6 +180,23 @@
     .btn-save   { background: #238636; color: #fff; }
     .btn-reset  { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
     .btn-clear  { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+
+    .log-filter-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.68rem;
+      color: #8b949e;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    .log-filter-option input {
+      width: auto;
+      margin: 0;
+      accent-color: #1f6feb;
+      cursor: pointer;
+    }
 
     .preset-select {
       background: #21262d;
@@ -398,7 +442,10 @@
 <!-- Header                                                                   -->
 <!-- ====================================================================== -->
 <header>
-  <h1>Power Switch 1</h1>
+  <div class="device-title">
+    <h1>Power Switch 1</h1>
+    <span id="connection-led" class="connection-led disconnected" title="Disconnected" aria-label="Connection status: disconnected"></span>
+  </div>
   <span class="badge">AI Device Description</span>
   <span class="hint">
     Point any AI client to <code id="add-url-hint">http://&lt;this-host&gt;/add</code>
@@ -493,6 +540,10 @@
       <button class="panel-collapse-btn" id="collapse-log" onclick="togglePanel('log-panel')" title="Collapse log panel">▶</button>
       <h2>Live Log</h2>
       <div class="actions">
+        <label class="log-filter-option" title="Do not store periodic Control UI state-poll messages">
+          <input type="checkbox" id="suppress-control-state" checked onchange="setControlStateLogFilter(this.checked)">
+          Hide Current State
+        </label>
         <button class="btn-save" onclick="downloadLog()">Download</button>
         <button class="btn-clear" onclick="clearLog()">Clear</button>
       </div>
@@ -587,29 +638,15 @@
         }
       }
 
-      // Keep device.ip aligned with current host on every load, including first page load.
-      updateLoadedDeviceIpToCurrentOrigin();
+
+      // device.ip is supplied by the active ADD preset from DEVICE_HOST.
+      // Do not overwrite it with the browser's current hostname.
     } catch(e) {
       setStatus('Could not load ADD document: ' + e, 'error');
     }
   }
 
-  // ---- Set loaded device IP to current origin ----
-  function updateLoadedDeviceIpToCurrentOrigin() {
-    if (!editor) return false;
-    try {
-      const doc = JSON.parse(editor.getValue());
-      if (!doc || typeof doc !== 'object' || !doc.device || typeof doc.device !== 'object') {
-        return false;
-      }
-      doc.device.ip = window.location.hostname;
-      editor.setValue(JSON.stringify(doc, null, 2));
-      return true;
-    } catch (e) {
-      console.error('Could not update device.ip to current origin:', e);
-      return false;
-    }
-  }
+  // device.ip is controlled by DEVICE_HOST in app2.py.
 
   // ---- Load preset ----
   async function loadPreset(name) {
@@ -754,16 +791,56 @@
     } catch(_) {}
   }
 
-  // ---- Poll power state ----
+  // ---- Connection LED ----
+  function setConnectionStatus(connected) {
+    const led = document.getElementById('connection-led');
+    if (!led) return;
+
+    led.classList.toggle('connected', connected);
+    led.classList.toggle('disconnected', !connected);
+    led.title = connected ? 'Connected' : 'Disconnected';
+    led.setAttribute(
+      'aria-label',
+      connected ? 'Connection status: connected' : 'Connection status: disconnected'
+    );
+  }
+
+  // ---- Poll power state / connection health ----
+  const STATE_REQUEST_TIMEOUT_MS = 3000;
+  let statePollRunning = false;
+
   async function pollState() {
+    // Avoid piling up multiple pending requests when the peer disappears.
+    if (statePollRunning) return;
+    statePollRunning = true;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), STATE_REQUEST_TIMEOUT_MS);
+
     try {
-      const r = await fetch('/api/state');
+      const r = await fetch('/api/state', {
+        cache: 'no-store',
+        signal: controller.signal
+      });
+
+      if (!r.ok) {
+        throw new Error('HTTP ' + r.status);
+      }
+
       const data = await r.json();
+      setConnectionStatus(true);
+
       if (data.power !== lastPowerState) {
         lastPowerState = data.power;
         updatePowerUI(data.power);
       }
-    } catch(_) {}
+    } catch(_) {
+      // Includes HTTP errors, refused connections and our own 3-second timeout.
+      setConnectionStatus(false);
+    } finally {
+      clearTimeout(timeoutId);
+      statePollRunning = false;
+    }
   }
 
   // ---- Update ceiling light visual and badge ----
@@ -792,6 +869,35 @@
       ring.setAttribute('opacity', '0.5');
       badge.textContent = 'OFF';
       badge.className = 'power-toggle-btn state-off';
+    }
+  }
+
+  // ---- LIVE LOG filter: suppress periodic Control UI state polls ----
+  async function loadLogOptions() {
+    try {
+      const r = await fetch('/api/log/options');
+      const data = await r.json();
+      const cb = document.getElementById('suppress-control-state');
+      if (cb) cb.checked = data.suppress_control_state === true;
+    } catch(e) {
+      console.error('Could not load log options:', e);
+    }
+  }
+
+  async function setControlStateLogFilter(enabled) {
+    try {
+      const r = await fetch('/api/log/options', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({suppress_control_state: enabled})
+      });
+      const data = await r.json();
+      const cb = document.getElementById('suppress-control-state');
+      if (cb) cb.checked = data.suppress_control_state === true;
+      lastLogCount = -1;
+      await pollLog();
+    } catch(e) {
+      console.error('Could not update log options:', e);
     }
   }
 
@@ -896,6 +1002,7 @@
   // ---- Init ----
   document.getElementById('preset-select').value = 'switch_only';
   loadADD();
+  loadLogOptions();
   pollLog();
   pollState();
   setInterval(pollLog,   2500);
