@@ -1,0 +1,16 @@
+services:
+  power-switch-3:
+    build: .
+    image: add-power-switch-3:1.0.0
+    container_name: power-switch-3
+
+    # Must match ADD_PORT and CONTROL_PORT in app.py.
+    ports:
+      - "5003:5003"   # ADD UI / ADD API (Gunicorn)
+      - "4003:4003"   # Control UI / Tasmota-compatible API
+
+    environment:
+      GUNICORN_THREADS: "4"
+      GUNICORN_TIMEOUT: "30"
+
+    restart: unless-stopped

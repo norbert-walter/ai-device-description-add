@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Power Switch 1</title>
+  <title>Power Switch 3</title>
   <!-- CodeMirror 5 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
@@ -443,13 +443,13 @@
 <!-- ====================================================================== -->
 <header>
   <div class="device-title">
-    <h1>Power Switch 1</h1>
+    <h1>Power Switch 3</h1>
     <span id="connection-led" class="connection-led disconnected" title="Disconnected" aria-label="Connection status: disconnected"></span>
   </div>
   <span class="badge">AI Device Description</span>
   <span class="hint">
     Point any AI client to <code id="add-url-hint">http://&lt;this-host&gt;/add</code>
-    and ask it to control Power Switch 1
+    and ask it to control Power Switch 3
   </span>
 </header>
 
@@ -470,7 +470,7 @@
         <span style="font-size:0.75rem; color:#8b949e; font-weight:600; letter-spacing:0.06em; white-space:nowrap; display:flex; align-items:center;">EXAMPLES</span>
         <select class="preset-select" id="preset-select" onchange="loadPreset(this.value)">
           <option value="switch_only">Power Switch — Direct Control</option>
-          <option value="ceiling_light_context">Power Switch — Ceiling Light Context</option>
+          <option value="tv_backlight_context">Power Switch — TV Backlight Context</option>
         </select>
         <button class="btn-reset" id="btn-reset" onclick="resetADD()">Reset</button>
         <button class="btn-save"  id="btn-save"  onclick="saveADD()">Save</button>
@@ -494,21 +494,54 @@
     <div class="panel-body">
 
       <div class="light-container">
-        <span class="light-label">Power Switch 1</span>
+        <span class="light-label">Power Switch 3</span>
 
-        <svg id="light-svg" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" aria-label="Ceiling light">
+        <svg id="light-svg" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" aria-label="TV Backlight">
           <defs>
-            <radialGradient id="glowGradient" cx="50%" cy="48%" r="50%">
-              <stop offset="0%" stop-color="#f2cc60" stop-opacity="0.55"/>
-              <stop offset="100%" stop-color="#f2cc60" stop-opacity="0"/>
-            </radialGradient>
+            <filter id="tvGlow" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="12"/>
+            </filter>
+            <linearGradient id="screenGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#252b33"/>
+              <stop offset="100%" stop-color="#15191e"/>
+            </linearGradient>
           </defs>
-          <circle id="light-glow" cx="90" cy="92" r="72" fill="url(#glowGradient)" opacity="0"/>
-          <path d="M58 48 H122 L115 78 H65 Z" fill="#30363d" stroke="#484f58" stroke-width="2"/>
-          <rect x="84" y="25" width="12" height="24" rx="4" fill="#484f58"/>
-          <path id="light-bulb" d="M67 78 H113 C112 105 103 121 90 121 C77 121 68 105 67 78 Z" fill="#21262d" stroke="#484f58" stroke-width="2"/>
+
+          <!-- Orange bias-light glow behind the TV; visible only when ON -->
+          <rect id="light-glow"
+                x="30" y="39" width="120" height="92" rx="14"
+                fill="#ff8a1f"
+                opacity="0"
+                filter="url(#tvGlow)"/>
+
+          <!-- TV body -->
+          <rect x="28" y="42" width="124" height="82" rx="6"
+                fill="#101318"
+                stroke="#484f58"
+                stroke-width="2"/>
+
+          <!-- Screen -->
+          <rect x="35" y="49" width="110" height="68" rx="3"
+                fill="url(#screenGradient)"
+                stroke="#30363d"
+                stroke-width="1"/>
+
+          <!-- Hidden compatibility elements used by existing updatePowerUI() -->
+          <rect id="light-bulb" x="90" y="120" width="0.1" height="0.1"
+                fill="transparent" stroke="transparent" opacity="0"/>
           <g id="light-rays" opacity="0"></g>
-          <circle id="status-ring" cx="90" cy="95" r="47" fill="none" stroke="#30363d" stroke-width="2" opacity="0.5"/>
+
+          <!-- TV stand -->
+          <rect x="84" y="124" width="12" height="16" rx="2" fill="#30363d"/>
+          <path d="M67 144 H113" stroke="#484f58" stroke-width="5" stroke-linecap="round"/>
+
+          <!-- Status frame retained for existing JS compatibility -->
+          <rect id="status-ring"
+                x="18" y="32" width="144" height="122" rx="12"
+                fill="none"
+                stroke="#30363d"
+                stroke-width="2"
+                opacity="0.45"/>
         </svg>
 
         <button class="power-toggle-btn state-off" id="state-badge" onclick="togglePower()">OFF</button>
@@ -839,7 +872,7 @@
     }
   }
 
-  // ---- Update ceiling light visual and badge ----
+  // ---- Update TV backlight visual and badge ----
   function updatePowerUI(state) {
     const isOn = state === 'ON';
     const glow = document.getElementById('light-glow');
@@ -849,10 +882,10 @@
     const badge = document.getElementById('state-badge');
     if (isOn) {
       glow.setAttribute('opacity', '1');
-      bulb.setAttribute('fill', '#f2cc60');
+      bulb.setAttribute('fill', '#ff9a2f');
       bulb.setAttribute('stroke', '#e3b341');
       rays.setAttribute('opacity', '1');
-      ring.setAttribute('stroke', '#f2cc60');
+      ring.setAttribute('stroke', '#ff9a2f');
       ring.setAttribute('opacity', '0.65');
       badge.textContent = 'ON';
       badge.className = 'power-toggle-btn state-on';

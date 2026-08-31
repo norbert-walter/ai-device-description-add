@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Power Switch 1</title>
+  <title>Power Switch 5</title>
   <!-- CodeMirror 5 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
@@ -443,13 +443,13 @@
 <!-- ====================================================================== -->
 <header>
   <div class="device-title">
-    <h1>Power Switch 1</h1>
+    <h1>Power Switch 5</h1>
     <span id="connection-led" class="connection-led disconnected" title="Disconnected" aria-label="Connection status: disconnected"></span>
   </div>
   <span class="badge">AI Device Description</span>
   <span class="hint">
     Point any AI client to <code id="add-url-hint">http://&lt;this-host&gt;/add</code>
-    and ask it to control Power Switch 1
+    and ask it to control Power Switch 5
   </span>
 </header>
 
@@ -470,7 +470,7 @@
         <span style="font-size:0.75rem; color:#8b949e; font-weight:600; letter-spacing:0.06em; white-space:nowrap; display:flex; align-items:center;">EXAMPLES</span>
         <select class="preset-select" id="preset-select" onchange="loadPreset(this.value)">
           <option value="switch_only">Power Switch — Direct Control</option>
-          <option value="ceiling_light_context">Power Switch — Ceiling Light Context</option>
+          <option value="reading_lamp_context">Power Switch — Reading Lamp Context</option>
         </select>
         <button class="btn-reset" id="btn-reset" onclick="resetADD()">Reset</button>
         <button class="btn-save"  id="btn-save"  onclick="saveADD()">Save</button>
@@ -494,21 +494,75 @@
     <div class="panel-body">
 
       <div class="light-container">
-        <span class="light-label">Power Switch 1</span>
+        <span class="light-label">Power Switch 5</span>
 
-        <svg id="light-svg" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" aria-label="Ceiling light">
+        <svg id="light-svg" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" aria-label="Reading Lamp">
           <defs>
-            <radialGradient id="glowGradient" cx="50%" cy="48%" r="50%">
-              <stop offset="0%" stop-color="#f2cc60" stop-opacity="0.55"/>
-              <stop offset="100%" stop-color="#f2cc60" stop-opacity="0"/>
-            </radialGradient>
+            <linearGradient id="lampShade" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#353b43"/>
+              <stop offset="100%" stop-color="#171b20"/>
+            </linearGradient>
+            <linearGradient id="warmCone" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ffd28a" stop-opacity="0.88"/>
+              <stop offset="100%" stop-color="#ff9a2f" stop-opacity="0.08"/>
+            </linearGradient>
+            <filter id="readingGlow" x="-80%" y="-50%" width="260%" height="220%">
+              <feGaussianBlur stdDeviation="7"/>
+            </filter>
           </defs>
-          <circle id="light-glow" cx="90" cy="92" r="72" fill="url(#glowGradient)" opacity="0"/>
-          <path d="M58 48 H122 L115 78 H65 Z" fill="#30363d" stroke="#484f58" stroke-width="2"/>
-          <rect x="84" y="25" width="12" height="24" rx="4" fill="#484f58"/>
-          <path id="light-bulb" d="M67 78 H113 C112 105 103 121 90 121 C77 121 68 105 67 78 Z" fill="#21262d" stroke="#484f58" stroke-width="2"/>
+
+          <!-- Warm reading light; opacity controlled by existing JS -->
+          <path id="light-glow"
+                d="M95 68 L145 145 L58 145 Z"
+                fill="url(#warmCone)"
+                opacity="0"
+                filter="url(#readingGlow)"/>
+
+          <!-- Couch silhouette -->
+          <path d="M18 122 Q18 108 31 108 H71 Q83 108 83 122 V145 H18 Z"
+                fill="#252a31"
+                stroke="#3d444d"
+                stroke-width="2"/>
+          <rect x="26" y="96" width="45" height="24" rx="8"
+                fill="#2d333b"
+                stroke="#3d444d"
+                stroke-width="1.5"/>
+          <path d="M23 145 H88" stroke="#484f58" stroke-width="4" stroke-linecap="round"/>
+
+          <!-- Floor lamp stem and base -->
+          <path d="M126 52 Q145 55 145 78 V137"
+                fill="none"
+                stroke="#484f58"
+                stroke-width="5"
+                stroke-linecap="round"/>
+          <ellipse cx="145" cy="145" rx="21" ry="6"
+                   fill="#30363d"
+                   stroke="#484f58"
+                   stroke-width="1.5"/>
+
+          <!-- Lamp shade -->
+          <path d="M104 43 Q119 39 132 48 L125 69 Q111 66 99 58 Z"
+                fill="url(#lampShade)"
+                stroke="#484f58"
+                stroke-width="2"/>
+
+          <!-- Lamp light source: existing JS controls fill/stroke -->
+          <path id="light-bulb"
+                d="M101 58 Q112 64 125 65 L122 70 Q111 68 100 62 Z"
+                fill="#3a2a1a"
+                stroke="#5a3a1d"
+                stroke-width="1"/>
+
+          <!-- Compatibility group retained for existing JS; no visible light rays -->
           <g id="light-rays" opacity="0"></g>
-          <circle id="status-ring" cx="90" cy="95" r="47" fill="none" stroke="#30363d" stroke-width="2" opacity="0.5"/>
+
+          <!-- Status frame retained for JS compatibility -->
+          <rect id="status-ring"
+                x="11" y="24" width="158" height="132" rx="12"
+                fill="none"
+                stroke="#30363d"
+                stroke-width="2"
+                opacity="0.45"/>
         </svg>
 
         <button class="power-toggle-btn state-off" id="state-badge" onclick="togglePower()">OFF</button>
@@ -839,7 +893,7 @@
     }
   }
 
-  // ---- Update ceiling light visual and badge ----
+  // ---- Update TV visual and badge ----
   function updatePowerUI(state) {
     const isOn = state === 'ON';
     const glow = document.getElementById('light-glow');
@@ -849,10 +903,10 @@
     const badge = document.getElementById('state-badge');
     if (isOn) {
       glow.setAttribute('opacity', '1');
-      bulb.setAttribute('fill', '#f2cc60');
+      bulb.setAttribute('fill', '#ff9a2f');
       bulb.setAttribute('stroke', '#e3b341');
       rays.setAttribute('opacity', '1');
-      ring.setAttribute('stroke', '#f2cc60');
+      ring.setAttribute('stroke', '#ff9a2f');
       ring.setAttribute('opacity', '0.65');
       badge.textContent = 'ON';
       badge.className = 'power-toggle-btn state-on';

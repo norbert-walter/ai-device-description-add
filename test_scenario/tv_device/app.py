@@ -7,8 +7,8 @@ This script represents one power-relay device with two complete ADD descriptions
    Describes only the technical ON/OFF relay function, without telling the AI
    what is connected to the switch.
 
-2. "ceiling_light_context"
-   Describes the same relay, but adds the real usage context as a ceiling light
+2. "tv_context"
+   Describes the same relay, but adds the real usage context as a television
    together with suitable usage rules.
 
 The script starts two web services that share the same relay state:
@@ -33,15 +33,15 @@ Port model:
 # USER CONFIGURATION
 # ============================================================================
 
-DEVICE_NAME = "Power Switch 1"
+DEVICE_NAME = "Power Switch 4"
 
 # Public hostname advertised inside the ADD document.
 # This is normally the Nginx/DNS name visible to the AI/client.
-DEVICE_HOST = "ps1.norbert-walter.dnshome.de"
+DEVICE_HOST = "ps4.norbert-walter.dnshome.de"
 
 # Internal ports used by this Python process / Docker container.
-ADD_PORT = 5001
-CONTROL_PORT = 4001
+ADD_PORT = 5004
+CONTROL_PORT = 4004
 
 # Public control port advertised inside ADD interfaces.
 # Nginx typically maps DEVICE_HOST:JSON_PORT -> container:CONTROL_PORT.
@@ -177,7 +177,7 @@ PRESETS = {
         }
     },
 
-    "ceiling_light_context": {
+    "tv_context": {
         "schema": "add",
         "version": "1.0",
         "spec_url": "https://norbert-walter.github.io/ai-device-description-add/ADD_AI_Reference_v1_0.html",
@@ -209,11 +209,11 @@ PRESETS = {
             "ip": DEVICE_HOST,
             "firmware": "Tasmota V14",
             "hardware": "ESP8266 with power relay",
-            "function": "ceiling_light_power",
-            "location": "living area ceiling",
+            "function": "television_power",
+            "location": "living area",
             "connected_load": {
-                "name": "Ceiling Light",
-                "purpose": "Primary general-purpose room illumination",
+                "name": "TV",
+                "purpose": "Television for video, broadcast and streaming media consumption",
                 "control": "power_only",
                 "states": ["ON", "OFF"]
             }
@@ -238,7 +238,7 @@ PRESETS = {
         "actions": [
             {
                 "name": "switch_on",
-                "description": f"Switch {DEVICE_NAME} on and energize the connected Ceiling Light.",
+                "description": f"Switch {DEVICE_NAME} on and energize the connected TV.",
                 "interface": "tasmota_http",
                 "method": "GET",
                 "path": "/cm?cmnd=Power%20On",
@@ -252,7 +252,7 @@ PRESETS = {
             },
             {
                 "name": "switch_off",
-                "description": f"Switch {DEVICE_NAME} off and de-energize the connected Ceiling Light.",
+                "description": f"Switch {DEVICE_NAME} off and de-energize the connected TV.",
                 "interface": "tasmota_http",
                 "method": "GET",
                 "path": "/cm?cmnd=Power%20Off",
@@ -266,7 +266,7 @@ PRESETS = {
             },
             {
                 "name": "read_state",
-                "description": "Read the current power state of the Ceiling Light. POWER=ON means the light has power; POWER=OFF means it does not.",
+                "description": "Read the current power state of the TV. POWER=ON means the light has power; POWER=OFF means it does not.",
                 "interface": "tasmota_http",
                 "method": "GET",
                 "path": "/cm?cmnd=Power",
@@ -285,12 +285,12 @@ PRESETS = {
             "If any field, instruction, or structure in this ADD document is unclear or ambiguous, consult the ADD specification at the URL provided in spec_url before proceeding.",
             "Always append a unix timestamp as query parameter 't' to all read requests to prevent caching.",
             "Verify the result of every write action by reading the device state afterward.",
-            f"{DEVICE_NAME} controls the Ceiling Light identified in device.connected_load.",
-            "Treat the Ceiling Light as the primary source for broad general-purpose room illumination.",
-            "An explicit user request to turn the Ceiling Light on or off takes precedence over inferred preferences.",
-            "Do not switch the Ceiling Light off solely for energy saving when current room use or user intent is uncertain.",
-            "When several lighting devices are available, use the Ceiling Light when broad room illumination is appropriate.",
-            "Prefer a more localized lighting device instead when the user's task clearly requires only localized light."
+            f"{DEVICE_NAME} controls the TV identified in device.connected_load.",
+            "Treat the TV as an entertainment device intended for video, broadcast and streaming media consumption.",
+            "An explicit user request to turn the TV on or off takes precedence over inferred preferences.",
+            "Switch the TV on when the user's intent clearly requires viewing television content or using a display connected to the TV.",
+            "Do not switch the TV on merely because other room lighting devices are active.",
+            "When the TV is no longer needed for the user's current activity, switching it off is appropriate to avoid unnecessary power use."
         ],
         "validation": {
             "add_version": "1.0",
