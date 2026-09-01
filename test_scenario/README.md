@@ -18,6 +18,57 @@ Only after establishing this understanding does the AI translate natural languag
 
 ---
 
+## What the Simulator Does
+
+The ADD simulator replicates the behavior of a real Tasmota power switch in software. Each simulated device runs as an independent instance and provides three functions.
+
+**Tasmota interface.** The simulator exposes the original Tasmota web interface on port 400x. The AI agent uses this interface to read the current device state and to switch the device on or off. The interface behaves exactly as a real Tasmota device would, so any AI agent or MCP tool that works with real hardware also works with the simulator without modification.
+
+**ADD document.** Each simulator instance serves its ADD document at the path `/add` on the same port. The AI agent retrieves this document to understand what the device is, what it is allowed to do, and how much autonomy it has. The simulator supports two selectable profiles per device: a generic profile that describes only the basic power switch capability, and a usage-context profile that places the device in the role it plays within the room. Switching between profiles is done in the Control interface and takes effect immediately.
+
+**Control interface.** The simulator provides a separate Control interface on port 500x. This interface is intended for the test observer and is not accessible to the AI agent. It shows the current device state, allows switching between ADD profiles at runtime, and displays a live log of all requests made to the device including timestamp and client IP address. The log makes every action of the AI agent visible and traceable in real time. The ADD document can also be edited directly in the Control interface. Changes take effect immediately and are visible to the AI agent on the next request. This allows testing how the AI agent reacts to modified rules, changed autonomy levels, or altered device descriptions without restarting the simulator.
+
+---
+
+## How to Use an AI for This Test
+
+### Why Claude Desktop with a Pro Subscription
+
+Claude Desktop in the Pro version is the recommended AI client for this test scenario. The Pro subscription unlocks the ability to connect external MCP services, which are essential for reliable device access. The free version of Claude and other free-tier AI clients do not support MCP and are therefore not suitable for this test.
+
+### Why MCP Tools Are Needed
+
+An AI agent interacts with the simulated devices exclusively via HTTP requests. There are two ways to provide this capability.
+
+The first option is the built-in web access that most AI clients include natively. This works without any additional setup, but has two significant limitations. Many AI clients cache HTTP responses within a session, which means a device state queried earlier may be returned again instead of a fresh response. In addition, AI clients apply internal security policies to their built-in web access that can block requests to non-standard ports or local addresses.
+
+The second option is an MCP fetch tool. This is an external service that the AI calls explicitly to retrieve a URL. It bypasses all client-side caching and is not subject to the same security restrictions as built-in web access. For this test scenario, where the AI must query the current device state before every action, fresh and reliable HTTP access is essential. MCP is therefore the recommended approach.
+
+In addition to the fetch tool, two further MCP services are useful for this test. The time service allows the AI to query the current time with correct timezone handling, which is needed for time-dependent rules in the preference document. The file-edit service allows the AI to write and update the test protocol directly as a file.
+
+### Configuring MCP Services in Claude Desktop
+
+Four MCP services are available for this test. They are added individually in Claude via Settings.
+
+The navigation path is: **User → Settings → Customize Connectors → + (Add custom connector) → Enter name → Enter URL → Add**
+
+| Name | URL |
+|------|-----|
+| `mcp-fetch` | `https://mcp-fetch.norbert-walter.dnshome.de/mcp` |
+| `mcp-time` | `https://mcp-time.norbert-walter.dnshome.de/mcp` |
+| `mcp-duckduckgo` | `https://mcp-duckduckgo.norbert-walter.dnshome.de/mcp` |
+| `mcp-file-edit` | `https://mcp-file-edit.norbert-walter.dnshome.de/mcp` |
+
+After saving, the tools appear under Connectors and are available in every new conversation. All four services should be installed for full ADD test functionality.
+
+### Important: Explicitly Instruct the AI to Use the MCP Fetch Tool
+
+Without an explicit instruction, Claude may fall back to its built-in web access instead of using the MCP fetch tool. The example prompts in this document already include the necessary instruction. When writing your own prompts, always add the following line:
+
+> Use the mcp-fetch:fetch tool for all HTTP requests. Do not use your built-in web access for this session. Append a current Unix timestamp as query parameter ?t=\<unix_timestamp\> to every URL to prevent cached responses.
+
+---
+
 ## Test Objective
 
 The goal of this scenario is to validate that an AI agent can:
