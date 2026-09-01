@@ -238,16 +238,7 @@ TASK: "I want to watch a movie. Make the room ready."
 
 ---
 
-## Further Notes
-
-- The ADD Simulator is publicly available at `https://add-simulator.norbert-walter.dnshome.de`
-- The ADD specification, Developer Guide, and all example documents are available at `https://github.com/norbert-walter/ai-device-description-add`
-- The recommended MCP tool for local HTTP access is `mcp-fetch:fetch` with the cache-buster parameter `?t=<unix_timestamp>`
-- The simulation dashboard (Port 500x) logs every request to a device with timestamp and client IP, which is useful for verifying that the AI only accessed the permitted endpoints.
-
----
-
-## The Bigger Picture: What ADD Means for Home Automation
+## What ADD Means for the Future
 
 ### From Device Control to Contextual Intelligence
 
@@ -297,10 +288,19 @@ The living room is a deliberately simple starting point. The architectural princ
 
 ### The Core Shift
 
-Conventional home automation asks: *"What rules do you want to encode?"*
+Conventional home automation asks: **"What rules do you want to encode?"**
 
-ADD-based home automation asks: *"What do you want to do?"*
+ADD-based home automation asks: **"What do you want to do?"**
 
 The difference is not cosmetic. Encoding rules requires the user to think like a programmer, anticipating scenarios, defining conditions, and maintaining a growing configuration over time. Acting on intent requires only that the user communicates naturally. The complexity moves from the user's configuration burden into the AI's contextual reasoning, where it can be shared across all users of all devices, improved continuously, and made transparent through the ADD standard's audit and confirmation mechanisms.
 
 The living room with five power switches is a proof of concept. The architecture behind it is a blueprint for how intelligent device control could work at any scale.
+
+---
+
+## Further Notes
+
+- The ADD Simulator is publicly available at `https://add-simulator.norbert-walter.dnshome.de`
+- The ADD specification, Developer Guide, and all example documents are available at `https://github.com/norbert-walter/ai-device-description-add`
+- The recommended MCP tool for local HTTP access is `mcp-fetch:fetch` with the cache-buster parameter `?t=<unix_timestamp>`
+- The simulation dashboard (Port 500x) logs every request to a device with timestamp and client IP, which is useful for verifying that the AI only accessed the permitted endpoints.
