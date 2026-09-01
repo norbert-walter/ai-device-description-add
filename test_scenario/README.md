@@ -2,9 +2,11 @@
 
 ## Introduction
 
+<img src="pictures/Test_Scenario_Living_Room.png" alt="Use Case" width="800">
+
 This test scenario demonstrates a core property of the **ADD standard**. An AI agent can derive **contextually appropriate actions** for a group of IoT devices solely from their ADD documents, without the user having defined a single rule, scene, or automation script.
 
-All five simulated devices are electrically identical **Tasmota Power Switches** (e.g. Sonoff S20), a single-channel relay controllable via HTTP. What makes them different is their **functional role**, expressed through their individual ADD document served at `/add`.
+All five simulated devices are electrically identical **Tasmota Power Switches** (e.g. Sonoff S20), a single-channel relay controllable via HTTP. What makes them different is their **functional role**, expressed through their individual ADD document served at **/add**.
 
 The AI agent is not told what kind of room it is operating in. It reads the ADD documents of all five devices and infers the room's purpose and character from the combination of devices alone. A ceiling light, an ambient light, a TV backlight, a television, and a reading lamp together allow the AI to independently answer the question:
 
