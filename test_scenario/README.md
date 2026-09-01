@@ -6,7 +6,7 @@
 
 This test scenario demonstrates a core property of the **ADD standard**. An AI agent can derive **contextually appropriate actions** for a group of IoT devices solely from their ADD documents, without the user having defined a single rule, scene, or automation script.
 
-All five simulated devices are electrically identical **Tasmota Power Switches** (e.g. Sonoff S20), a single-channel relay controllable via HTTP. What makes them different is their **functional role**, expressed through their individual ADD document served at **/add**.
+All six simulated devices are electrically identical power switches (e.g. Sonoff S20) running Tasmota firmware. They are single-channel relays controllable via HTTP. Five of them carry an ADD document served at /add that describes their functional role. The sixth device, a spot light, does not provide ADD functionality and is controlled solely through the user preference document.
 
 The AI agent is not told what kind of room it is operating in. It reads the ADD documents of all five devices and infers the room's purpose and character from the combination of devices alone. A ceiling light, an ambient light, a TV backlight, a television, and a reading lamp together allow the AI to independently answer the question:
 
@@ -20,7 +20,7 @@ Only after establishing this understanding does the AI translate natural languag
 
 The goal of this scenario is to validate that an AI agent can:
 
-1. **Load and understand** the ADD document of each device autonomously via its `/add` endpoint.
+1. **Load and understand** the ADD document of each device autonomously via its **/add** endpoint.
 2. **Derive the room context** from the combination of all five ADD documents. The AI should recognize that this is a living room with four different light sources and a television.
 3. **Translate natural language requests** into coordinated, contextually appropriate device actions, without the user specifying which devices to use or which state they should be in.
 4. **Respect the semantic role** of each device by distinguishing between general illumination, mood lighting, focused task light, and entertainment context.
