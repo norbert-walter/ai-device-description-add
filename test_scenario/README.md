@@ -2,7 +2,7 @@
 
 ## Introduction
 
-<img src="pictures/Test_Scenario_Living_Room.png" alt="Living Room" width="800">
+<img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/Test_Scenario_Living_Room.png" alt="Living Room" width="800">
 
 This test scenario demonstrates a core property of the **ADD standard**. An AI agent can derive **contextually appropriate actions** for a group of IoT devices solely from their ADD documents, without the user having defined a single rule, scene, or automation script.
 
