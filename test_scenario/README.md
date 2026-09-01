@@ -22,7 +22,7 @@ Only after establishing this understanding does the AI translate natural languag
 
 The ADD simulator replicates the behavior of a real Tasmota power switch in software. Each simulated device runs as an independent instance and provides three functions.
 
-**Tasmota interface.** The simulator exposes the original Tasmota web interface on port 400x. The AI agent uses this interface to read the current device state and to switch the device on or off. The interface behaves exactly as a real Tasmota device would, so any AI agent or MCP tool that works with real hardware also works with the simulator without modification.
+**Tasmota interface.** The simulator exposes the original Tasmota web interface on port 400x. The AI agent uses this interface to read the current device state and to switch the device on or off. The simulator implements the Tasmota HTTP commands required for this test scenario, so any AI agent or MCP tool that works with real hardware also works with the simulator without modification.
 
 **ADD document.** Each simulator instance serves its ADD document at the path `/add` on the same port. The AI agent retrieves this document to understand what the device is, what it is allowed to do, and how much autonomy it has. The simulator supports two selectable profiles per device: a generic profile that describes only the basic power switch capability, and a usage-context profile that places the device in the role it plays within the room. Switching between profiles is done in the Control interface and takes effect immediately.
 
@@ -242,7 +242,7 @@ TASK: "I want to watch a movie. Make the room ready."
 
 ### Why Small Models Are Interesting
 
-Large frontier models such as Claude or ChatGPT handle ADD-based device control reliably when given a well-structured prompt. A more demanding and practically relevant test is to use small, locally operated AI models with limited context capacity and weaker instruction-following. Models such as Qwen3.5-4B-Q4 run entirely on consumer hardware without any cloud connection, which makes them attractive for privacy-sensitive home automation. However, they also expose the boundaries of what ADD-based control can achieve without additional scaffolding.
+In exploratory tests, larger frontier models such as Claude or ChatGPT have generally handled ADD-based device control more consistently than the small local models tested so far. A more demanding and practically relevant test is to use small, locally operated AI models with limited context capacity and weaker instruction-following. Models such as Qwen3.5-4B-Q4 run entirely on consumer hardware without any cloud connection, which makes them attractive for privacy-sensitive home automation. However, they also expose the boundaries of what ADD-based control can achieve without additional scaffolding.
 
 ### Where Small Models Struggle
 
@@ -276,7 +276,27 @@ The step chain enforces a pattern that is elementary for acting in a real physic
 
 ### What This Reveals About ADD
 
-Testing with small models makes the value of the ADD document's machine-readable structure more visible. A well-written ADD document does not rely on the AI understanding natural language descriptions correctly. It encodes rules, autonomy levels, and confirmation requirements in structured fields that can enforce correct execution independently of the model's own judgment. The compact instruction document serves as the content-level guidance for the working method. The combination of a structured ADD document and a carefully designed instruction chain allows a 4-billion-parameter model running on a laptop to perform controlled device operations that would otherwise require a much larger model.
+Testing with small models makes the value of the ADD document's machine-readable structure more visible. A well-written ADD document does not rely on the AI understanding natural language descriptions correctly. It encodes rules, autonomy levels, and confirmation requirements in structured fields, making the intended behavior explicit and machine-readable rather than relying solely on free-form natural language. The compact instruction document serves as the content-level guidance for the working method. The combination of a structured ADD document and a carefully designed instruction chain allows a 4-billion-parameter model running on a laptop to perform controlled device operations that would otherwise require a much larger model.
+
+---
+
+## Experimental Status
+
+This test environment is currently transitioning from exploratory testing to systematic evaluation. Observations described in this document should therefore be considered preliminary rather than benchmark results.
+
+Planned controlled experiments will vary one factor at a time. The following experiment series are under development:
+
+| Series | Variable | Conditions |
+|--------|----------|------------|
+| A | ADD profile type | No ADD / Generic ADD / Contextual ADD |
+| B | Model size | 4B / 9B / 14B / 32B / 70B parameters |
+| C | Context length | 0 / 5 / 10 / 20 / 40 prior interactions |
+| D | Preference layer | ADD only / ADD + generic preferences / ADD + individual preferences |
+| E | Adversarial | Contradictory instructions, manipulated ADD documents, rule boundary probing |
+
+All other conditions — model, prompt, task, initial device state — remain identical within each series. Raw interaction logs, device request logs, and inference logs will be retained to make individual runs auditable and reproducible.
+
+The goal is not to add more features to the simulator. The test environment is considered complete for the first experiment series. The next step is to freeze test conditions, collect measurement data, and vary one variable at a time.
 
 ---
 
@@ -318,9 +338,9 @@ All rules in ADD are designed to enable safe operation, provided the AI is capab
 
 **Multiple AI agents, same devices.** Because ADD is an open, agent-agnostic standard, the same device group can be controlled by different AI models on different platforms without any re-integration work. A small local model handles routine requests. A larger cloud model takes over for complex multi-device coordination or fault diagnosis. The devices do not care which agent is talking to them. They all respond to the same interface and expose their own ADD document to any agent that connects.
 
-### What This Enables — Longer Term
+### Research Vision — Longer Term
 
-The living room is a deliberately simple starting point. The architectural principles scale directly.
+The following scenarios are not conclusions drawn from current experiments. They describe where the architectural principles of ADD could lead if the open research questions are answered successfully.
 
 **Whole-home context.** A home with ten rooms and forty devices, each with an ADD document, presents the AI with a complete, machine-readable map of the building. Room context such as bedroom, kitchen, or workshop is inferred from device combinations. Cross-room coordination becomes a single natural language instruction rather than forty individual automation rules.
 
