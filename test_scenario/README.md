@@ -25,35 +25,33 @@ The goal of this scenario is to validate that an AI agent can:
 3. **Translate natural language requests** into coordinated, contextually appropriate device actions, without the user specifying which devices to use or which state they should be in.
 4. **Respect the semantic role** of each device by distinguishing between general illumination, mood lighting, focused task light, and entertainment context.
 5. **Request confirmation** only where the ADD document explicitly requires it, and otherwise act autonomously.
-6. **Document each action** in a structured test protocol (device, action, timestamp, reason).
+6. **Track room occupancy and device usage** by inferring from context who is present, what they are doing, and how that affects which devices should be active.
+7. **Document each action** in a structured test protocol (device, action, timestamp, reason).
 
 ---
 
 ## Simulated Devices and Endpoints
 
-The AI agent has access exclusively to **Port 400x** of each device. Port 500x is the simulation dashboard for test observers only and is not accessible to the AI.
+Each device exposes three endpoints. The Tasmota interface and the ADD document are accessible to the AI agent. The Control dashboard is for test observers only and is not accessible to the AI.
 
-| # | Device | Functional Role | Tasmota UI | ADD Document |
-|---|--------|-----------------|------------|--------------|
-| 1 | Ceiling Light    | Primary room illumination; general-purpose overhead light | `http://…:4001/`     | `http://…:4001/add` |
-| 2 | Ambient Light    | Indirect accent lighting; mood and atmosphere             | `http://…:4002/`     | `http://…:4002/add` |
-| 3 | TV Backlight     | Bias lighting behind the TV; reduces eye strain           | `http://…:4003/`     | `http://…:4003/add` |
-| 4 | TV Set           | Main display; power state of the television               | `http://…:4004/`     | `http://…:4004/add` |
-| 5 | Reading Lamp     | Focused task light; directed illumination for one person  | `http://…:4005/`     | `http://…:4005/add` |
-
-### AI-Accessible Endpoints per Device
-
-| Endpoint | Description |
-|----------|-------------|
-| `http://…:400x/`         | Original Tasmota web interface for toggling the relay and reading current state |
-| `http://…:400x/add`      | ADD document (JSON) with machine-readable device description, rules, and autonomy level |
-| `http://…:400x/add.html` | ADD document (rendered HTML) as a human-readable view of the same document |
-
-### Test Observer Endpoints (not accessible to the AI)
-
-| Endpoint | Description |
-|----------|-------------|
-| `http://…:500x/` | Simulation dashboard with live device state, ADD profile selector, and request log including timestamp and client IP |
+| # | Device | Endpoints |
+|---|--------|-----------|
+| 1 | Ceiling Light | `https://ps1.norbert-walter.dnshome.de:4001` (Tasmota) |
+|   |               | `https://ps1.norbert-walter.dnshome.de:4001/add` (ADD document) |
+|   |               | `https://ps1.norbert-walter.dnshome.de:5001` (Control) |
+| 2 | Ambient Light | `https://ps2.norbert-walter.dnshome.de:4002` (Tasmota) |
+|   |               | `https://ps2.norbert-walter.dnshome.de:4002/add` (ADD document) |
+|   |               | `https://ps2.norbert-walter.dnshome.de:5002` (Control) |
+| 3 | TV Backlight  | `https://ps3.norbert-walter.dnshome.de:4003` (Tasmota) |
+|   |               | `https://ps3.norbert-walter.dnshome.de:4003/add` (ADD document) |
+|   |               | `https://ps3.norbert-walter.dnshome.de:5003` (Control) |
+| 4 | TV Set        | `https://ps4.norbert-walter.dnshome.de:4004` (Tasmota) |
+|   |               | `https://ps4.norbert-walter.dnshome.de:4004/add` (ADD document) |
+|   |               | `https://ps4.norbert-walter.dnshome.de:5004` (Control) |
+| 5 | Reading Lamp  | `https://ps5.norbert-walter.dnshome.de:4005` (Tasmota) |
+|   |               | `https://ps5.norbert-walter.dnshome.de:4005/add` (ADD document) |
+|   |               | `https://ps5.norbert-walter.dnshome.de:5005` (Control) |
+| 6 | Spot Light    | no ADD document; controlled via user preference document only |
 
 ---
 
