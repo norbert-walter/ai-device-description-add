@@ -36,21 +36,11 @@ Each device exposes three endpoints. The Tasmota interface and the ADD document 
 
 | # | Device | Endpoints |
 |---|--------|-----------|
-| 1 | Ceiling Light | `https://ps1.norbert-walter.dnshome.de:4001` (Tasmota) |
-|   |               | `https://ps1.norbert-walter.dnshome.de:4001/add` (ADD document) |
-|   |               | `https://ps1.norbert-walter.dnshome.de:5001` (Control) |
-| 2 | Ambient Light | `https://ps2.norbert-walter.dnshome.de:4002` (Tasmota) |
-|   |               | `https://ps2.norbert-walter.dnshome.de:4002/add` (ADD document) |
-|   |               | `https://ps2.norbert-walter.dnshome.de:5002` (Control) |
-| 3 | TV Backlight  | `https://ps3.norbert-walter.dnshome.de:4003` (Tasmota) |
-|   |               | `https://ps3.norbert-walter.dnshome.de:4003/add` (ADD document) |
-|   |               | `https://ps3.norbert-walter.dnshome.de:5003` (Control) |
-| 4 | TV Set        | `https://ps4.norbert-walter.dnshome.de:4004` (Tasmota) |
-|   |               | `https://ps4.norbert-walter.dnshome.de:4004/add` (ADD document) |
-|   |               | `https://ps4.norbert-walter.dnshome.de:5004` (Control) |
-| 5 | Reading Lamp  | `https://ps5.norbert-walter.dnshome.de:4005` (Tasmota) |
-|   |               | `https://ps5.norbert-walter.dnshome.de:4005/add` (ADD document) |
-|   |               | `https://ps5.norbert-walter.dnshome.de:5005` (Control) |
+| 1 | Ceiling Light | [https://ps1.norbert-walter.dnshome.de:4001](https://ps1.norbert-walter.dnshome.de:4001) (Tasmota)<br>[https://ps1.norbert-walter.dnshome.de:4001/add](https://ps1.norbert-walter.dnshome.de:4001/add) (ADD document)<br>[https://ps1.norbert-walter.dnshome.de:5001](https://ps1.norbert-walter.dnshome.de:5001) (Control) |
+| 2 | Ambient Light | [https://ps2.norbert-walter.dnshome.de:4002](https://ps2.norbert-walter.dnshome.de:4002) (Tasmota)<br>[https://ps2.norbert-walter.dnshome.de:4002/add](https://ps2.norbert-walter.dnshome.de:4002/add) (ADD document)<br>[https://ps2.norbert-walter.dnshome.de:5002](https://ps2.norbert-walter.dnshome.de:5002) (Control) |
+| 3 | TV Backlight  | [https://ps3.norbert-walter.dnshome.de:4003](https://ps3.norbert-walter.dnshome.de:4003) (Tasmota)<br>[https://ps3.norbert-walter.dnshome.de:4003/add](https://ps3.norbert-walter.dnshome.de:4003/add) (ADD document)<br>[https://ps3.norbert-walter.dnshome.de:5003](https://ps3.norbert-walter.dnshome.de:5003) (Control) |
+| 4 | TV Set        | [https://ps4.norbert-walter.dnshome.de:4004](https://ps4.norbert-walter.dnshome.de:4004) (Tasmota)<br>[https://ps4.norbert-walter.dnshome.de:4004/add](https://ps4.norbert-walter.dnshome.de:4004/add) (ADD document)<br>[https://ps4.norbert-walter.dnshome.de:5004](https://ps4.norbert-walter.dnshome.de:5004) (Control) |
+| 5 | Reading Lamp  | [https://ps5.norbert-walter.dnshome.de:4005](https://ps5.norbert-walter.dnshome.de:4005) (Tasmota)<br>[https://ps5.norbert-walter.dnshome.de:4005/add](https://ps5.norbert-walter.dnshome.de:4005/add) (ADD document)<br>[https://ps5.norbert-walter.dnshome.de:5005](https://ps5.norbert-walter.dnshome.de:5005) (Control) |
 | 6 | Spot Light    | no ADD document; controlled via user preference document only |
 
 ---
