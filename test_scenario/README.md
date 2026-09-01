@@ -6,9 +6,9 @@
 
 This test scenario demonstrates a core property of the **ADD standard**. An AI agent can derive **contextually appropriate actions** for a group of IoT devices solely from their ADD documents, without the user having defined a single rule, scene, or automation script.
 
-All six simulated devices are electrically identical power switches (e.g. Sonoff S20) running Tasmota firmware. They are single-channel relays controllable via HTTP. Five of them carry an ADD document served at /add that describes their functional role. The sixth device, a spot light, does not provide ADD functionality and is controlled solely through the user preference document.
+All six simulated devices are electrically identical power switches (e.g. Sonoff S20) running Tasmota firmware. They are single-channel relays controllable via HTTP. Five of them carry an ADD document served at /add that describes their functional role. The sixth device, a spot light, does not provide ADD functionality and will be controlled in later tests solely through the user preference document.
 
-Each of the five ADD-equipped devices can be operated with two different ADD profiles. The first is a generic profile that describes the device purely as a single-channel power switch, without any knowledge of its purpose. With this profile, an AI agent knows only that it can turn the device on or off. The second is a usage-context profile that describes what the device actually does in this room, how it relates to the other devices, and under what circumstances it should be active. This distinction makes the role of ADD visible. A generic profile is sufficient to control a device in isolation. To act correctly within a group of devices, the AI needs the usage context. Only then can it understand why a reading lamp and a television are fundamentally different things, even though both are controlled by the same type of power switch.
+Each of the five ADD-equipped devices can be operated with two different ADD profiles. The first is a generic profile that describes the device purely as a single-channel power switch, without naming its purpose. With this profile, an AI agent knows only that it can turn the device on or off. The second is a usage-context profile that describes what function the device has, how one interacts with the devices, and under what circumstances it should be active. This distinction makes the role of ADD visible. A generic profile is sufficient to control a device in isolation. To act correctly within a group of devices, the AI needs the usage context. Only then can it understand why a reading lamp and a television are fundamentally different things, even though both are controlled by the same type of power switch.
 
 The AI or the AI agent is not told what kind of room it is operating in. It reads the ADD documents of all five devices and infers the room's purpose and character from the combination of devices alone. A ceiling light, an ambient light, a TV backlight, a television, and a reading lamp together allow the AI to independently answer the question:
 
@@ -238,7 +238,47 @@ TASK: "I want to watch a movie. Make the room ready."
 
 ---
 
-## What ADD Means for the Future
+## Testing with Small, Locally Operated AI Models
+
+### Why Small Models Are Interesting
+
+Large frontier models such as Claude or ChatGPT handle ADD-based device control reliably when given a well-structured prompt. A more demanding and practically relevant test is to use small, locally operated AI models with limited context capacity and weaker instruction-following. Models such as Qwen3.5-4B-Q4 run entirely on consumer hardware without any cloud connection, which makes them attractive for privacy-sensitive home automation. However, they also expose the boundaries of what ADD-based control can achieve without additional scaffolding.
+
+### Where Small Models Struggle
+
+Small models with around 4 billion parameters show characteristic weaknesses when controlling a group of devices via ADD documents.
+
+**Context loss over longer sessions.** Instructions given at the start of a prompt lose their influence as the conversation grows. A rule loaded in step 1 may be effectively forgotten by step 15. This means that safety rules, confirmation requirements, and autonomy boundaries encoded in the ADD document are at risk of being silently ignored as the session progresses.
+
+**Skipping mandatory steps.** When given a multi-step workflow, small models tend to shortcut or merge steps, especially when consecutive steps seem similar. A model may query the device state once and reuse that result for several subsequent requests instead of querying it fresh each time, even when the prompt explicitly prohibits this.
+
+**Hallucinating device states.** Without a fresh tool call, a small model may report a device state it believes to be correct based on earlier context rather than an actual measurement. It may also invent a plausible explanation for why a measured value "must be wrong" rather than accepting the measurement as authoritative.
+
+**Ambiguous multi-person situations.** When several people are present in a room and one of them makes a request, small models often fail to correctly apply shared-resource logic. They may switch off a device that is still in use by another person, or ask unnecessary confirmation questions instead of following the fixed rule.
+
+**Rule dilution under message accumulation.** The longer a session runs, the more the model's behavior shifts toward fluent conversation rather than strict rule adherence. Critical constraints such as children's TV curfews or mandatory confirmation steps become progressively less reliable.
+
+### How to Guide Small Models Effectively
+
+The compact instruction document developed for this test scenario addresses these weaknesses through a set of structural measures that have proven effective in live testing with Qwen3.5-4B-Q4.
+
+**Numbered step chains with explicit completion criteria.** Every request follows a fixed sequence of numbered steps. Each step is only considered done when an actual tool call has been made. The model is explicitly told that recalling a result from an earlier response is never valid for steps involving current device state or time.
+
+**Separation of one-time and per-request steps.** Steps that load static knowledge such as ADD documents and the ethics framework are marked as one-time per session. Steps that involve current state such as device status and time are marked as mandatory for every single request without exception. This division reduces unnecessary tool calls while preserving the freshness guarantee for state-dependent decisions.
+
+**Explicit participant tracking with formal logic.** Multi-person room situations are handled through a deterministic shared-resource rule written out as a formal logic schema directly in the prompt. A device assigned to an ongoing activity may only be changed when every person involved has individually confirmed they are done. The model is told that this rule requires no judgment call and no confirmation question — it either applies or it does not.
+
+**Forcing rule internalization through explicit restatement.** Small models tend to follow a rule reliably only if that rule is actively present in their recent context. A rule stated once at the start of a long prompt will lose its influence as the conversation grows. The compact instruction document counters this through a deliberate technique: the model is required to restate critical rules in its own words and with a justification at specific points in the workflow. Because the model formulates the rule itself, with its own words and a justification, the rule reappears freshly in the conversation history at regular intervals. This repeated resurfacing sharpens the model's attention to the rule in a way that a single statement at the start of a prompt cannot achieve. Even when the original instruction has long since scrolled out of the effective context window, the rule remains present in recent history in the model's own voice. This has proven to be one of the most effective measures for making small models adhere to constraints they would otherwise silently drop after a few exchanges.
+
+**Explicit transition guard between setup and first request.** Small models frequently treat the completion of the setup phase as implicit permission to skip step 13 on the very first actual request. The instruction document addresses this directly with an explicit warning that the first real request after setup is subject to exactly the same per-request rules as every subsequent request.
+
+### What This Reveals About ADD
+
+Testing with small models makes the value of the ADD document's machine-readable structure more visible. A well-written ADD document does not rely on the AI understanding natural language descriptions correctly. It encodes rules, autonomy levels, and confirmation requirements in structured fields that can enforce correct execution independently of the model's own judgment. The compact instruction document serves as the content-level guidance for the working method. The combination of a structured ADD document and a carefully designed instruction chain allows a 4-billion-parameter model running on a laptop to perform controlled device operations that would otherwise require a much larger model.
+
+---
+
+## What ADD Could Mean for the Future
 
 ### From Device Control to Contextual Intelligence
 
