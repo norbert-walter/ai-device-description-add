@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Alpha-Blending</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background-color: #f4f4f4;
+            color: #222;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .controls {
+            max-width: 700px;
+            padding: 20px;
+            margin-bottom: 25px;
+
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            margin-bottom: 15px;
+        }
+
+        label {
+            width: 160px;
+            font-weight: bold;
+        }
+
+        input[type="number"] {
+            width: 70px;
+            padding: 6px;
+            font-size: 16px;
+        }
+
+        input[type="file"] {
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 18px;
+
+            font-size: 15px;
+            cursor: pointer;
+
+            border: 1px solid #888;
+            border-radius: 5px;
+
+            background-color: #eee;
+        }
+
+        button:hover {
+            background-color: #ddd;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        canvas {
+            display: block;
+
+            max-width: 100%;
+            height: auto;
+
+            background-color: white;
+
+            border: 1px solid #999;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <h1>Alpha-Blending zweier Bilder</h1>
+
+    <div class="controls">
+
+        <!-- Bild 1 -->
+        <div class="row">
+            <label for="image1Input">
+                Bild 1:
+            </label>
+
+            <input
+                type="file"
+                id="image1Input"
+                accept="image/png,image/jpeg,image/webp"
+            >
+        </div>
+
+
+        <!-- Bild 2 -->
+        <div class="row">
+            <label for="image2Input">
+                Bild 2:
+            </label>
+
+            <input
+                type="file"
+                id="image2Input"
+                accept="image/png,image/jpeg,image/webp"
+            >
+        </div>
+
+
+        <!-- Alpha-Wert -->
+        <div class="row">
+            <label for="alphaInput">
+                Bild 2 Anteil:
+            </label>
+
+            <input
+                type="number"
+                id="alphaInput"
+                min="0"
+                max="100"
+                step="1"
+                value="50"
+            >
+
+            <span>%</span>
+        </div>
+
+
+        <!-- Download -->
+        <div class="row">
+            <label></label>
+
+            <button
+                id="downloadButton"
+                disabled
+            >
+                PNG herunterladen
+            </button>
+        </div>
+
+
+        <!-- Status -->
+        <div id="status">
+            Bitte Bild 1 und Bild 2 auswählen.
+        </div>
+
+    </div>
+
+
+    <div class="result">
+
+        <h2>Ergebnis</h2>
+
+        <canvas id="canvas"></canvas>
+
+    </div>
+
+
+<script>
+
+    // ------------------------------------------------------------
+    // HTML-Elemente
+    // ------------------------------------------------------------
+
+    const image1Input =
+        document.getElementById("image1Input");
+
+    const image2Input =
+        document.getElementById("image2Input");
+
+    const alphaInput =
+        document.getElementById("alphaInput");
+
+    const downloadButton =
+        document.getElementById("downloadButton");
+
+    const status =
+        document.getElementById("status");
+
+    const canvas =
+        document.getElementById("canvas");
+
+    const ctx =
+        canvas.getContext("2d");
+
+
+    // ------------------------------------------------------------
+    // Geladene Bilder
+    // ------------------------------------------------------------
+
+    let image1 = null;
+    let image2 = null;
+
+
+    // ------------------------------------------------------------
+    // Datei als Bild laden
+    // ------------------------------------------------------------
+
+    function loadImage(file) {
+
+        return new Promise((resolve, reject) => {
+
+            const image =
+                new Image();
+
+            const url =
+                URL.createObjectURL(file);
+
+
+            image.onload = function() {
+
+                URL.revokeObjectURL(url);
+
+                resolve(image);
+            };
+
+
+            image.onerror = function() {
+
+                URL.revokeObjectURL(url);
+
+                reject(
+                    new Error(
+                        "Das Bild konnte nicht geladen werden."
+                    )
+                );
+            };
+
+
+            image.src = url;
+
+        });
+
+    }
+
+
+    // ------------------------------------------------------------
+    // Bild 1 auswählen
+    // ------------------------------------------------------------
+
+    image1Input.addEventListener(
+        "change",
+        async function() {
+
+            if (!this.files.length) {
+                return;
+            }
+
+            try {
+
+                image1 =
+                    await loadImage(this.files[0]);
+
+                render();
+
+            }
+            catch (error) {
+
+                alert(error.message);
+
+            }
+
+        }
+    );
+
+
+    // ------------------------------------------------------------
+    // Bild 2 auswählen
+    // ------------------------------------------------------------
+
+    image2Input.addEventListener(
+        "change",
+        async function() {
+
+            if (!this.files.length) {
+                return;
+            }
+
+            try {
+
+                image2 =
+                    await loadImage(this.files[0]);
+
+                render();
+
+            }
+            catch (error) {
+
+                alert(error.message);
+
+            }
+
+        }
+    );
+
+
+    // ------------------------------------------------------------
+    // Alpha-Wert geändert
+    // ------------------------------------------------------------
+
+    alphaInput.addEventListener(
+        "input",
+        function() {
+
+            let value =
+                Number(alphaInput.value);
+
+
+            // Wertebereich auf 0 ... 100 begrenzen
+
+            if (value < 0) {
+                value = 0;
+            }
+
+            if (value > 100) {
+                value = 100;
+            }
+
+
+            render();
+
+        }
+    );
+
+
+    alphaInput.addEventListener(
+        "change",
+        function() {
+
+            let value =
+                Number(alphaInput.value);
+
+
+            if (!Number.isFinite(value)) {
+                value = 50;
+            }
+
+
+            value =
+                Math.max(
+                    0,
+                    Math.min(100, value)
+                );
+
+
+            alphaInput.value =
+                value;
+
+
+            render();
+
+        }
+    );
+
+
+    // ------------------------------------------------------------
+    // Alpha-Blending durchführen
+    // ------------------------------------------------------------
+
+    function render() {
+
+        // Beide Bilder müssen geladen sein
+
+        if (!image1 || !image2) {
+
+            downloadButton.disabled = true;
+
+            status.textContent =
+                "Bitte Bild 1 und Bild 2 auswählen.";
+
+            return;
+        }
+
+
+        // --------------------------------------------------------
+        // Größe des Ergebnisbildes
+        //
+        // Die Originalgröße von Bild 1 wird verwendet.
+        // --------------------------------------------------------
+
+        const width =
+            image1.naturalWidth;
+
+        const height =
+            image1.naturalHeight;
+
+
+        canvas.width =
+            width;
+
+        canvas.height =
+            height;
+
+
+        // --------------------------------------------------------
+        // Alpha-Wert ermitteln
+        // --------------------------------------------------------
+
+        let percent =
+            Number(alphaInput.value);
+
+
+        if (!Number.isFinite(percent)) {
+            percent = 50;
+        }
+
+
+        percent =
+            Math.max(
+                0,
+                Math.min(100, percent)
+            );
+
+
+        const alpha =
+            percent / 100;
+
+
+        // --------------------------------------------------------
+        // Canvas löschen
+        // --------------------------------------------------------
+
+        ctx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        // --------------------------------------------------------
+        // Bild 1 zeichnen
+        // --------------------------------------------------------
+
+        ctx.globalAlpha =
+            1 - alpha;
+
+
+        ctx.drawImage(
+            image1,
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        // --------------------------------------------------------
+        // Bild 2 darüber zeichnen
+        // --------------------------------------------------------
+
+        ctx.globalAlpha =
+            alpha;
+
+
+        ctx.drawImage(
+            image2,
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        // Alpha zurücksetzen
+
+        ctx.globalAlpha = 1;
+
+
+        // --------------------------------------------------------
+        // Status anzeigen
+        // --------------------------------------------------------
+
+        const image1Percent =
+            Math.round((1 - alpha) * 100);
+
+        const image2Percent =
+            Math.round(alpha * 100);
+
+
+        status.textContent =
+            "Bild 1: " +
+            image1Percent +
+            " % | Bild 2: " +
+            image2Percent +
+            " % | Auflösung: " +
+            width +
+            " × " +
+            height +
+            " Pixel";
+
+
+        downloadButton.disabled = false;
+
+    }
+
+
+    // ------------------------------------------------------------
+    // Ergebnis als PNG herunterladen
+    // ------------------------------------------------------------
+
+    downloadButton.addEventListener(
+        "click",
+        function() {
+
+            if (!image1 || !image2) {
+                return;
+            }
+
+
+            const percent =
+                Number(alphaInput.value);
+
+
+            canvas.toBlob(
+                function(blob) {
+
+                    if (!blob) {
+                        alert(
+                            "Das PNG konnte nicht erzeugt werden."
+                        );
+
+                        return;
+                    }
+
+
+                    const url =
+                        URL.createObjectURL(blob);
+
+
+                    const link =
+                        document.createElement("a");
+
+
+                    link.href =
+                        url;
+
+
+                    link.download =
+                        "alpha-blend-" +
+                        percent +
+                        ".png";
+
+
+                    document.body.appendChild(link);
+
+                    link.click();
+
+                    link.remove();
+
+
+                    URL.revokeObjectURL(url);
+
+                },
+
+                "image/png"
+
+            );
+
+        }
+    );
+
+</script>
+
+</body>
+</html>

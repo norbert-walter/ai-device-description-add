@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>PNG Alpha-Blending</title>
+
+    <style>
+        #imageContainer {
+            position: relative;
+            width: 600px;
+            height: 400px;
+        }
+
+        #imageContainer img {
+            position: absolute;
+            top: 0;
+            left: 0;
+
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        #image1 {
+            opacity: 1;
+        }
+
+        #image2 {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="imageContainer">
+    <img id="image1" src="KI_Use_Case_Home_EN.png" alt="">
+    <img id="image2" src="KI_Use_Case_Industry_EN.png" alt="">
+</div>
+
+<script>
+const image1 = document.getElementById("image1");
+const image2 = document.getElementById("image2");
+
+const holdTime = 10000;  // 10 Sekunden sichtbar
+const fadeTime = 2000;   // 2 Sekunden Überblendung
+
+let startTime = performance.now();
+
+function animate(currentTime) {
+
+    const elapsed = currentTime - startTime;
+
+    // Gesamtdauer eines Zyklus:
+    // 5s Bild 1
+    // 2s Überblendung zu Bild 2
+    // 5s Bild 2
+    // 2s Überblendung zu Bild 1
+    const cycleTime = holdTime + fadeTime + holdTime + fadeTime;
+
+    const time = elapsed % cycleTime;
+
+    let blend;
+
+    if (time < holdTime) {
+
+        // Bild 1 vollständig sichtbar
+        blend = 0;
+
+    } else if (time < holdTime + fadeTime) {
+
+        // Bild 1 -> Bild 2
+        blend = (time - holdTime) / fadeTime;
+
+    } else if (time < holdTime + fadeTime + holdTime) {
+
+        // Bild 2 vollständig sichtbar
+        blend = 1;
+
+    } else {
+
+        // Bild 2 -> Bild 1
+        blend = 1 -
+            (time - (holdTime + fadeTime + holdTime)) / fadeTime;
+    }
+
+    image1.style.opacity = 1 - blend;
+    image2.style.opacity = blend;
+
+    requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+</script>
+
+</body>
+</html>
