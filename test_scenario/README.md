@@ -38,7 +38,7 @@ The tests described in this document were conducted on a PC workstation using Cl
 
 Additional information on test equipment used in this project — including hardware configurations, local inference setups for small models, and GPU specifications — is documented at:
 
-`https://github.com/norbert-walter/ai-device-description-add/tree/main/test_equipment`
+[https://github.com/norbert-walter/ai-device-description-add/tree/main/test_equipment](https://github.com/norbert-walter/ai-device-description-add/tree/main/test_equipment)
 
 
 ### Why MCP Tools Are Needed
