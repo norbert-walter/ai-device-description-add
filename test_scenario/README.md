@@ -32,6 +32,16 @@ The ADD simulator replicates the behavior of a real Tasmota power switch in soft
 
 ## How to Use an AI for This Test
 
+### Test Equipment
+
+The tests described in this document were conducted on a workstation using [Claude Desktop](https://claude.ai/download) in the Pro version. Claude Desktop provides native support for MCP connectors, which are required for reliable device access as described below.
+
+Additional test equipment used in this project — including hardware configurations, local inference setups for small models, and GPU specifications — is documented at:
+
+[https://github.com/norbert-walter/ai-device-description-add/tree/main/test_equipment](https://github.com/norbert-walter/ai-device-description-add/tree/main/test_equipment)
+
+---
+
 ### Why Claude Desktop with a Pro Subscription
 
 Claude Desktop in the Pro version is the recommended AI client for this test scenario. The Pro subscription unlocks the ability to connect external MCP services, which are essential for reliable device access. The free version of Claude and other free-tier AI clients do not support MCP and are therefore not suitable for this test.
