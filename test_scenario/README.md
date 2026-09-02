@@ -298,8 +298,8 @@ Planned controlled experiments will vary one factor at a time. The following exp
 | Series | Variable | Conditions |
 |--------|----------|------------|
 | A | ADD profile type | No ADD / Generic ADD / Contextual ADD |
-| B | Model size | 4B / 9B / 14B / 32B / 70B parameters |
-| C | Context length | 0 / 5 / 10 / 20 / 40 prior interactions |
+| B | AI model | selected models from ~4B to ~70B parameters |
+| C | Conversation history depth | 0 / 5 / 10 / 20 / 40 prior interactions |
 | D | Preference layer | ADD only / ADD + generic preferences / ADD + individual preferences |
 | E | Adversarial | Contradictory instructions, manipulated ADD documents, rule boundary probing |
 
