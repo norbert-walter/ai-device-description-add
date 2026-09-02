@@ -171,6 +171,8 @@ An AI reading this document immediately knows what the device is, how to control
 | [Ethical Framework — Full](ADD_Ethical_Framework_Full_v1_0.md) | For Autonomy Level 3 |
 | [ADD Style Guide](ADD_Style_Guide_v1_0.md) | Style Guide for dashboars |
 | [ADD Simulator](simulator/) | Interactive simulator for testing ADD-compatible devices and AI behavior |
+| [ADD Multi-Device Test](test_scenario/) | Multi device test scenario in a living room |
+| [Test Equipment](test_equipment/) | Test equipment and evaluation methodology |
 | [REAL Hardware](real_hardware/) | Real hardware wind sensor Yachta for testing ADD-compatible devices and AI behavior, example for dashboard creation |
 | [ADD Tools](tools/) | Utilities and scripts for testing and validation workflows |
 
@@ -240,7 +242,7 @@ This work is currently pursued in spare time, alongside a full-time job, which m
 
 | Status | Topic | Description |
 |---|---|---|
-| 🔧 | **Multi-agent AI hardware acquisition** | Procure flexible, adaptable AI hardware capable of running multi-agent systems, to enable automated, repeatable test runs (e.g. Captain Principle setups, concurrent Actor/Observer agents) beyond what current single-node local inference hardware supports |
+| ✅ | **Multi-agent AI hardware acquisition** | Procure flexible, adaptable AI hardware capable of running multi-agent systems, to enable automated, repeatable test runs (e.g. Captain Principle setups, concurrent Actor/Observer agents) beyond what current single-node local inference hardware supports |
 | 🔧 | **Industrial plant component model — build/acquire** | Build or acquire a real functional model of an industrial plant component, to serve as a representative multi-component test platform beyond single devices (sensors, cooling valve) |
 
 ### Implementation
