@@ -100,11 +100,11 @@ Run the same ADD scenario with 4B, 9B, 14B, 32B, and 70B models in sequence. For
 
 ## IoT Test Devices
 
-| Status | Device | Role in Test System |
+| Image | Device | Role in Test System |
 |---|---|---|
-| ✅ | **Sonoff devices** (various) | Tasmota-flashed actuators used as simple ADD-compatible test targets. Represent the realistic low-end of the deployment spectrum: cheap, widely deployed, HTTP-capable hardware. Primary device class for valve, switch, and relay scenarios. |
-| ✅ | **Yachta Windsensor 2.1** | Real deployed marine hardware with ADD-enabled firmware. Tests ADD under actual network conditions with real sensor data (wind speed, wind angle). Approximately 250 units shipped; ADD rollout in progress to existing users. |
-| ✅ | **OBP40 / OBP60** (Open Boat Projects multifunction displays) | Multi-interface marine hardware (NMEA 2000, NMEA 0183, WiFi, display). Used for testing ADD on complex, multi-protocol real devices and for dashboard integration work. |
+| <img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/Sonoff_S20.jpg" width="200" height="200" style="object-fit:contain;"> | **Sonoff devices** (various) | Tasmota-flashed actuators used as simple ADD-compatible test targets. Represent the realistic low-end of the deployment spectrum: cheap, widely deployed, HTTP-capable hardware. Primary device class for valve, switch, and relay scenarios. |
+| <img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/Yachta_Wind_Sensor.png" width="200" height="200" style="object-fit:contain;"> | **Yachta Windsensor 2.1** | Real deployed marine hardware with ADD-enabled firmware. Tests ADD under actual network conditions with real sensor data (wind speed, wind angle). Approximately 250 units shipped; ADD rollout in progress to existing users. |
+| <img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/OBP60_Naigation.png" width="200" height="200" style="object-fit:contain;"> | **OBP40 / OBP60** (Open Boat Projects multifunction displays) | Multi-interface marine hardware (NMEA 2000, NMEA 0183, WiFi, display). Used for testing ADD on complex, multi-protocol real devices and for dashboard integration work. |
 
 The combination of simulated devices (ADD Simulator), simple real actuators (Sonoff/Tasmota), and fully instrumented real hardware (Yachta, OBP) covers the evaluation range from controlled laboratory conditions to actual field deployment.
 
