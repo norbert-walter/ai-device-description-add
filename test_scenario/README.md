@@ -32,19 +32,14 @@ The ADD simulator replicates the behavior of a real Tasmota power switch in soft
 
 ## How to Use an AI for This Test
 
-### Test Equipment
+### Test Environment
 
-The tests described in this document were conducted on a workstation using [Claude Desktop](https://claude.ai/download) in the Pro version. Claude Desktop provides native support for MCP connectors, which are required for reliable device access as described below.
+The tests described in this document were conducted on a PC workstation using Claude Desktop in the Pro version. The Pro version is the recommended AI client for this test scenario. The Pro subscription unlocks the ability to connect external MCP services, which are essential for reliable device access. The free version of Claude and other free-tier AI clients do not support MCP and are therefore not suitable for this test.
 
-Additional test equipment used in this project — including hardware configurations, local inference setups for small models, and GPU specifications — is documented at:
+Additional information on test equipment used in this project — including hardware configurations, local inference setups for small models, and GPU specifications — is documented at:
 
-[https://github.com/norbert-walter/ai-device-description-add/tree/main/test_equipment](https://github.com/norbert-walter/ai-device-description-add/tree/main/test_equipment)
+`https://github.com/norbert-walter/ai-device-description-add/tree/main/test_equipment`
 
----
-
-### Why Claude Desktop with a Pro Subscription
-
-Claude Desktop in the Pro version is the recommended AI client for this test scenario. The Pro subscription unlocks the ability to connect external MCP services, which are essential for reliable device access. The free version of Claude and other free-tier AI clients do not support MCP and are therefore not suitable for this test.
 
 ### Why MCP Tools Are Needed
 
@@ -376,7 +371,7 @@ The living room with five power switches is a proof of concept. The architecture
 
 ## Further Notes
 
-- The ADD Simulator is publicly available at `https://add-simulator.norbert-walter.dnshome.de`
-- The ADD specification, Developer Guide, and all example documents are available at `https://github.com/norbert-walter/ai-device-description-add`
+- The ADD Simulator is publicly available at [https://add-simulator.norbert-walter.dnshome.de](https://add-simulator.norbert-walter.dnshome.de)
+- The ADD specification, Developer Guide, and all example documents are available at [https://github.com/norbert-walter/ai-device-description-add](https://github.com/norbert-walter/ai-device-description-add)
 - The recommended MCP tool for local HTTP access is `mcp-fetch:fetch` with the cache-buster parameter `?t=<unix_timestamp>`
 - The simulation dashboard (Port 500x) logs every request to a device with timestamp and client IP, which is useful for verifying that the AI only accessed the permitted endpoints.
