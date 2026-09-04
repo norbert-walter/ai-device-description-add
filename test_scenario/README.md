@@ -198,7 +198,7 @@ for a relaxed evening. The adults want to watch something later."
 
 ### Compact preference document for small AI models
 
-In addition to the full preference document, a compact version exists that is specifically designed for small, locally operated AI models. Frontier models can handle a richly structured preference document and derive the correct behavior from it with relatively little explicit guidance. Small models with limited context capacity and weaker instruction-following cannot. They need to be guided strictly through every step of the process to achieve comparable results.
+In addition to the full preference document, a compact version **livingroom_preferences_compact.md** exists that is specifically designed for small, locally operated AI models. Frontier models can handle a richly structured preference document and derive the correct behavior from it with relatively little explicit guidance. Small models with limited context capacity and weaker instruction-following cannot. They need to be guided strictly through every step of the process to achieve comparable results.
 
 The compact preference document replaces open-ended descriptions with a numbered step chain that the model must execute completely and in order for every single request. It makes the participant logic for multi-person situations explicit as a formal schema, enforces fresh status queries without exception, and requires the model to restate critical rules in its own words at defined points in the workflow. This strict structure compensates for the context loss, rule drift, and step-skipping that small models show under less guided conditions.
 
