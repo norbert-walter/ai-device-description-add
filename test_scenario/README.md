@@ -22,11 +22,26 @@ Only after establishing this understanding does the AI translate natural languag
 
 The ADD simulator replicates the behavior of a real Tasmota power switch in software. Each simulated device runs as an independent instance and provides three functions.
 
-**Tasmota interface.** The simulator exposes the original Tasmota web interface on port 400x. The AI agent uses this interface to read the current device state and to switch the device on or off. The simulator implements the Tasmota HTTP commands required for this test scenario, so any AI agent or MCP tool that works with real hardware also works with the simulator without modification.
+**Tasmota interface.** The simulator exposes the original Tasmota web interface. The AI agent uses this interface to read the current device state and to switch the device on or off. The simulator implements the Tasmota HTTP commands required for this test scenario, so any AI agent or MCP tool that works with real hardware also works with the simulator without modification.
 
 **ADD document.** Each simulator instance serves its ADD document at the path `/add` on the same port. The AI agent retrieves this document to understand what the device is, what it is allowed to do, and how much autonomy it has. The simulator supports two selectable profiles per device: a generic profile that describes only the basic power switch capability, and a usage-context profile that places the device in the role it plays within the room. Switching between profiles is done in the Control interface and takes effect immediately.
 
-**Control interface.** The simulator provides a separate Control interface on port 500x. This interface is intended for the test observer and is not accessible to the AI agent. It shows the current device state, allows switching between ADD profiles at runtime, and displays a live log of all requests made to the device including timestamp and client IP address. The log makes every action of the AI agent visible and traceable in real time. The ADD document can also be edited directly in the Control interface. Changes take effect immediately and are visible to the AI agent on the next request. This allows testing how the AI agent reacts to modified rules, changed autonomy levels, or altered device descriptions without restarting the simulator.
+**Control interface.** The simulator provides a separate Control interface. This interface is intended for the test observer and is not accessible to the AI agent. It shows the current device state, allows switching between ADD profiles at runtime, and displays a live log of all requests made to the device including timestamp and client IP address. The log makes every action of the AI agent visible and traceable in real time. The ADD document can also be edited directly in the Control interface. Changes take effect immediately and are visible to the AI agent on the next request. This allows testing how the AI agent reacts to modified rules, changed autonomy levels, or altered device descriptions without restarting the simulator.
+
+---
+
+## Simulated Devices and Endpoints
+
+Each device exposes three endpoints. The Tasmota interface and the ADD document are accessible to the AI agent. The Control dashboard is for test observers only and is not accessible to the AI.
+
+| **#** | **Device** | Endpoints |
+|---|--------|-----------|
+| **1** | **Ceiling Light** | [https://ps1.norbert-walter.dnshome.de](https://ps1.norbert-walter.dnshome.de) (Tasmota)<br>[https://ps1.norbert-walter.dnshome.de/add](https://ps1.norbert-walter.dnshome.de/add) (ADD document)<br>[https://ps1-cntl.norbert-walter.dnshome.de](https://ps1-cntl.norbert-walter.dnshome.de) (Control) |
+| **2** | **Ambient Light** | [https://ps2.norbert-walter.dnshome.de](https://ps2.norbert-walter.dnshome.de) (Tasmota)<br>[https://ps2.norbert-walter.dnshome.de/add](https://ps2.norbert-walter.dnshome.de/add) (ADD document)<br>[https://ps2-cntl.norbert-walter.dnshome.de](https://ps2-cntl.norbert-walter.dnshome.de) (Control) |
+| **3** | **TV Backlight**  | [https://ps3.norbert-walter.dnshome.de](https://ps3.norbert-walter.dnshome.de) (Tasmota)<br>[https://ps3.norbert-walter.dnshome.de/add](https://ps3.norbert-walter.dnshome.de/add) (ADD document)<br>[https://ps3-cntl.norbert-walter.dnshome.de](https://ps3-cntl.norbert-walter.dnshome.de) (Control) |
+| **4** | **TV Set**        | [https://ps4.norbert-walter.dnshome.de](https://ps4.norbert-walter.dnshome.de) (Tasmota)<br>[https://ps4.norbert-walter.dnshome.de/add](https://ps4.norbert-walter.dnshome.de/add) (ADD document)<br>[https://ps4-cntl.norbert-walter.dnshome.de](https://ps4-cntl.norbert-walter.dnshome.de) (Control) |
+| **5** | **Reading Lamp**  | [https://ps5.norbert-walter.dnshome.de](https://ps5.norbert-walter.dnshome.de) (Tasmota)<br>[https://ps5.norbert-walter.dnshome.de/add](https://ps5.norbert-walter.dnshome.de/add) (ADD document)<br>[https://ps5-cntl.norbert-walter.dnshome.de](https://ps5-cntl.norbert-walter.dnshome.de) (Control) |
+| **6** | **Spot Light**    | no ADD document; controlled via user preference document only; accessible via local private IP address only |
 
 ---
 
@@ -89,21 +104,6 @@ The goal of this scenario is to validate that an AI agent can:
 5. **Request confirmation** only where the ADD document explicitly requires it, and otherwise act autonomously.
 6. **Track room occupancy and device usage** by inferring from context who is present, what they are doing, and how that affects which devices should be active.
 7. **Document each action** in a structured test protocol (device, action, timestamp, reason).
-
----
-
-## Simulated Devices and Endpoints
-
-Each device exposes three endpoints. The Tasmota interface and the ADD document are accessible to the AI agent. The Control dashboard is for test observers only and is not accessible to the AI.
-
-| **#** | **Device** | Endpoints |
-|---|--------|-----------|
-| **1** | **Ceiling Light** | [https://ps1.norbert-walter.dnshome.de](https://ps1.norbert-walter.dnshome.de) (Tasmota)<br>[https://ps1.norbert-walter.dnshome.de/add](https://ps1.norbert-walter.dnshome.de/add) (ADD document)<br>[https://ps1-cntl.norbert-walter.dnshome.de](https://ps1-cntl.norbert-walter.dnshome.de) (Control) |
-| **2** | **Ambient Light** | [https://ps2.norbert-walter.dnshome.de](https://ps2.norbert-walter.dnshome.de) (Tasmota)<br>[https://ps2.norbert-walter.dnshome.de/add](https://ps2.norbert-walter.dnshome.de/add) (ADD document)<br>[https://ps2-cntl.norbert-walter.dnshome.de](https://ps2-cntl.norbert-walter.dnshome.de) (Control) |
-| **3** | **TV Backlight**  | [https://ps3.norbert-walter.dnshome.de](https://ps3.norbert-walter.dnshome.de) (Tasmota)<br>[https://ps3.norbert-walter.dnshome.de/add](https://ps3.norbert-walter.dnshome.de/add) (ADD document)<br>[https://ps3-cntl.norbert-walter.dnshome.de](https://ps3-cntl.norbert-walter.dnshome.de) (Control) |
-| **4** | **TV Set**        | [https://ps4.norbert-walter.dnshome.de](https://ps4.norbert-walter.dnshome.de) (Tasmota)<br>[https://ps4.norbert-walter.dnshome.de/add](https://ps4.norbert-walter.dnshome.de/add) (ADD document)<br>[https://ps4-cntl.norbert-walter.dnshome.de](https://ps4-cntl.norbert-walter.dnshome.de) (Control) |
-| **5** | **Reading Lamp**  | [https://ps5.norbert-walter.dnshome.de](https://ps5.norbert-walter.dnshome.de) (Tasmota)<br>[https://ps5.norbert-walter.dnshome.de/add](https://ps5.norbert-walter.dnshome.de/add) (ADD document)<br>[https://ps5-cntl.norbert-walter.dnshome.de](https://ps5-cntl.norbert-walter.dnshome.de) (Control) |
-| **6** | **Spot Light**    | no ADD document; controlled via user preference document only; accessible via local private IP address only |
 
 ---
 
