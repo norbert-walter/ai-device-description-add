@@ -171,7 +171,7 @@ Step 1 — Load all ADD documents
   Reading Lamp:   https://ps5.norbert-walter.dnshome.de/add
 
 Step 2 — Load the user preference document
-  [URL or path to the preference document]
+  https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/test_scenario/livingroom_preferences.md
 
 Step 3 — State your understanding
   For each device, name its functional role, its permitted actions, and its confirmation
