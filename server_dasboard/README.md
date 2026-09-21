@@ -133,7 +133,7 @@ After starting or stopping an instance, additional polls are triggered at 800 ms
 
 ## API Endpoints
 
-<img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/Dashboard_Endpoints_EN.png" alt="Dash Board Endpoints" width="800">
+<img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/Dashboard_Endpoints_EN.png" alt="Dash Board Endpoints" width="800">
 
 The dashboard exposes its own REST API on **port 9000**, which can also be called directly (e.g. from scripts or monitoring tools).
 
