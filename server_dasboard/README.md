@@ -1,6 +1,6 @@
 # AI Server · GPU Dashboard
 
-<img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/AI_Server_Dashboard_EN.png" alt="AI Server GPU Dash Board" width="800">
+<img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/Dashboard.png" alt="AI Server GPU Dash Board" width="800">
 
 A live web dashboard for managing **llama-server** instances on a multi-GPU server. It shows system utilization, VRAM usage, and running model instances in real time — and lets you start, stop, and configure new instances directly from the browser.
 
