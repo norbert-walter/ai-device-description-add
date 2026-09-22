@@ -175,6 +175,7 @@ An AI reading this document immediately knows what the device is, how to control
 | [Test Equipment](test_equipment/) | Test equipment and evaluation methodology |
 | [REAL Hardware](real_hardware/) | Real hardware wind sensor Yachta for testing ADD-compatible devices and AI behavior, example for dashboard creation |
 | [ADD Tools](tools/) | Utilities and scripts for testing and validation workflows |
+| [AI Server Dashboard](server_dashboard/) | A live web dashboard for managing llama-server instances on a multi-GPU server |
 | [Github Tasmota User Group](https://github.com/arendst/Tasmota/discussions/25006) | Diskussion to ADD integration in Tasmota |
 | [Discord Tasmota User Group](https://discord.com/channels/479389167382691863/573596830252924928) | Diskussion to ADD integration in Tasmota |
 
