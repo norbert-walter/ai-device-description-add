@@ -77,8 +77,8 @@ The Dell Optiplex Micro 7020 runs permanently and hosts all Docker-based service
 | Image | Equipment | Role in Test System |
 |---|---|---|
 | <img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/Dell_Optiplex_7020.jpg" width="200" height="200" style="object-fit:contain;"> | **Dell Optiplex Micro 7020**<br>i5-14500T, 64 GB RAM | Hosts Docker-based services: LocalAI, ADD Simulator, MCP server containers. Runs up to 50 different models for offline and on-premise testing. Primary environment for local model evaluation (small to mid-size models without GPU requirements). |
-| <img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/Dell_Precision_5820.jpg" width="200" height="200" style="object-fit:contain;"> | **Dell Precision 5820**<br>AMD RX 6700 XT (12 GB VRAM), 128 GB RAM, 8 TB HDD | Local LLM inference via Vulkan/llama.cpp. Supports small to mid-size quantized models. Used for exploratory runs and model qualification before multi-GPU deployment. |
-| <img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/KI_Server_Gigabyte_G431-MMO.png" width="200" height="200" style="object-fit:contain;"> | **KI-Server G431-MM0**<br>6× NVIDIA P100 (16 GB VRAM each), 96 GB total VRAM, 1 TB SSD | Multi-GPU inference via CUDA/llama.cpp. Runs models from 4B to approximately 70B parameters. Enables parallel model instances, multi-agent configurations, and runtime monitoring during tests. Central platform for Level 2 and Level 3 evaluation. |
+| <img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/Dell_Precision_5820.jpg" width="200" height="200" style="object-fit:contain;"> | **Dell Precision 5820**<br>XEON W2145, AMD RX 6700 XT (12 GB VRAM), 128 GB RAM, 8 TB HDD | Local LLM inference via Vulkan/llama.cpp. Supports small to mid-size quantized models. Used for exploratory runs and model qualification before multi-GPU deployment. |
+| <img src="https://raw.githubusercontent.com/norbert-walter/ai-device-description-add/refs/heads/main/pictures/KI_Server_Gigabyte_G431-MMO.png" width="200" height="200" style="object-fit:contain;"> | **KI-Server G431-MM0**<br>8× NVIDIA P100 (16 GB VRAM each), 128 GB total VRAM, 1 TB SSD | Multi-GPU inference via CUDA/llama.cpp. Runs models from 4B to approximately 120B parameters. Enables parallel model instances, multi-agent configurations, and runtime monitoring during tests. Central platform for Level 2 and Level 3 evaluation. |
 
 ### AI Server — Extended Evaluation Capabilities
 
@@ -94,7 +94,7 @@ The AI server runs a management tool that provides runtime visibility into model
 This makes it possible to observe not only *whether* a model succeeds at an ADD task, but *how* it uses its context, how much compute it consumes, and whether these scale predictably with model size or ADD document complexity.
 
 **A natural experiment format at this level:**  
-Run the same ADD scenario with 4B, 9B, 14B, 32B, and 70B models in sequence. For each run, record: task outcome (PASS / PARTIAL / FAIL), peak context usage, processing time, peak VRAM, average GPU load, and energy consumption. This turns a capability comparison into a capability-vs.-cost comparison — directly relevant to the question of which model size is appropriate for which class of ADD deployment.
+Run the same ADD scenario with 4B, 9B, 14B, 35B, 70B and 120B models in sequence. For each run, record: task outcome (PASS / PARTIAL / FAIL), peak context usage, processing time, peak VRAM, average GPU load, and energy consumption. This turns a capability comparison into a capability-vs.-cost comparison — directly relevant to the question of which model size is appropriate for which class of ADD deployment.
 
 ---
 
@@ -164,7 +164,7 @@ Available as Docker images on [Docker Hub (openboatprojects)](https://hub.docker
 |---|---|---|
 | ✅ | **ADD Simulator** | Simulates a Tasmota-based valve with a complete ADD document, including logging. Docker-based, portable. Available on [Docker Hub](https://hub.docker.com/r/openboatprojects/add-simulator). Used as the primary controlled test target for Level 2 and Level 3 experiments. |
 | 🔧 | **Test Scripts** | Automated test routines spanning multiple cycles with structured logging. In development. |
-| 📋 | **Test Bench** | A comprehensive evaluation harness for systematic AI qualification against ADD — standardized task sets, scoring, regression testing. Planned. |
+| 🔧 | **Test Bench** | A comprehensive [evaluation harness](https://github.com/norbert-walter/ai-device-description-add/tree/main/server_dasboard) for systematic AI qualification against ADD — standardized task sets, scoring, regression testing. Planned. |
 
 ---
 
