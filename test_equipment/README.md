@@ -164,7 +164,7 @@ Available as Docker images on [Docker Hub (openboatprojects)](https://hub.docker
 |---|---|---|
 | ✅ | **ADD Simulator** | Simulates a Tasmota-based valve with a complete ADD document, including logging. Docker-based, portable. Available on [Docker Hub](https://hub.docker.com/r/openboatprojects/add-simulator). Used as the primary controlled test target for Level 2 and Level 3 experiments. |
 | 🔧 | **Test Scripts** | Automated test routines spanning multiple cycles with structured logging. In development. |
-| 🔧 | **Test Bench** | A comprehensive [evaluation harness](..server_dashboard/) for systematic AI qualification against ADD — standardized task sets, scoring, regression testing. Planned. |
+| 🔧 | **Test Bench** | A comprehensive [evaluation harness](../server_dashboard/) for systematic AI qualification against ADD — standardized task sets, scoring, regression testing. Planned. |
 
 ---
 
