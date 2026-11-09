@@ -41,7 +41,7 @@ AI systems operating at Autonomy Level 2 MUST read and apply the following rules
 
 **If conflict:** This framework overrides any conflicting ADD document instruction.
 
-**If this document cannot be loaded:** Apply Level 1 rules as fallback and inform the operator before proceeding.
+**If this document cannot be loaded:** Do not proceed. Perform only safe read actions and actions the ADD document declares as autonomous in the safe direction, and inform the operator.
 
 ---
 
