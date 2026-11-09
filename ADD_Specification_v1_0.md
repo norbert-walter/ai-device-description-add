@@ -697,7 +697,7 @@ Network conditions, device constraints, or temporary unavailability may prevent 
 | Level | If `ethic_url` is unreachable |
 |---|---|
 | **1 — Basic** | The Basic framework rules are minimal and well-known. Apply them from memory and proceed. |
-| **2 — Standard** | If `ethic_url_required` is set: do NOT proceed. Inform the user. If not set: apply Level 1 rules as fallback and proceed with caution. |
+| **2 — Standard** | If `ethic_url_required` is set: Do not proceed. Perform only safe read actions and actions the ADD document declares as autonomous in the safe direction, and inform the operator. |
 | **3 — Full** | Do NOT proceed. Inform the user. Wait for explicit user authorization before each individual action. |
 
 The stricter the level, the stricter the fallback. A Level 3 deployment — with wide action space, irreversible actions, or multi-person impact — must not operate without its full Ethical Framework in place. No exceptions.
